@@ -1,0 +1,70 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Plan {
+  FREE
+  PRO
+}
+
+enum ApplicationStatus {
+  APPLIED
+  PHONE
+  TECHNICAL
+  OFFER
+  REJECTED
+}
+
+enum Language {
+  FR
+  EN
+}
+
+model User {
+  id           String        @id
+  email        String        @unique
+  plan         Plan          @default(FREE)
+  cvUrl        String?
+  cvText       String?       @db.Text
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  applications Application[]
+  usage        UsageCounter?
+}
+
+model Application {
+  id            String            @id @default(cuid())
+  userId        String
+  user          User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  company       String
+  role          String
+  status        ApplicationStatus @default(APPLIED)
+  language      Language          @default(EN)
+  offerText     String            @db.Text
+  salary        String?
+  link          String?
+  notes         String?           @db.Text
+  adaptedCvUrl  String?
+  coverLetter   String?           @db.Text
+  interviewQs   Json?
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+
+  @@index([userId])
+  @@index([status])
+}
+
+model UsageCounter {
+  id            String   @id @default(cuid())
+  userId        String   @unique
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  month         String
+  cvAdaptations Int      @default(0)
+  coverLetters  Int      @default(0)
+  applications  Int      @default(0)
+  updatedAt     DateTime @updatedAt
+}
