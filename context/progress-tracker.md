@@ -1,10 +1,10 @@
 ## Current Phase
 
-Phase 6 — AI Features (Cover Letter Generator)
+Phase 7 — Interview Prep (completed)
 
 ## Current Goal
 
-Build Interview Prep
+GitHub push + Vercel deploy
 
 ## Completed
 
@@ -89,15 +89,25 @@ Build Interview Prep
   - [x] Application interface: coverLetter field added
   - [x] npm run build passes with no errors
 
+- [x] Interview Prep (Phase 7)
+  - [x] lib/ai/generate-interview-questions.ts — generateInterviewQuestions(cvText, offerText, company, role, language) — 10 questions (5 technical + 5 behavioral), 2000 tokens, temperature 0.3, bilingual
+  - [x] POST /api/applications/[id]/interview — ownership check, CV check, saves interviewQs (Json) to DB
+  - [x] Application interface: interviewQs field added (InterviewQuestion[] | null)
+  - [x] EditApplicationSheet Interview tab — 4 states: no CV / empty / generating / has questions; two sections (Technical/Behavioral) with colored left border cards; Regenerate + Mock Interview buttons
+  - [x] components/applications/mock-interview-modal.tsx — full-screen modal, timer, question counter, progress bar, hint toggle, textarea answer, Prev/Next/Finish navigation, summary screen with all Q&A
+  - [x] app/(app)/interview/page.tsx — Interview Prep page listing apps with questions; empty state; Practice button opens mock interview modal
+  - [x] applications page: onInterviewQsGenerated callback wired
+  - [x] Sidebar already linked to /interview
+
 ## In Progress
 
 - None
 
 ## Next Up
 
-1. Build Interview Prep
-3. Setup GitLab CI/CD pipeline
-4. Setup Terraform IaC
+1. GitHub push + Vercel deploy
+2. Setup GitLab CI/CD pipeline
+3. Setup Terraform IaC
 
 ## Schema Changes Needed (run in Supabase SQL Editor)
 

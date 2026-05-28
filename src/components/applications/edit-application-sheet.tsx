@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from 'react'
 import { Check, Download, ExternalLink, FileText, Loader2, MessageSquare, MoreHorizontal, RefreshCw, Sparkles, X } from 'lucide-react'
+import { MockInterviewModal } from '@/components/applications/mock-interview-modal'
+import type { InterviewQuestion } from '@/lib/ai/generate-interview-questions'
 import {
   Sheet,
   SheetClose,
@@ -34,6 +36,7 @@ export interface Application {
   offerText: string
   adaptedCvText: string | null
   coverLetter: string | null
+  interviewQs: InterviewQuestion[] | null
   createdAt: string
 }
 
@@ -556,6 +559,208 @@ function CoverLetterTab({ applicationId, hasCv, initialCoverLetter, onGenerated 
   )
 }
 
+// ── Interview Tab ─────────────────────────────────────────────────────────────
+
+interface InterviewTabProps {
+  applicationId: string
+  company: string
+  hasCv: boolean
+  initialQuestions: InterviewQuestion[] | null
+  onGenerated: (questions: InterviewQuestion[]) => void
+}
+
+function InterviewTab({ applicationId, company, hasCv, initialQuestions, onGenerated }: InterviewTabProps) {
+  const [questions, setQuestions] = useState<InterviewQuestion[] | null>(initialQuestions)
+  const [generating, setGenerating] = useState(false)
+  const [error, setError] = useState('')
+  const [mockOpen, setMockOpen] = useState(false)
+
+  useEffect(() => {
+    setQuestions(initialQuestions)
+    setError('')
+  }, [applicationId, initialQuestions])
+
+  async function generate(skipConfirm = false) {
+    if (questions?.length && !skipConfirm) {
+      if (!window.confirm('Regenerate interview questions? The current ones will be replaced.')) return
+    }
+    setError('')
+    setGenerating(true)
+    try {
+      const res = await fetch(`/api/applications/${applicationId}/interview`, { method: 'POST' })
+      const json = await res.json() as { data?: { questions: InterviewQuestion[] }; error?: string }
+
+      if (res.status === 400 && json.error === 'No CV uploaded') {
+        setError('no-cv')
+        return
+      }
+      if (!res.ok) {
+        setError(json.error ?? 'Generation failed. Please try again.')
+        return
+      }
+
+      const qs = json.data?.questions ?? []
+      setQuestions(qs)
+      onGenerated(qs)
+    } catch {
+      setError('Network error. Please try again.')
+    } finally {
+      setGenerating(false)
+    }
+  }
+
+  if (!hasCv && !questions?.length) {
+    return (
+      <div className="flex flex-col items-center justify-center py-16 gap-4 px-5">
+        <div className="h-12 w-12 rounded-xl bg-[hsl(var(--bg-surface-raised))] flex items-center justify-center">
+          <FileText className="h-5 w-5 text-[hsl(var(--text-muted))]" />
+        </div>
+        <div className="text-center space-y-1">
+          <p className="text-sm font-medium text-[hsl(var(--text-primary))]">Upload your CV first</p>
+          <p className="text-xs text-[hsl(var(--text-muted))]">JobPilot needs your CV to generate interview questions.</p>
+        </div>
+        <a
+          href="/my-cv"
+          className="inline-flex items-center justify-center rounded-lg bg-amber-500 text-black hover:bg-amber-400 font-medium h-8 px-4 text-sm"
+        >
+          Go to My CV →
+        </a>
+      </div>
+    )
+  }
+
+  if (error === 'no-cv') {
+    return (
+      <div className="flex flex-col items-center justify-center py-16 gap-4 px-5">
+        <div className="h-12 w-12 rounded-xl bg-[hsl(var(--bg-surface-raised))] flex items-center justify-center">
+          <FileText className="h-5 w-5 text-[hsl(var(--text-muted))]" />
+        </div>
+        <p className="text-sm text-[hsl(var(--text-muted))]">Upload your CV first</p>
+        <a
+          href="/my-cv"
+          className="inline-flex items-center justify-center rounded-lg bg-amber-500 text-black hover:bg-amber-400 font-medium h-8 px-4 text-sm"
+        >
+          Go to My CV →
+        </a>
+      </div>
+    )
+  }
+
+  if (generating) {
+    return (
+      <div className="flex flex-col items-center justify-center py-16 gap-3">
+        <Loader2 className="h-6 w-6 animate-spin text-amber-500" />
+        <p className="text-sm text-[hsl(var(--text-muted))]">Preparing your interview…</p>
+      </div>
+    )
+  }
+
+  if (questions?.length) {
+    const technical = questions.filter(q => q.type === 'technical')
+    const behavioral = questions.filter(q => q.type === 'behavioral')
+
+    return (
+      <div className="p-5 space-y-6">
+        {error && (
+          <p className="text-sm text-[hsl(var(--state-error))] bg-[hsl(var(--state-error-light))] rounded-lg px-3 py-2">
+            {error}
+          </p>
+        )}
+
+        {technical.length > 0 && (
+          <div className="space-y-3">
+            <p className="text-xs font-medium text-[hsl(var(--text-secondary))] uppercase tracking-wide">
+              Technical Questions ({technical.length})
+            </p>
+            {technical.map(q => (
+              <div
+                key={q.id}
+                className="rounded-xl border border-[hsl(var(--border-default))] border-l-2 border-l-sky-500 p-4 space-y-2 bg-[hsl(var(--bg-surface-raised))]"
+              >
+                <span className="inline-block text-[10px] font-semibold px-2 py-0.5 rounded-full bg-sky-500/10 text-sky-400">
+                  Technical
+                </span>
+                <p className="text-sm font-medium text-[hsl(var(--text-primary))]">{q.question}</p>
+                <p className="text-xs text-[hsl(var(--text-secondary))] italic">{q.hint}</p>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {behavioral.length > 0 && (
+          <div className="space-y-3">
+            <p className="text-xs font-medium text-[hsl(var(--text-secondary))] uppercase tracking-wide">
+              Behavioral Questions ({behavioral.length})
+            </p>
+            {behavioral.map(q => (
+              <div
+                key={q.id}
+                className="rounded-xl border border-[hsl(var(--border-default))] border-l-2 border-l-amber-500 p-4 space-y-2 bg-[hsl(var(--bg-surface-raised))]"
+              >
+                <span className="inline-block text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-400">
+                  Behavioral
+                </span>
+                <p className="text-sm font-medium text-[hsl(var(--text-primary))]">{q.question}</p>
+                <p className="text-xs text-[hsl(var(--text-secondary))] italic">{q.hint}</p>
+              </div>
+            ))}
+          </div>
+        )}
+
+        <div className="flex items-center gap-2 pt-2">
+          <button
+            type="button"
+            onClick={() => generate(false)}
+            className="inline-flex items-center justify-center rounded-lg border border-[hsl(var(--border-default))] h-8 px-4 text-sm text-[hsl(var(--text-secondary))] hover:bg-[hsl(var(--bg-surface-raised))] transition-colors"
+          >
+            <RefreshCw className="h-3.5 w-3.5 mr-1.5" />
+            Regenerate
+          </button>
+          <button
+            type="button"
+            onClick={() => setMockOpen(true)}
+            className="inline-flex items-center justify-center rounded-lg bg-amber-500 text-black hover:bg-amber-400 font-medium h-8 px-4 text-sm transition-colors"
+          >
+            <MessageSquare className="h-3.5 w-3.5 mr-1.5" />
+            Mock Interview
+          </button>
+        </div>
+
+        {mockOpen && (
+          <MockInterviewModal
+            company={company}
+            questions={questions}
+            onClose={() => setMockOpen(false)}
+          />
+        )}
+      </div>
+    )
+  }
+
+  return (
+    <div className="flex flex-col items-center justify-center py-16 gap-4 px-5">
+      <div className="h-12 w-12 rounded-xl bg-[hsl(var(--bg-surface-raised))] flex items-center justify-center">
+        <MessageSquare className="h-5 w-5 text-[hsl(var(--text-muted))]" />
+      </div>
+      <div className="text-center space-y-1">
+        <p className="text-sm font-medium text-[hsl(var(--text-primary))]">No interview questions yet</p>
+        <p className="text-xs text-[hsl(var(--text-muted))]">Generate targeted questions based on the actual offer.</p>
+      </div>
+      {error && (
+        <p className="text-sm text-[hsl(var(--state-error))] text-center">{error}</p>
+      )}
+      <button
+        type="button"
+        onClick={() => generate(true)}
+        className="inline-flex items-center justify-center rounded-lg bg-amber-500 text-black hover:bg-amber-400 font-medium h-8 px-4 text-sm"
+      >
+        <Sparkles className="h-3.5 w-3.5 mr-1.5" />
+        Generate Questions
+      </button>
+    </div>
+  )
+}
+
 // ── Sheet ─────────────────────────────────────────────────────────────────────
 
 interface EditApplicationSheetProps {
@@ -567,6 +772,7 @@ interface EditApplicationSheetProps {
   onDeleted: () => void
   onCvAdapted: (id: string, text: string) => void
   onCoverLetterGenerated: (id: string, text: string) => void
+  onInterviewQsGenerated: (id: string, questions: InterviewQuestion[]) => void
 }
 
 export function EditApplicationSheet({
@@ -578,13 +784,13 @@ export function EditApplicationSheet({
   onDeleted,
   onCvAdapted,
   onCoverLetterGenerated,
+  onInterviewQsGenerated,
 }: EditApplicationSheetProps) {
   const [status, setStatus] = useState<ApplicationStatus>('APPLIED')
   const [notes, setNotes] = useState('')
   const [saving, setSaving] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [error, setError] = useState('')
-  const [toast, setToast] = useState('')
 
   useEffect(() => {
     if (application) {
@@ -593,11 +799,6 @@ export function EditApplicationSheet({
       setError('')
     }
   }, [application?.id])
-
-  function showToast(msg: string) {
-    setToast(msg)
-    setTimeout(() => setToast(''), 2000)
-  }
 
   async function handleSave() {
     if (!application) return
@@ -813,20 +1014,13 @@ export function EditApplicationSheet({
 
           {/* ── Interview ── */}
           <TabsContent value="interview" className="flex-1 overflow-y-auto min-h-0">
-            <div className="flex flex-col items-center justify-center py-16 gap-4">
-              <div className="h-12 w-12 rounded-xl bg-[hsl(var(--bg-surface-raised))] flex items-center justify-center">
-                <MessageSquare className="h-5 w-5 text-[hsl(var(--text-muted))]" />
-              </div>
-              <p className="text-sm text-[hsl(var(--text-muted))]">No interview questions yet</p>
-              <Button
-                onClick={() => showToast('Interview prep coming soon')}
-                className="rounded-lg bg-amber-500 text-black hover:bg-amber-400 font-medium h-8 px-4 text-sm"
-              >
-                <Sparkles className="h-3.5 w-3.5 mr-1.5" />
-                Generate Questions
-              </Button>
-            </div>
-            {toast && <ToastBanner message={toast} />}
+            <InterviewTab
+              applicationId={application.id}
+              company={application.company}
+              hasCv={hasCv}
+              initialQuestions={application.interviewQs}
+              onGenerated={qs => onInterviewQsGenerated(application.id, qs)}
+            />
           </TabsContent>
         </Tabs>
       </SheetContent>
@@ -845,10 +1039,3 @@ function InfoRow({ label, children }: { label: string; children: React.ReactNode
   )
 }
 
-function ToastBanner({ message }: { message: string }) {
-  return (
-    <div className="absolute bottom-5 left-1/2 -translate-x-1/2 px-4 py-2 rounded-lg bg-[hsl(var(--bg-surface-raised))] border border-[hsl(var(--border-strong))] text-sm text-[hsl(var(--text-primary))] shadow-lg whitespace-nowrap pointer-events-none">
-      {message}
-    </div>
-  )
-}

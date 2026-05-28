@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { NewApplicationModal } from '@/components/applications/new-application-modal'
 import { EditApplicationSheet, type Application } from '@/components/applications/edit-application-sheet'
+import type { InterviewQuestion } from '@/lib/ai/generate-interview-questions'
 
 type ApplicationStatus = 'APPLIED' | 'PHONE' | 'TECHNICAL' | 'OFFER' | 'REJECTED'
 type Language = 'FR' | 'EN'
@@ -243,6 +244,13 @@ export default function ApplicationsPage() {
     setEditApp(prev => prev?.id === id ? { ...prev, coverLetter: text } : prev)
   }
 
+  function handleInterviewQsGenerated(id: string, questions: InterviewQuestion[]) {
+    setApplications(prev =>
+      prev.map(a => a.id === id ? { ...a, interviewQs: questions } : a)
+    )
+    setEditApp(prev => prev?.id === id ? { ...prev, interviewQs: questions } : prev)
+  }
+
   const grouped = COLUMNS.reduce<Record<ApplicationStatus, Application[]>>(
     (acc, col) => {
       acc[col.status] = applications.filter(a => a.status === col.status)
@@ -327,6 +335,7 @@ export default function ApplicationsPage() {
         onDeleted={() => void fetchApplications()}
         onCvAdapted={handleCvAdapted}
         onCoverLetterGenerated={handleCoverLetterGenerated}
+        onInterviewQsGenerated={handleInterviewQsGenerated}
       />
     </div>
   )
