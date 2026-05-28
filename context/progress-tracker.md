@@ -1,10 +1,10 @@
 ## Current Phase
 
-Phase 1 — Project Setup complete
+Phase 2 — Job Tracker complete
 
 ## Current Goal
 
-Build Job Tracker Kanban board (/applications)
+Integrate Stripe (Free + Pro checkout + webhook)
 
 ## Completed
 
@@ -30,6 +30,16 @@ Build Job Tracker Kanban board (/applications)
 - [x] prisma.config.ts loads .env.local first, then .env
 - [x] npm run dev running at localhost:3000
 - [x] All env keys filled in .env.local (Clerk, Supabase, Groq, Stripe)
+- [x] Job Tracker Kanban board (/applications)
+  - [x] src/lib/usage.ts — checkAndIncrementUsage() with free tier enforcement
+  - [x] POST /api/applications — create with free tier check
+  - [x] GET /api/applications — list all for user
+  - [x] PATCH /api/applications/[id] — update status/notes/salary/link
+  - [x] DELETE /api/applications/[id] — delete with ownership check
+  - [x] NewApplicationModal — paste offer, detect FR/EN, company/role/link/salary
+  - [x] EditApplicationSheet — status dropdown, notes, salary, link, delete
+  - [x] Kanban board page with 5 columns, cards, empty state
+  - [x] pg + @prisma/adapter-pg installed — Prisma 7 driver adapter pattern wired up
 
 ## In Progress
 
@@ -37,8 +47,8 @@ Build Job Tracker Kanban board (/applications)
 
 ## Next Up
 
-1. Build Job Tracker (Kanban board — /applications)
-2. Integrate Stripe (Free + Pro checkout + webhook)
+1. Integrate Stripe (Free + Pro checkout + webhook)
+2. Build Resume Adapter (CV upload + AI adaptation)
 3. Build Resume Adapter (CV upload + AI adaptation)
 4. Build Cover Letter Generator
 5. Build Interview Prep
@@ -61,6 +71,7 @@ Build Job Tracker Kanban board (/applications)
 - Stripe SDK v18: API version `2026-04-22.dahlia` (latest)
 - Groq API (llama-3.3-70b) instead of Ollama — deployable, fast, free tier generous
 - Supabase for both PostgreSQL and file storage — single provider simplicity
+- Prisma 7 requires driver adapter: `pg` + `@prisma/adapter-pg` — `new PrismaClient({ adapter: new PrismaPg(...) })` in lib/prisma.ts; `schema.prisma` datasource has no `url` field (it lives in `prisma.config.ts` for CLI only)
 
 ## Session Notes
 

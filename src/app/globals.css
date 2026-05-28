@@ -57,6 +57,18 @@
   --state-error: 0 84% 60%;
   --state-error-light: 0 86% 95%;
 
+  /* Kanban column colors */
+  --kanban-applied-bg: 239 100% 97%;
+  --kanban-applied-text: 239 68% 49%;
+  --kanban-phone-bg: 48 100% 93%;
+  --kanban-phone-text: 32 95% 44%;
+  --kanban-technical-bg: 198 96% 94%;
+  --kanban-technical-text: 202 89% 40%;
+  --kanban-offer-bg: 152 76% 92%;
+  --kanban-offer-text: 160 84% 39%;
+  --kanban-rejected-bg: 0 86% 95%;
+  --kanban-rejected-text: 0 72% 51%;
+
   /* shadcn/ui compatibility */
   --background: oklch(1 0 0);
   --foreground: oklch(0.13 0.03 255);
@@ -97,6 +109,18 @@
   --state-warning: 38 92% 50%;
   --state-error: 0 84% 60%;
   --state-error-light: 0 84% 12%;
+
+  /* Kanban column colors */
+  --kanban-applied-bg: 235 43% 16%;
+  --kanban-applied-text: 234 85% 74%;
+  --kanban-phone-bg: 38 100% 6%;
+  --kanban-phone-text: 38 92% 50%;
+  --kanban-technical-bg: 210 100% 9%;
+  --kanban-technical-text: 197 100% 61%;
+  --kanban-offer-bg: 150 100% 8%;
+  --kanban-offer-text: 136 68% 57%;
+  --kanban-rejected-bg: 0 65% 12%;
+  --kanban-rejected-text: 3 91% 64%;
 
   /* shadcn/ui compatibility */
   --background: oklch(0.13 0.03 255);
