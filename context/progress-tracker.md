@@ -1,6 +1,6 @@
 ## Current Phase
 
-Phase 2 — Job Tracker complete
+Phase 3 — Dashboard complete
 
 ## Current Goal
 
@@ -40,6 +40,13 @@ Integrate Stripe (Free + Pro checkout + webhook)
   - [x] EditApplicationSheet — status dropdown, notes, salary, link, delete
   - [x] Kanban board page with 5 columns, cards, empty state
   - [x] pg + @prisma/adapter-pg installed — Prisma 7 driver adapter pattern wired up
+- [x] Dashboard page (/dashboard)
+  - [x] GET /api/dashboard — stats (totalApplications, byStatus, recentApplications, usageThisMonth, plan, thisWeekCount, responseRate)
+  - [x] Free Tier Banner — amber left accent, usage progress bar, session-only dismiss (Client Component)
+  - [x] Stats Cards Row — Total Applications, Response Rate, Interviews, Offers
+  - [x] Recent Applications Table — company avatar, language badge, status badge with kanban colors, relative date, action buttons
+  - [x] Empty state — links to /applications to add first application
+  - [x] Page is a Server Component — data fetched via Prisma directly, firstName from Clerk currentUser()
 
 ## In Progress
 
@@ -49,7 +56,6 @@ Integrate Stripe (Free + Pro checkout + webhook)
 
 1. Integrate Stripe (Free + Pro checkout + webhook)
 2. Build Resume Adapter (CV upload + AI adaptation)
-3. Build Resume Adapter (CV upload + AI adaptation)
 4. Build Cover Letter Generator
 5. Build Interview Prep
 6. Setup GitLab CI/CD pipeline
