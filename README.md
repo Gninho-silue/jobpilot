@@ -1,36 +1,237 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# ✈️ JobPilot — AI-Powered Job Search SaaS
 
-## Getting Started
+> Land your dream job faster with AI. Adapt your CV, generate cover letters and prepare for interviews — all in one place. Bilingual FR/EN.
 
-First, run the development server:
+🔗 **Live:** [jobpilot-jet.vercel.app](https://jobpilot-jet.vercel.app)
+
+---
+
+## ✨ Features
+
+### 📋 Job Tracker
+- Kanban board with 5 stages: Applied → Phone Screen → Technical → Offer → Rejected
+- Auto-parse job offers: company, role and salary extracted automatically
+- Bilingual language detection (FR/EN) on every application
+- Full application history with notes, salary and links
+
+### 📄 Resume Adapter
+- Upload your CV once as PDF
+- Paste any job offer → AI adapts your CV to match the keywords and requirements
+- Language auto-detected (FR/EN)
+- Download adapted CV as PDF
+
+### ✉️ Cover Letter Generator
+- Personalized cover letter generated from your CV + job offer
+- 3 paragraphs, professional tone, never generic
+- Bilingual: FR or EN detected automatically
+- Download as formatted PDF
+
+### 🎤 Interview Prep
+- 10 targeted questions generated per offer (5 technical + 5 behavioral)
+- STAR method hints for each question
+- Mock interview mode with live timer
+- AI feedback on your answers: score, strengths, improvements (Pro)
+
+### 💳 Stripe Payments
+- Free tier: 5 applications, 3 CV adaptations, 3 cover letters/month
+- Pro plan: $9/month — unlimited everything + AI feedback
+- Stripe Customer Portal for subscription management
+
+---
+
+## 🛠️ Tech Stack
+
+| Layer | Technology |
+|---|---|
+| Framework | Next.js 16 + TypeScript (App Router) |
+| UI | Tailwind CSS + shadcn/ui |
+| Font | JetBrains Mono |
+| Auth | Clerk |
+| Database | Supabase (PostgreSQL) + Prisma |
+| File Storage | Supabase Storage |
+| AI / LLM | Groq API (llama-3.3-70b-versatile) |
+| Payments | Stripe |
+| PDF | @react-pdf/renderer |
+| Analytics | Vercel Analytics + Speed Insights |
+| Deploy | Vercel |
+| CI/CD | GitHub Actions |
+
+---
+
+## 🚀 Getting Started
+
+### Prerequisites
+- Node.js 20+
+- npm
+- A Supabase account
+- A Clerk account
+- A Groq API key
+- A Stripe account
+
+### Installation
 
 ```bash
+# Clone the repo
+git clone https://github.com/Gninho-silue/jobpilot.git
+cd jobpilot
+
+# Install dependencies
+npm install
+
+# Copy env file
+cp .env.example .env.local
+# Fill in your API keys (see Environment Variables below)
+
+# Generate SQL from Prisma schema and run in Supabase SQL Editor
+npx prisma migrate diff --from-empty --to-schema-datamodel prisma/schema.prisma --script
+
+# Generate Prisma client
+npx prisma generate
+
+# Start development server
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open http://localhost:3000
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+---
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## 🔐 Environment Variables
 
-## Learn More
+Create a `.env.local` file from `.env.example`:
 
-To learn more about Next.js, take a look at the following resources:
+```env
+# Clerk
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=
+CLERK_SECRET_KEY=
+NEXT_PUBLIC_CLERK_SIGN_IN_URL=/sign-in
+NEXT_PUBLIC_CLERK_SIGN_UP_URL=/sign-up
+NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL=/dashboard
+NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL=/dashboard
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+# Database (Supabase)
+DATABASE_URL=
+DIRECT_URL=
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+# Supabase
+NEXT_PUBLIC_SUPABASE_URL=
+NEXT_PUBLIC_SUPABASE_ANON_KEY=
+SUPABASE_SERVICE_ROLE_KEY=
 
-## Deploy on Vercel
+# Groq
+GROQ_API_KEY=
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+# Stripe
+STRIPE_SECRET_KEY=
+STRIPE_WEBHOOK_SECRET=
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=
+STRIPE_PRO_PRICE_ID=
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+# App
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+```
+
+---
+
+## 🗄️ Database Schema
+
+Three main models:
+
+- **User** — Clerk ID, plan (FREE/PRO), CV URL + extracted text, Stripe customer ID
+- **Application** — company, role, status, language, offer text, adapted CV, cover letter, interview questions
+- **UsageCounter** — monthly usage tracking per user (applications, CV adaptations, cover letters)
+
+---
+
+## 🔄 CI/CD
+
+GitHub Actions runs on every push to `main` and `develop`:
+
+1. **Lint** — ESLint
+2. **Type check** — TypeScript strict mode
+3. **Build** — Next.js production build
+4. **Security scan** — `npm audit`
+
+Vercel auto-deploys on push to `main`.
+
+---
+
+## 📁 Project Structure
+
+```
+jobpilot/
+├── src/
+│   ├── app/                    # Next.js App Router
+│   │   ├── (app)/              # Protected routes (auth required)
+│   │   │   ├── dashboard/
+│   │   │   ├── applications/
+│   │   │   ├── my-cv/
+│   │   │   ├── interview-prep/
+│   │   │   └── settings/
+│   │   ├── api/                # API routes
+│   │   │   ├── applications/
+│   │   │   ├── cv/
+│   │   │   ├── dashboard/
+│   │   │   ├── stripe/
+│   │   │   └── webhooks/
+│   │   └── page.tsx            # Landing page
+│   ├── components/             # UI components
+│   ├── lib/                    # Clients + utilities
+│   │   ├── ai/                 # All Groq prompt functions
+│   │   ├── pdf/                # PDF generation
+│   │   ├── prisma.ts
+│   │   ├── stripe.ts
+│   │   ├── groq.ts
+│   │   ├── config.ts
+│   │   └── analytics.ts
+│   └── context/                # Claude Code context files
+├── prisma/
+│   └── schema.prisma
+├── .github/
+│   └── workflows/
+│       ├── ci.yml
+│       └── deploy.yml
+├── .env.example
+└── CLAUDE.md
+```
+
+---
+
+## 📸 Screenshots
+
+### Dashboard
+![Dashboard](public/screenshots/dashboard.png)
+
+### Kanban Board
+![Kanban](public/screenshots/kanban.png)
+
+### Resume Adapter
+![Resume](public/screenshots/resume.png)
+
+### Interview Prep
+![Interview](public/screenshots/interview.png)
+
+---
+
+## 🚧 Roadmap
+
+- [ ] Mobile app (React Native)
+- [ ] Drag and drop Kanban
+- [ ] Email reminders for follow-ups
+- [ ] LinkedIn job import
+- [ ] Team/agency plan
+- [ ] AI feedback scoring history
+
+---
+
+## 👨‍💻 Author
+
+**Gninninmaguignon Silué**
+- GitHub: [@Gninho-silue](https://github.com/Gninho-silue)
+- LinkedIn: [linkedin.com/in/gninema-silue](https://linkedin.com/in/gninema-silue)
+
+---
+
+## 📄 License
+
+MIT
