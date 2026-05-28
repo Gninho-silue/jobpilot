@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { X, Zap } from 'lucide-react'
-import Link from 'next/link'
+import { UpgradeButton } from '@/components/upgrade-button'
 
 interface FreeTierBannerProps {
   used: number
@@ -39,12 +39,9 @@ export function FreeTierBanner({ used, limit, nextResetDate }: FreeTierBannerPro
         </div>
       </div>
 
-      <Link
-        href="/billing"
-        className="shrink-0 text-sm font-medium text-amber-500 hover:text-amber-400 transition-colors whitespace-nowrap mt-0.5"
-      >
+      <UpgradeButton variant="link" className="mt-0.5">
         Upgrade to Pro →
-      </Link>
+      </UpgradeButton>
 
       <button
         onClick={() => setDismissed(true)}

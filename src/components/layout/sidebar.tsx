@@ -8,9 +8,10 @@ import {
   FileText,
   MessageSquare,
   Settings,
-  Zap,
+  Crown,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { UpgradeButton } from '@/components/upgrade-button'
 
 const navItems = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -20,7 +21,11 @@ const navItems = [
   { href: '/settings', label: 'Settings', icon: Settings },
 ]
 
-export function Sidebar() {
+interface SidebarProps {
+  plan: 'FREE' | 'PRO'
+}
+
+export function Sidebar({ plan }: SidebarProps) {
   const pathname = usePathname()
 
   return (
@@ -46,15 +51,26 @@ export function Sidebar() {
         })}
       </nav>
 
-      <div className="p-3 border-t border-[hsl(var(--border-default))]">
-        <Link
-          href="/upgrade"
-          className="flex items-center gap-2 w-full px-3 py-2 rounded-lg bg-amber-500 text-black text-sm font-medium hover:bg-amber-400 transition-colors"
-        >
-          <Zap className="h-4 w-4" />
-          Upgrade to Pro
-        </Link>
-      </div>
+      {plan === 'FREE' && (
+        <div className="p-3 border-t border-[hsl(var(--border-default))]">
+          <div className="rounded-xl bg-[hsl(var(--accent-light))] border border-amber-500/20 p-3 flex flex-col gap-2.5">
+            <div className="flex items-center gap-2">
+              <div className="h-7 w-7 rounded-lg bg-amber-500/20 flex items-center justify-center shrink-0">
+                <Crown className="h-3.5 w-3.5 text-amber-500" />
+              </div>
+              <span className="text-sm font-semibold text-[hsl(var(--text-primary))]">
+                Upgrade to Pro
+              </span>
+            </div>
+            <p className="text-[11px] leading-relaxed text-[hsl(var(--text-muted))]">
+              Unlimited applications, advanced AI tailoring and interview coaching.
+            </p>
+            <UpgradeButton>
+              Upgrade — $9/mo
+            </UpgradeButton>
+          </div>
+        </div>
+      )}
     </aside>
   )
 }

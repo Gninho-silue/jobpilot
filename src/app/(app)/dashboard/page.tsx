@@ -1,6 +1,7 @@
 import { auth, currentUser } from '@clerk/nextjs/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
+import { Suspense } from 'react'
 import {
   Briefcase,
   RefreshCw,
@@ -15,6 +16,7 @@ import {
 import { prisma } from '@/lib/prisma'
 import { FREE_TIER_LIMITS } from '@/lib/config'
 import { FreeTierBanner } from '@/components/dashboard/free-tier-banner'
+import { UpgradeSuccessToast } from '@/components/dashboard/upgrade-success-toast'
 
 type AppStatus = 'APPLIED' | 'PHONE' | 'TECHNICAL' | 'OFFER' | 'REJECTED'
 
@@ -134,6 +136,10 @@ export default async function DashboardPage() {
 
   return (
     <div className="flex flex-col gap-6">
+      <Suspense>
+        <UpgradeSuccessToast />
+      </Suspense>
+
       {/* Header */}
       <div className="flex items-start justify-between">
         <div>

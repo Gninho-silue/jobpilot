@@ -25,15 +25,16 @@ enum Language {
 }
 
 model User {
-  id           String        @id
-  email        String        @unique
-  plan         Plan          @default(FREE)
-  cvUrl        String?
-  cvText       String?       @db.Text
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
-  applications Application[]
-  usage        UsageCounter?
+  id               String        @id
+  email            String        @unique
+  plan             Plan          @default(FREE)
+  stripeCustomerId String?       @unique
+  cvUrl            String?
+  cvText           String?       @db.Text
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+  applications     Application[]
+  usage            UsageCounter?
 }
 
 model Application {
