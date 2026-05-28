@@ -39,7 +39,7 @@ export function FreeTierBanner({ used, limit, nextResetDate }: FreeTierBannerPro
         </div>
       </div>
 
-      <UpgradeButton variant="link" className="mt-0.5">
+      <UpgradeButton variant="link" source="banner" className="mt-0.5">
         Upgrade to Pro →
       </UpgradeButton>
 

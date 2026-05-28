@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
+import { trackEvent } from '@/lib/analytics'
 
 const FR_KEYWORDS = ['le', 'la', 'les', 'de', 'du', 'vous', 'nous', 'emploi', 'poste', 'entreprise', 'société', 'recherche', 'compétences', 'expérience', 'formation']
 const EN_KEYWORDS = ['the', 'and', 'or', 'you', 'we', 'job', 'role', 'position', 'company', 'team', 'skills', 'experience', 'requirements', 'responsibilities']
@@ -144,6 +145,7 @@ export function NewApplicationModal({
         return
       }
 
+      trackEvent.applicationCreated(detectedLang ?? 'EN')
       onOpenChange(false)
       onCreated()
     } catch {

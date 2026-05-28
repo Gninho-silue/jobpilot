@@ -61,7 +61,7 @@ export default async function SettingsPage() {
             {isPro ? (
               <ManageSubscriptionButton />
             ) : (
-              <UpgradeButton className="w-auto px-4">
+              <UpgradeButton source="settings" className="w-auto px-4">
                 <Zap className="h-4 w-4" />
                 Upgrade to Pro
               </UpgradeButton>

@@ -1,0 +1,15 @@
+name: Deploy to Vercel
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    name: Deploy Production
+    runs-on: ubuntu-latest
+    # Actual deploy is handled by Vercel's GitHub integration on push to main.
+    # This job exists to make the deploy visible in the Actions tab.
+    steps:
+      - name: Notify deploy triggered
+        run: echo "Vercel deploy triggered by push to main"

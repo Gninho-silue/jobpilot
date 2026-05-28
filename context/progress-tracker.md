@@ -99,6 +99,41 @@ GitHub push + Vercel deploy
   - [x] applications page: onInterviewQsGenerated callback wired
   - [x] Sidebar already linked to /interview
 
+- [x] AI Interview Feedback (Part 1 of prompt)
+  - [x] lib/ai/interview-feedback.ts — generateInterviewFeedback(), bilingual FR/EN, score + strengths + improvements + betterAnswer
+  - [x] POST /api/interview/feedback — Clerk auth, PRO-only check, Zod validation, rate limit
+  - [x] GET /api/user/plan — lightweight plan endpoint
+  - [x] MockInterviewModal — isPro + language props; FeedbackCard with colored stars, collapsible betterAnswer; PRO feedback on Next/Finish; FREE upgrade banner
+
+- [x] Security Audit & Fixes (Part 2 of prompt)
+  - [x] src/lib/rate-limit.ts — in-memory rate limiter (10 req/min/user), applied to all 4 AI endpoints
+  - [x] src/lib/env.ts — validateEnv() checks all required env vars
+  - [x] next.config.ts — X-Frame-Options, X-Content-Type-Options, Referrer-Policy, Permissions-Policy headers
+  - [x] All [id] routes — id non-empty validation + combined 403 (no-leak pattern)
+  - [x] PDF magic bytes validation in /api/cv/upload
+  - [x] Generic error messages in all catch blocks (no stack traces)
+  - [x] eslint.config.mjs — downgraded react-hooks/set-state-in-effect to warn (pre-existing patterns)
+
+- [x] GitHub Actions CI/CD (Part 3 of prompt)
+  - [x] .github/workflows/ci.yml — lint+type-check → build → security-scan jobs
+  - [x] .github/workflows/deploy.yml — notifies on push to main (Vercel integration handles actual deploy)
+  - [x] .github/PULL_REQUEST_TEMPLATE.md — checklist with build/lint/type/security gates
+
+- [x] Vercel Analytics + Speed Insights (Part 4 of prompt)
+  - [x] @vercel/analytics + @vercel/speed-insights installed
+  - [x] Analytics + SpeedInsights added to root layout
+  - [x] src/lib/analytics.ts — trackEvent helpers (applicationCreated, cvAdapted, coverLetterGenerated, interviewStarted, upgradeClicked, upgraded)
+  - [x] UpgradeButton — source prop + trackEvent.upgradeClicked(source) on click
+  - [x] All 5 UpgradeButton call sites wired with source labels
+  - [x] new-application-modal — trackEvent.applicationCreated(language) on success
+  - [x] edit-application-sheet — trackEvent.cvAdapted() + trackEvent.coverLetterGenerated() on success
+  - [x] mock-interview-modal — trackEvent.interviewStarted() on mount
+  - [x] webhooks/stripe — trackEvent.upgraded() on checkout.session.completed
+
+## Current Goal
+
+GitHub push + Vercel deploy
+
 ## In Progress
 
 - None
@@ -106,8 +141,6 @@ GitHub push + Vercel deploy
 ## Next Up
 
 1. GitHub push + Vercel deploy
-2. Setup GitLab CI/CD pipeline
-3. Setup Terraform IaC
 
 ## Schema Changes Needed (run in Supabase SQL Editor)
 

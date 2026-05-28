@@ -10,6 +10,7 @@ interface AppWithQuestions {
   id: string
   company: string
   role: string
+  language: 'FR' | 'EN'
   interviewQs: InterviewQuestion[]
 }
 
@@ -30,10 +31,11 @@ export default function InterviewPrepPage() {
   const [apps, setApps] = useState<AppWithQuestions[]>([])
   const [loading, setLoading] = useState(true)
   const [active, setActive] = useState<AppWithQuestions | null>(null)
+  const [isPro, setIsPro] = useState(false)
 
   useEffect(() => {
     fetch('/api/applications')
-      .then(r => r.json() as Promise<{ data?: { id: string; company: string; role: string; interviewQs: unknown }[] }>)
+      .then(r => r.json() as Promise<{ data?: { id: string; company: string; role: string; language: string; interviewQs: unknown }[] }>)
       .then(j => {
         const filtered = (j.data ?? [])
           .filter(a => Array.isArray(a.interviewQs) && (a.interviewQs as InterviewQuestion[]).length > 0)
@@ -41,12 +43,18 @@ export default function InterviewPrepPage() {
             id: a.id,
             company: a.company,
             role: a.role,
+            language: (a.language as 'FR' | 'EN') ?? 'EN',
             interviewQs: a.interviewQs as InterviewQuestion[],
           }))
         setApps(filtered)
       })
       .catch(() => {})
       .finally(() => setLoading(false))
+
+    fetch('/api/user/plan')
+      .then(r => r.json() as Promise<{ data?: { plan: string } }>)
+      .then(j => { if (j.data?.plan === 'PRO') setIsPro(true) })
+      .catch(() => {})
   }, [])
 
   return (
@@ -125,6 +133,8 @@ export default function InterviewPrepPage() {
         <MockInterviewModal
           company={active.company}
           questions={active.interviewQs}
+          language={active.language}
+          isPro={isPro}
           onClose={() => setActive(null)}
         />
       )}

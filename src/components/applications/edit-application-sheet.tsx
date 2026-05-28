@@ -19,6 +19,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { UpgradeButton } from '@/components/upgrade-button'
+import { trackEvent } from '@/lib/analytics'
 import Link from 'next/link'
 
 type ApplicationStatus = 'APPLIED' | 'PHONE' | 'TECHNICAL' | 'OFFER' | 'REJECTED'
@@ -170,6 +171,7 @@ function ResumeTab({ applicationId, hasCv, initialAdaptedCvText, onAdapted }: Re
       const text = json.data?.adaptedCvText ?? ''
       setAdaptedCvText(text)
       onAdapted(text)
+      trackEvent.cvAdapted()
     } catch {
       setError('Network error. Please try again.')
     } finally {
@@ -234,7 +236,7 @@ function ResumeTab({ applicationId, hasCv, initialAdaptedCvText, onAdapted }: Re
           <p className="text-sm font-medium text-[hsl(var(--text-primary))]">Free tier limit reached</p>
           <p className="text-xs text-[hsl(var(--text-muted))]">Upgrade to Pro for unlimited CV adaptations.</p>
         </div>
-        <UpgradeButton>Upgrade to Pro — $9/mo</UpgradeButton>
+        <UpgradeButton source="cv-adaptation">Upgrade to Pro — $9/mo</UpgradeButton>
         <button
           type="button"
           onClick={() => setShowUpgrade(false)}
@@ -390,6 +392,7 @@ function CoverLetterTab({ applicationId, hasCv, initialCoverLetter, onGenerated 
       const text = json.data?.coverLetter ?? ''
       setCoverLetter(text)
       onGenerated(text)
+      trackEvent.coverLetterGenerated()
     } catch {
       setError('Network error. Please try again.')
     } finally {
@@ -454,7 +457,7 @@ function CoverLetterTab({ applicationId, hasCv, initialCoverLetter, onGenerated 
           <p className="text-sm font-medium text-[hsl(var(--text-primary))]">Free tier limit reached</p>
           <p className="text-xs text-[hsl(var(--text-muted))]">Upgrade to Pro for unlimited cover letters.</p>
         </div>
-        <UpgradeButton>Upgrade to Pro — $9/mo</UpgradeButton>
+        <UpgradeButton source="cover-letter">Upgrade to Pro — $9/mo</UpgradeButton>
         <button
           type="button"
           onClick={() => setShowUpgrade(false)}
@@ -565,11 +568,13 @@ interface InterviewTabProps {
   applicationId: string
   company: string
   hasCv: boolean
+  language: 'FR' | 'EN'
+  isPro: boolean
   initialQuestions: InterviewQuestion[] | null
   onGenerated: (questions: InterviewQuestion[]) => void
 }
 
-function InterviewTab({ applicationId, company, hasCv, initialQuestions, onGenerated }: InterviewTabProps) {
+function InterviewTab({ applicationId, company, hasCv, language, isPro, initialQuestions, onGenerated }: InterviewTabProps) {
   const [questions, setQuestions] = useState<InterviewQuestion[] | null>(initialQuestions)
   const [generating, setGenerating] = useState(false)
   const [error, setError] = useState('')
@@ -730,6 +735,8 @@ function InterviewTab({ applicationId, company, hasCv, initialQuestions, onGener
           <MockInterviewModal
             company={company}
             questions={questions}
+            language={language}
+            isPro={isPro}
             onClose={() => setMockOpen(false)}
           />
         )}
@@ -767,6 +774,7 @@ interface EditApplicationSheetProps {
   application: Application | null
   open: boolean
   hasCv: boolean
+  isPro: boolean
   onOpenChange: (open: boolean) => void
   onUpdated: () => void
   onDeleted: () => void
@@ -779,6 +787,7 @@ export function EditApplicationSheet({
   application,
   open,
   hasCv,
+  isPro,
   onOpenChange,
   onUpdated,
   onDeleted,
@@ -1018,6 +1027,8 @@ export function EditApplicationSheet({
               applicationId={application.id}
               company={application.company}
               hasCv={hasCv}
+              language={application.language}
+              isPro={isPro}
               initialQuestions={application.interviewQs}
               onGenerated={qs => onInterviewQsGenerated(application.id, qs)}
             />

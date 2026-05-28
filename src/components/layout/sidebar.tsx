@@ -65,7 +65,7 @@ export function Sidebar({ plan }: SidebarProps) {
             <p className="text-[11px] leading-relaxed text-[hsl(var(--text-muted))]">
               Unlimited applications, advanced AI tailoring and interview coaching.
             </p>
-            <UpgradeButton>
+            <UpgradeButton source="sidebar">
               Upgrade — $9/mo
             </UpgradeButton>
           </div>

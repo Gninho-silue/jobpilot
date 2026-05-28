@@ -5,10 +5,14 @@ import { ChevronLeft, ChevronRight, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import type { InterviewQuestion } from '@/lib/ai/generate-interview-questions'
+import type { InterviewFeedback } from '@/lib/ai/interview-feedback'
+import { trackEvent } from '@/lib/analytics'
 
 interface MockInterviewModalProps {
   company: string
   questions: InterviewQuestion[]
+  language: 'FR' | 'EN'
+  isPro: boolean
   onClose: () => void
 }
 
@@ -18,7 +22,91 @@ function formatTime(seconds: number): string {
   return `${m}:${s}`
 }
 
-export function MockInterviewModal({ company, questions, onClose }: MockInterviewModalProps) {
+function FeedbackCard({
+  feedback,
+  betterOpen,
+  onToggleBetter,
+}: {
+  feedback: InterviewFeedback
+  betterOpen: boolean
+  onToggleBetter: () => void
+}) {
+  const scoreColor =
+    feedback.score >= 8
+      ? 'text-emerald-400'
+      : feedback.score >= 5
+      ? 'text-amber-400'
+      : 'text-red-400'
+
+  return (
+    <div className="rounded-xl border border-[hsl(var(--border-default))] bg-[hsl(var(--bg-surface-raised))] p-4 space-y-3">
+      <div className="flex items-center justify-between">
+        <span className="text-xs font-semibold text-[hsl(var(--text-secondary))] uppercase tracking-wide">
+          AI Feedback
+        </span>
+        <span className={`text-sm font-bold ${scoreColor}`}>{feedback.score}/10</span>
+      </div>
+
+      <div className="flex gap-0.5">
+        {Array.from({ length: 10 }, (_, i) => (
+          <span
+            key={i}
+            className={`text-sm ${i < feedback.score ? scoreColor : 'text-[hsl(var(--text-muted))]'}`}
+          >
+            {i < feedback.score ? '★' : '☆'}
+          </span>
+        ))}
+      </div>
+
+      {feedback.strengths.length > 0 && (
+        <div className="space-y-1">
+          <p className="text-xs font-medium text-emerald-400">✅ Strengths</p>
+          <ul className="space-y-0.5">
+            {feedback.strengths.map((s, i) => (
+              <li key={i} className="text-xs text-[hsl(var(--text-secondary))] flex gap-1.5">
+                <span className="text-[hsl(var(--text-muted))] shrink-0">•</span>
+                {s}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {feedback.improvements.length > 0 && (
+        <div className="space-y-1">
+          <p className="text-xs font-medium text-amber-400">💡 Improvements</p>
+          <ul className="space-y-0.5">
+            {feedback.improvements.map((s, i) => (
+              <li key={i} className="text-xs text-[hsl(var(--text-secondary))] flex gap-1.5">
+                <span className="text-[hsl(var(--text-muted))] shrink-0">•</span>
+                {s}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {feedback.betterAnswer && (
+        <div>
+          <button
+            type="button"
+            onClick={onToggleBetter}
+            className="text-xs text-[hsl(var(--text-muted))] hover:text-amber-500 transition-colors"
+          >
+            🎯 Better Answer {betterOpen ? '▲' : '▼'}
+          </button>
+          {betterOpen && (
+            <p className="mt-2 text-xs text-[hsl(var(--text-secondary))] italic leading-relaxed bg-[hsl(var(--bg-base))] rounded-lg px-3 py-2">
+              {feedback.betterAnswer}
+            </p>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
+export function MockInterviewModal({ company, questions, language, isPro, onClose }: MockInterviewModalProps) {
   const [index, setIndex] = useState(0)
   const [answers, setAnswers] = useState<string[]>(() => questions.map(() => ''))
   const [hintOpen, setHintOpen] = useState(false)
@@ -26,8 +114,13 @@ export function MockInterviewModal({ company, questions, onClose }: MockIntervie
   const [finished, setFinished] = useState(false)
   const [finalTime, setFinalTime] = useState(0)
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const [feedbacks, setFeedbacks] = useState<Record<number, InterviewFeedback>>({})
+  const [feedbackLoading, setFeedbackLoading] = useState(false)
+  const [feedbackAttempted, setFeedbackAttempted] = useState<Set<number>>(new Set())
+  const [betterAnswerOpen, setBetterAnswerOpen] = useState(false)
 
   useEffect(() => {
+    trackEvent.interviewStarted()
     timerRef.current = setInterval(() => {
       setElapsed(e => e + 1)
     }, 1000)
@@ -35,12 +128,6 @@ export function MockInterviewModal({ company, questions, onClose }: MockIntervie
       if (timerRef.current) clearInterval(timerRef.current)
     }
   }, [])
-
-  function handleFinish() {
-    if (timerRef.current) clearInterval(timerRef.current)
-    setFinalTime(elapsed)
-    setFinished(true)
-  }
 
   function handleAnswerChange(value: string) {
     setAnswers(prev => {
@@ -50,19 +137,75 @@ export function MockInterviewModal({ company, questions, onClose }: MockIntervie
     })
   }
 
-  function goNext() {
+  async function fetchFeedback(questionIndex: number) {
+    const answer = answers[questionIndex] ?? ''
+    const q = questions[questionIndex]!
+    setFeedbackLoading(true)
+    setFeedbackAttempted(prev => new Set(prev).add(questionIndex))
+    try {
+      const res = await fetch('/api/interview/feedback', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          question: q.question,
+          answer,
+          type: q.type,
+          language,
+        }),
+      })
+      const json = await res.json() as { data?: InterviewFeedback }
+      if (res.ok && json.data) {
+        setFeedbacks(prev => ({ ...prev, [questionIndex]: json.data! }))
+      }
+    } catch {
+      // Silently fail — user can proceed on next click
+    } finally {
+      setFeedbackLoading(false)
+    }
+  }
+
+  function shouldFetchFeedback(questionIndex: number): boolean {
+    const answer = answers[questionIndex] ?? ''
+    return (
+      isPro &&
+      answer.length >= 10 &&
+      !feedbacks[questionIndex] &&
+      !feedbackAttempted.has(questionIndex) &&
+      !feedbackLoading
+    )
+  }
+
+  async function handleNext() {
+    if (shouldFetchFeedback(index)) {
+      await fetchFeedback(index)
+      return
+    }
     setHintOpen(false)
+    setBetterAnswerOpen(false)
     setIndex(i => i + 1)
+  }
+
+  async function handleFinish() {
+    if (shouldFetchFeedback(index)) {
+      await fetchFeedback(index)
+      return
+    }
+    if (timerRef.current) clearInterval(timerRef.current)
+    setFinalTime(elapsed)
+    setFinished(true)
   }
 
   function goPrev() {
     setHintOpen(false)
+    setBetterAnswerOpen(false)
     setIndex(i => i - 1)
   }
 
   const current = questions[index]!
   const isFirst = index === 0
   const isLast = index === questions.length - 1
+  const currentFeedback = feedbacks[index]
+  const currentAnswer = answers[index] ?? ''
 
   if (finished) {
     return (
@@ -190,10 +333,40 @@ export function MockInterviewModal({ company, questions, onClose }: MockIntervie
 
           <Textarea
             placeholder="Type your answer here..."
-            value={answers[index] ?? ''}
+            value={currentAnswer}
             onChange={e => handleAnswerChange(e.target.value)}
             className="resize-none min-h-[200px] bg-[hsl(var(--bg-surface-raised))] border border-[hsl(var(--border-default))] text-[hsl(var(--text-primary))] placeholder:text-[hsl(var(--text-muted))] rounded-lg focus-visible:ring-1 focus-visible:ring-amber-500/60 focus-visible:border-[hsl(var(--border-default))]"
           />
+
+          {/* Feedback area */}
+          {!isPro && currentAnswer.length >= 10 && (
+            <div className="flex items-center justify-between rounded-lg border border-amber-500/20 bg-amber-500/5 px-4 py-3">
+              <p className="text-xs text-[hsl(var(--text-secondary))]">
+                Upgrade to Pro for AI feedback on your answers
+              </p>
+              <a
+                href="/settings"
+                className="text-xs font-medium text-amber-500 hover:text-amber-400 transition-colors shrink-0 ml-3"
+              >
+                Upgrade →
+              </a>
+            </div>
+          )}
+
+          {isPro && feedbackLoading && (
+            <div className="flex items-center gap-2 text-xs text-[hsl(var(--text-muted))] py-2">
+              <span className="h-3.5 w-3.5 border-2 border-amber-500/40 border-t-amber-500 rounded-full animate-spin inline-block" />
+              Getting AI feedback...
+            </div>
+          )}
+
+          {isPro && currentFeedback && !feedbackLoading && (
+            <FeedbackCard
+              feedback={currentFeedback}
+              betterOpen={betterAnswerOpen}
+              onToggleBetter={() => setBetterAnswerOpen(o => !o)}
+            />
+          )}
         </div>
       </div>
 
@@ -202,7 +375,7 @@ export function MockInterviewModal({ company, questions, onClose }: MockIntervie
         <Button
           variant="ghost"
           onClick={goPrev}
-          disabled={isFirst}
+          disabled={isFirst || feedbackLoading}
           className="rounded-lg border border-[hsl(var(--border-default))] h-9 px-4 text-sm text-[hsl(var(--text-secondary))] hover:bg-[hsl(var(--bg-surface-raised))] disabled:opacity-40"
         >
           <ChevronLeft className="h-4 w-4 mr-1" />
@@ -211,18 +384,26 @@ export function MockInterviewModal({ company, questions, onClose }: MockIntervie
 
         {isLast ? (
           <Button
-            onClick={handleFinish}
-            className="rounded-lg bg-amber-500 text-black hover:bg-amber-400 font-medium h-9 px-6 text-sm"
+            onClick={() => void handleFinish()}
+            disabled={feedbackLoading}
+            className="rounded-lg bg-amber-500 text-black hover:bg-amber-400 font-medium h-9 px-6 text-sm disabled:opacity-60"
           >
-            Finish
+            {feedbackLoading ? 'Getting feedback...' : 'Finish'}
           </Button>
         ) : (
           <Button
-            onClick={goNext}
-            className="rounded-lg bg-amber-500 text-black hover:bg-amber-400 font-medium h-9 px-4 text-sm"
+            onClick={() => void handleNext()}
+            disabled={feedbackLoading}
+            className="rounded-lg bg-amber-500 text-black hover:bg-amber-400 font-medium h-9 px-4 text-sm disabled:opacity-60"
           >
-            Next
-            <ChevronRight className="h-4 w-4 ml-1" />
+            {feedbackLoading ? (
+              'Getting feedback...'
+            ) : (
+              <>
+                Next
+                <ChevronRight className="h-4 w-4 ml-1" />
+              </>
+            )}
           </Button>
         )}
       </div>

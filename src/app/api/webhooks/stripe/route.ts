@@ -2,6 +2,7 @@ import { stripe } from '@/lib/stripe'
 import { prisma } from '@/lib/prisma'
 import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
+import { trackEvent } from '@/lib/analytics'
 
 async function getUserIdFromCustomer(customerId: string): Promise<string | undefined> {
   const user = await prisma.user.findFirst({ where: { stripeCustomerId: customerId } })
@@ -30,6 +31,7 @@ export async function POST(req: NextRequest) {
           where: { id: clerkUserId },
           data: { plan: 'PRO' },
         })
+        trackEvent.upgraded()
       }
       break
     }

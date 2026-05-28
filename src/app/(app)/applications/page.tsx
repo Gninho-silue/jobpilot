@@ -204,6 +204,7 @@ export default function ApplicationsPage() {
   const [editApp, setEditApp] = useState<Application | null>(null)
   const [sheetOpen, setSheetOpen] = useState(false)
   const [userHasCv, setUserHasCv] = useState(false)
+  const [userIsPro, setUserIsPro] = useState(false)
 
   const fetchApplications = useCallback(async () => {
     try {
@@ -222,6 +223,10 @@ export default function ApplicationsPage() {
     fetch('/api/cv')
       .then(r => r.json() as Promise<{ data?: { hasCv: boolean } }>)
       .then(j => { if (j.data?.hasCv) setUserHasCv(true) })
+      .catch(() => {})
+    fetch('/api/user/plan')
+      .then(r => r.json() as Promise<{ data?: { plan: string } }>)
+      .then(j => { if (j.data?.plan === 'PRO') setUserIsPro(true) })
       .catch(() => {})
   }, [fetchApplications])
 
@@ -330,6 +335,7 @@ export default function ApplicationsPage() {
         application={editApp}
         open={sheetOpen}
         hasCv={userHasCv}
+        isPro={userIsPro}
         onOpenChange={setSheetOpen}
         onUpdated={() => void fetchApplications()}
         onDeleted={() => void fetchApplications()}

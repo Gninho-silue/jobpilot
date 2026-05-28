@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server'
 import { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
 import { generateInterviewQuestions } from '@/lib/ai/generate-interview-questions'
+import { checkRateLimit } from '@/lib/rate-limit'
 
 export async function POST(
   _request: Request,
@@ -14,12 +15,17 @@ export async function POST(
   }
 
   const { id } = await params
+  if (!id) {
+    return NextResponse.json({ error: 'Invalid request' }, { status: 400 })
+  }
+
+  const rateLimit = checkRateLimit(userId)
+  if (!rateLimit.allowed) {
+    return NextResponse.json({ error: 'Too many requests. Please wait before trying again.' }, { status: 429 })
+  }
 
   const application = await prisma.application.findUnique({ where: { id } })
-  if (!application) {
-    return NextResponse.json({ error: 'Not found' }, { status: 404 })
-  }
-  if (application.userId !== userId) {
+  if (!application || application.userId !== userId) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
@@ -41,8 +47,9 @@ export async function POST(
       application.role,
       application.language
     )
-  } catch {
-    return NextResponse.json({ error: 'AI generation failed. Please try again.' }, { status: 500 })
+  } catch (err) {
+    console.error('[interview] AI generation failed:', err)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 
   await prisma.application.update({

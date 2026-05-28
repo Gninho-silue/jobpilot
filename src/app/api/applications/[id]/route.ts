@@ -20,12 +20,12 @@ export async function PATCH(
   }
 
   const { id } = await params
+  if (!id) {
+    return NextResponse.json({ error: 'Invalid request' }, { status: 400 })
+  }
 
   const existing = await prisma.application.findUnique({ where: { id } })
-  if (!existing) {
-    return NextResponse.json({ error: 'Not found' }, { status: 404 })
-  }
-  if (existing.userId !== userId) {
+  if (!existing || existing.userId !== userId) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
@@ -65,12 +65,12 @@ export async function DELETE(
   }
 
   const { id } = await params
+  if (!id) {
+    return NextResponse.json({ error: 'Invalid request' }, { status: 400 })
+  }
 
   const existing = await prisma.application.findUnique({ where: { id } })
-  if (!existing) {
-    return NextResponse.json({ error: 'Not found' }, { status: 404 })
-  }
-  if (existing.userId !== userId) {
+  if (!existing || existing.userId !== userId) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 

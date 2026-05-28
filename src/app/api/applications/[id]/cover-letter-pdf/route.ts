@@ -13,16 +13,16 @@ export async function GET(
   }
 
   const { id } = await params
+  if (!id) {
+    return NextResponse.json({ error: 'Invalid request' }, { status: 400 })
+  }
 
   const application = await prisma.application.findUnique({
     where: { id },
     select: { userId: true, coverLetter: true, company: true, role: true },
   })
 
-  if (!application) {
-    return NextResponse.json({ error: 'Not found' }, { status: 404 })
-  }
-  if (application.userId !== userId) {
+  if (!application || application.userId !== userId) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
   if (!application.coverLetter) {
@@ -58,6 +58,6 @@ export async function GET(
     })
   } catch (err) {
     console.error('[cover-letter-pdf] generation error:', err)
-    return NextResponse.json({ error: 'Failed to generate PDF' }, { status: 500 })
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

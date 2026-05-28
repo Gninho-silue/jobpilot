@@ -4,17 +4,20 @@ import { useState } from 'react'
 import { Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
+import { trackEvent } from '@/lib/analytics'
 
 interface UpgradeButtonProps {
   children: React.ReactNode
   className?: string
   variant?: 'primary' | 'link'
+  source?: string
 }
 
-export function UpgradeButton({ children, className, variant = 'primary' }: UpgradeButtonProps) {
+export function UpgradeButton({ children, className, variant = 'primary', source = 'unknown' }: UpgradeButtonProps) {
   const [loading, setLoading] = useState(false)
 
   async function handleClick() {
+    trackEvent.upgradeClicked(source)
     setLoading(true)
     try {
       const res = await fetch('/api/stripe/checkout', { method: 'POST' })

@@ -9,6 +9,8 @@ import { supabase } from '@/lib/supabase'
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const pdfParse = require('pdf-parse') as (buf: Buffer) => Promise<{ text: string; numpages: number }>
 
+const PDF_MAGIC = [0x25, 0x50, 0x44, 0x46] // %PDF
+
 export async function POST(request: Request) {
   const { userId } = await auth()
   if (!userId) {
@@ -35,14 +37,24 @@ export async function POST(request: Request) {
 
   const buffer = Buffer.from(await file.arrayBuffer())
 
+  // Validate PDF magic bytes (%PDF-) — guards against spoofed MIME type
+  if (
+    buffer.length < 4 ||
+    buffer[0] !== PDF_MAGIC[0] ||
+    buffer[1] !== PDF_MAGIC[1] ||
+    buffer[2] !== PDF_MAGIC[2] ||
+    buffer[3] !== PDF_MAGIC[3]
+  ) {
+    return NextResponse.json({ error: 'File does not appear to be a valid PDF' }, { status: 400 })
+  }
+
   let cvText: string
   try {
     const data = await pdfParse(buffer)
     cvText = data.text.trim()
   } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err)
-    console.error('[cv/upload] pdf-parse error:', msg)
-    return NextResponse.json({ error: `Failed to extract text from PDF: ${msg}` }, { status: 400 })
+    console.error('[cv/upload] pdf-parse error:', err)
+    return NextResponse.json({ error: 'Failed to extract text from PDF' }, { status: 400 })
   }
 
   if (!cvText) {

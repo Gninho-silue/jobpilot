@@ -1,6 +1,8 @@
 import type { Metadata } from 'next'
 import { ClerkProvider } from '@clerk/nextjs'
 import { Providers } from '@/components/providers'
+import { Analytics } from '@vercel/analytics/react'
+import { SpeedInsights } from '@vercel/speed-insights/next'
 import './globals.css'
 
 export const metadata: Metadata = {
@@ -24,6 +26,8 @@ export default function RootLayout({
         </head>
         <body className="min-h-full antialiased">
           <Providers>{children}</Providers>
+          <Analytics />
+          <SpeedInsights />
         </body>
       </html>
     </ClerkProvider>
