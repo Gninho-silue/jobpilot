@@ -1,10 +1,10 @@
 ## Current Phase
 
-Phase 5 — AI Features (Resume Adapter + Auto-Parse)
+Phase 6 — AI Features (Cover Letter Generator)
 
 ## Current Goal
 
-Build Cover Letter Generator
+Build Interview Prep
 
 ## Completed
 
@@ -79,14 +79,23 @@ Build Cover Letter Generator
   - [x] next.config.ts: serverExternalPackages: ['pdf-parse'] (CJS compat)
   - [x] npm run build passes with no errors
 
+- [x] Cover Letter Generator (Phase 6)
+  - [x] lib/ai/generate-cover-letter.ts — generateCoverLetter(cvText, offerText, company, role, language) — 2048 tokens, temperature 0.4, bilingual
+  - [x] POST /api/applications/[id]/cover-letter — ownership check, CV check, free tier limit (coverLetters), saves coverLetter to DB
+  - [x] GET /api/applications/[id]/cover-letter-pdf — generates A4 PDF with candidate header, date, recipient, body, footer
+  - [x] lib/pdf/generate-cover-letter-pdf.tsx — Helvetica, A4, candidate name + contact from cvText, date, role/company line, paragraphs
+  - [x] EditApplicationSheet Cover Letter tab — 4 states: no CV / empty / generating / has result; Copy, Regenerate (with confirm), Download PDF buttons
+  - [x] applications page: onCoverLetterGenerated callback wired
+  - [x] Application interface: coverLetter field added
+  - [x] npm run build passes with no errors
+
 ## In Progress
 
 - None
 
 ## Next Up
 
-1. Build Cover Letter Generator
-2. Build Interview Prep
+1. Build Interview Prep
 3. Setup GitLab CI/CD pipeline
 4. Setup Terraform IaC
 

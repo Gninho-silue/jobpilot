@@ -236,6 +236,13 @@ export default function ApplicationsPage() {
     setEditApp(prev => prev?.id === id ? { ...prev, adaptedCvText: text } : prev)
   }
 
+  function handleCoverLetterGenerated(id: string, text: string) {
+    setApplications(prev =>
+      prev.map(a => a.id === id ? { ...a, coverLetter: text } : a)
+    )
+    setEditApp(prev => prev?.id === id ? { ...prev, coverLetter: text } : prev)
+  }
+
   const grouped = COLUMNS.reduce<Record<ApplicationStatus, Application[]>>(
     (acc, col) => {
       acc[col.status] = applications.filter(a => a.status === col.status)
@@ -319,6 +326,7 @@ export default function ApplicationsPage() {
         onUpdated={() => void fetchApplications()}
         onDeleted={() => void fetchApplications()}
         onCvAdapted={handleCvAdapted}
+        onCoverLetterGenerated={handleCoverLetterGenerated}
       />
     </div>
   )
