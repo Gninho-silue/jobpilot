@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { ExternalLink, FileText, Mail, MessageSquare, MoreHorizontal, Sparkles, X } from 'lucide-react'
+import { Download, ExternalLink, FileText, Loader2, Mail, MessageSquare, MoreHorizontal, RefreshCw, Sparkles, X } from 'lucide-react'
 import {
   Sheet,
   SheetClose,
@@ -16,6 +16,8 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
+import { UpgradeButton } from '@/components/upgrade-button'
+import Link from 'next/link'
 
 type ApplicationStatus = 'APPLIED' | 'PHONE' | 'TECHNICAL' | 'OFFER' | 'REJECTED'
 type Language = 'FR' | 'EN'
@@ -29,6 +31,8 @@ export interface Application {
   salary: string | null
   link: string | null
   notes: string | null
+  offerText: string
+  adaptedCvText: string | null
   createdAt: string
 }
 
@@ -114,48 +118,245 @@ function StatusBadge({
   )
 }
 
-function EmptyState({
-  icon: Icon,
-  label,
-  buttonLabel,
-  onAction,
-}: {
-  icon: React.ElementType
-  label: string
-  buttonLabel: string
-  onAction: () => void
-}) {
-  return (
-    <div className="flex flex-col items-center justify-center py-16 gap-4">
-      <div className="h-12 w-12 rounded-xl bg-[hsl(var(--bg-surface-raised))] flex items-center justify-center">
-        <Icon className="h-5 w-5 text-[hsl(var(--text-muted))]" />
+// ── Resume Tab ────────────────────────────────────────────────────────────────
+
+interface ResumeTabProps {
+  applicationId: string
+  hasCv: boolean
+  initialAdaptedCvText: string | null
+  onAdapted: (text: string) => void
+}
+
+function ResumeTab({ applicationId, hasCv, initialAdaptedCvText, onAdapted }: ResumeTabProps) {
+  const [adaptedCvText, setAdaptedCvText] = useState(initialAdaptedCvText)
+  const [generating, setGenerating] = useState(false)
+  const [downloading, setDownloading] = useState(false)
+  const [error, setError] = useState('')
+  const [showUpgrade, setShowUpgrade] = useState(false)
+
+  useEffect(() => {
+    setAdaptedCvText(initialAdaptedCvText)
+    setError('')
+    setShowUpgrade(false)
+  }, [applicationId, initialAdaptedCvText])
+
+  async function generate() {
+    setError('')
+    setShowUpgrade(false)
+    setGenerating(true)
+    try {
+      const res = await fetch(`/api/applications/${applicationId}/adapt-resume`, {
+        method: 'POST',
+      })
+      const json = await res.json() as { data?: { adaptedCvText: string }; error?: string; upgrade?: boolean }
+
+      if (res.status === 403 && json.upgrade) {
+        setShowUpgrade(true)
+        return
+      }
+      if (res.status === 400 && json.error === 'No CV uploaded yet') {
+        setError('no-cv')
+        return
+      }
+      if (!res.ok) {
+        setError(json.error ?? 'Generation failed. Please try again.')
+        return
+      }
+
+      const text = json.data?.adaptedCvText ?? ''
+      setAdaptedCvText(text)
+      onAdapted(text)
+    } catch {
+      setError('Network error. Please try again.')
+    } finally {
+      setGenerating(false)
+    }
+  }
+
+  async function downloadPdf() {
+    setDownloading(true)
+    try {
+      const res = await fetch(`/api/applications/${applicationId}/adapted-cv-pdf`)
+      if (!res.ok) {
+        const j = await res.json() as { error?: string }
+        setError(j.error ?? 'Failed to generate PDF')
+        return
+      }
+      const blob = await res.blob()
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = 'adapted-cv.pdf'
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      URL.revokeObjectURL(url)
+    } catch {
+      setError('Network error. Please try again.')
+    } finally {
+      setDownloading(false)
+    }
+  }
+
+  // No CV uploaded
+  if (!hasCv && !adaptedCvText) {
+    return (
+      <div className="flex flex-col items-center justify-center py-16 gap-4 px-5">
+        <div className="h-12 w-12 rounded-xl bg-[hsl(var(--bg-surface-raised))] flex items-center justify-center">
+          <FileText className="h-5 w-5 text-[hsl(var(--text-muted))]" />
+        </div>
+        <div className="text-center space-y-1">
+          <p className="text-sm font-medium text-[hsl(var(--text-primary))]">Upload your CV first</p>
+          <p className="text-xs text-[hsl(var(--text-muted))]">JobPilot needs your CV to adapt it for this role.</p>
+        </div>
+        <Link
+          href="/my-cv"
+          className="inline-flex items-center justify-center rounded-lg bg-amber-500 text-black hover:bg-amber-400 font-medium h-8 px-4 text-sm"
+        >
+          Go to My CV →
+        </Link>
       </div>
-      <p className="text-sm text-[hsl(var(--text-muted))]">{label}</p>
+    )
+  }
+
+  // Upgrade required
+  if (showUpgrade) {
+    return (
+      <div className="flex flex-col items-center justify-center py-16 gap-4 px-5">
+        <div className="h-12 w-12 rounded-xl bg-[hsl(var(--accent-light))] flex items-center justify-center">
+          <Sparkles className="h-5 w-5 text-amber-500" />
+        </div>
+        <div className="text-center space-y-1">
+          <p className="text-sm font-medium text-[hsl(var(--text-primary))]">Free tier limit reached</p>
+          <p className="text-xs text-[hsl(var(--text-muted))]">Upgrade to Pro for unlimited CV adaptations.</p>
+        </div>
+        <UpgradeButton>Upgrade to Pro — $9/mo</UpgradeButton>
+        <button
+          type="button"
+          onClick={() => setShowUpgrade(false)}
+          className="text-xs text-[hsl(var(--text-muted))] hover:text-[hsl(var(--text-secondary))]"
+        >
+          Go back
+        </button>
+      </div>
+    )
+  }
+
+  // Error: no CV (server-side check failed)
+  if (error === 'no-cv') {
+    return (
+      <div className="flex flex-col items-center justify-center py-16 gap-4 px-5">
+        <div className="h-12 w-12 rounded-xl bg-[hsl(var(--bg-surface-raised))] flex items-center justify-center">
+          <FileText className="h-5 w-5 text-[hsl(var(--text-muted))]" />
+        </div>
+        <p className="text-sm text-[hsl(var(--text-muted))]">Upload your CV first</p>
+        <Link
+          href="/my-cv"
+          className="inline-flex items-center justify-center rounded-lg bg-amber-500 text-black hover:bg-amber-400 font-medium h-8 px-4 text-sm"
+        >
+          Go to My CV →
+        </Link>
+      </div>
+    )
+  }
+
+  // Generating
+  if (generating) {
+    return (
+      <div className="flex flex-col items-center justify-center py-16 gap-3">
+        <Loader2 className="h-6 w-6 animate-spin text-amber-500" />
+        <p className="text-sm text-[hsl(var(--text-muted))]">Adapting your CV…</p>
+      </div>
+    )
+  }
+
+  // Has adapted CV
+  if (adaptedCvText) {
+    return (
+      <div className="p-5 flex flex-col gap-4">
+        <div className="flex items-center justify-between">
+          <p className="text-xs font-medium text-[hsl(var(--text-secondary))] uppercase tracking-wide">
+            Adapted CV
+          </p>
+          <div className="flex items-center gap-1.5">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={generate}
+              className="h-7 px-2 text-xs rounded-lg text-[hsl(var(--text-secondary))] hover:bg-[hsl(var(--bg-surface-raised))]"
+            >
+              <RefreshCw className="h-3 w-3 mr-1" />
+              Regenerate
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={downloadPdf}
+              disabled={downloading}
+              className="h-7 px-2 text-xs rounded-lg text-[hsl(var(--text-secondary))] hover:bg-[hsl(var(--bg-surface-raised))]"
+            >
+              {downloading ? (
+                <><Loader2 className="h-3 w-3 mr-1 animate-spin" />PDF…</>
+              ) : (
+                <><Download className="h-3 w-3 mr-1" />PDF</>
+              )}
+            </Button>
+          </div>
+        </div>
+
+        {error && (
+          <p className="text-sm text-[hsl(var(--state-error))] bg-[hsl(var(--state-error-light))] rounded-lg px-3 py-2">
+            {error}
+          </p>
+        )}
+      </div>
+    )
+  }
+
+  // Empty — CV uploaded but no adaptation yet
+  return (
+    <div className="flex flex-col items-center justify-center py-16 gap-4 px-5">
+      <div className="h-12 w-12 rounded-xl bg-[hsl(var(--bg-surface-raised))] flex items-center justify-center">
+        <FileText className="h-5 w-5 text-[hsl(var(--text-muted))]" />
+      </div>
+      <div className="text-center space-y-1">
+        <p className="text-sm font-medium text-[hsl(var(--text-primary))]">No adapted CV yet</p>
+        <p className="text-xs text-[hsl(var(--text-muted))]">Generate a version tailored to this specific role.</p>
+      </div>
+      {error && (
+        <p className="text-sm text-[hsl(var(--state-error))] text-center">{error}</p>
+      )}
       <Button
-        onClick={onAction}
+        onClick={generate}
         className="rounded-lg bg-amber-500 text-black hover:bg-amber-400 font-medium h-8 px-4 text-sm"
       >
         <Sparkles className="h-3.5 w-3.5 mr-1.5" />
-        {buttonLabel}
+        Generate Adapted CV
       </Button>
     </div>
   )
 }
 
+// ── Sheet ─────────────────────────────────────────────────────────────────────
+
 interface EditApplicationSheetProps {
   application: Application | null
   open: boolean
+  hasCv: boolean
   onOpenChange: (open: boolean) => void
   onUpdated: () => void
   onDeleted: () => void
+  onCvAdapted: (id: string, text: string) => void
 }
 
 export function EditApplicationSheet({
   application,
   open,
+  hasCv,
   onOpenChange,
   onUpdated,
   onDeleted,
+  onCvAdapted,
 }: EditApplicationSheetProps) {
   const [status, setStatus] = useState<ApplicationStatus>('APPLIED')
   const [notes, setNotes] = useState('')
@@ -230,14 +431,12 @@ export function EditApplicationSheet({
         {/* ── Header ── */}
         <div className="shrink-0 px-5 pt-5 pb-4 border-b border-[hsl(var(--border-default))] space-y-3">
           <div className="flex items-start gap-3">
-            {/* Avatar */}
             <div
               className={`${colorClass} h-10 w-10 rounded-xl shrink-0 flex items-center justify-center text-white text-sm font-bold`}
             >
               {initial}
             </div>
 
-            {/* Name + role */}
             <div className="flex-1 min-w-0 pt-0.5">
               <p className="text-[hsl(var(--text-primary))] font-semibold truncate leading-tight">
                 {application.company}
@@ -247,7 +446,6 @@ export function EditApplicationSheet({
               </p>
             </div>
 
-            {/* Actions */}
             <div className="flex items-center gap-1 shrink-0">
               <DropdownMenu>
                 <DropdownMenuTrigger
@@ -275,7 +473,6 @@ export function EditApplicationSheet({
             </div>
           </div>
 
-          {/* Status + lang + date row */}
           <div className="flex items-center gap-2 flex-wrap">
             <StatusBadge status={status} onChange={setStatus} />
             <span className="text-xs px-2 py-1 rounded-lg border border-[hsl(var(--border-strong))] text-[hsl(var(--text-muted))]">
@@ -288,7 +485,7 @@ export function EditApplicationSheet({
         </div>
 
         {/* ── Tabs ── */}
-        <Tabs defaultValue="overview" className="flex-1 flex flex-col overflow-hidden">
+        <Tabs defaultValue="overview" className="flex-1 flex flex-col overflow-hidden min-h-0">
           <TabsList
             variant="line"
             className="shrink-0 px-5 pt-3 w-full justify-start rounded-none border-b border-[hsl(var(--border-default))] h-auto pb-0"
@@ -300,9 +497,8 @@ export function EditApplicationSheet({
           </TabsList>
 
           {/* ── Overview ── */}
-          <TabsContent value="overview" className="flex-1 overflow-y-auto">
+          <TabsContent value="overview" className="flex-1 overflow-y-auto min-h-0">
             <div className="p-5 space-y-5">
-              {/* Info rows */}
               <div className="space-y-0 divide-y divide-[hsl(var(--border-default))]">
                 <InfoRow label="Status">
                   <StatusBadge status={status} onChange={setStatus} />
@@ -345,7 +541,6 @@ export function EditApplicationSheet({
                 </InfoRow>
               </div>
 
-              {/* Notes */}
               <div className="space-y-2">
                 <p className="text-xs font-medium text-[hsl(var(--text-secondary))] uppercase tracking-wide">
                   Notes
@@ -355,7 +550,7 @@ export function EditApplicationSheet({
                   value={notes}
                   onChange={e => setNotes(e.target.value)}
                   rows={5}
-                  className="resize-none bg-[hsl(var(--bg-surface-raised))] border border-[hsl(var(--border-default))] text-[hsl(var(--text-primary))] placeholder:text-[hsl(var(--text-muted))] rounded-lg focus-visible:ring-1 focus-visible:ring-amber-500"
+                  className="resize-none field-sizing-fixed bg-[hsl(var(--bg-surface-raised))] border border-[hsl(var(--border-default))] text-[hsl(var(--text-primary))] placeholder:text-[hsl(var(--text-muted))] rounded-lg focus-visible:ring-1 focus-visible:ring-amber-500/60 focus-visible:border-[hsl(var(--border-default))]"
                 />
               </div>
 
@@ -376,41 +571,51 @@ export function EditApplicationSheet({
           </TabsContent>
 
           {/* ── Resume ── */}
-          <TabsContent value="resume" className="flex-1 overflow-y-auto">
-            <EmptyState
-              icon={FileText}
-              label="No adapted CV yet"
-              buttonLabel="Generate Adapted CV"
-              onAction={() => showToast('CV adaptation coming soon')}
+          <TabsContent value="resume" className="flex-1 overflow-y-auto min-h-0">
+            <ResumeTab
+              applicationId={application.id}
+              hasCv={hasCv}
+              initialAdaptedCvText={application.adaptedCvText}
+              onAdapted={text => onCvAdapted(application.id, text)}
             />
-            {toast && <ToastBanner message={toast} />}
           </TabsContent>
 
           {/* ── Cover Letter ── */}
-          <TabsContent value="cover-letter" className="flex-1 overflow-y-auto">
-            <EmptyState
-              icon={Mail}
-              label="No cover letter yet"
-              buttonLabel="Generate Cover Letter"
-              onAction={() => showToast('Cover letter generation coming soon')}
-            />
+          <TabsContent value="cover-letter" className="flex-1 overflow-y-auto min-h-0">
+            <div className="flex flex-col items-center justify-center py-16 gap-4">
+              <div className="h-12 w-12 rounded-xl bg-[hsl(var(--bg-surface-raised))] flex items-center justify-center">
+                <Mail className="h-5 w-5 text-[hsl(var(--text-muted))]" />
+              </div>
+              <p className="text-sm text-[hsl(var(--text-muted))]">No cover letter yet</p>
+              <Button
+                onClick={() => showToast('Cover letter generation coming soon')}
+                className="rounded-lg bg-amber-500 text-black hover:bg-amber-400 font-medium h-8 px-4 text-sm"
+              >
+                <Sparkles className="h-3.5 w-3.5 mr-1.5" />
+                Generate Cover Letter
+              </Button>
+            </div>
             {toast && <ToastBanner message={toast} />}
           </TabsContent>
 
           {/* ── Interview ── */}
-          <TabsContent value="interview" className="flex-1 overflow-y-auto">
-            <EmptyState
-              icon={MessageSquare}
-              label="No interview questions yet"
-              buttonLabel="Generate Questions"
-              onAction={() => showToast('Interview prep coming soon')}
-            />
+          <TabsContent value="interview" className="flex-1 overflow-y-auto min-h-0">
+            <div className="flex flex-col items-center justify-center py-16 gap-4">
+              <div className="h-12 w-12 rounded-xl bg-[hsl(var(--bg-surface-raised))] flex items-center justify-center">
+                <MessageSquare className="h-5 w-5 text-[hsl(var(--text-muted))]" />
+              </div>
+              <p className="text-sm text-[hsl(var(--text-muted))]">No interview questions yet</p>
+              <Button
+                onClick={() => showToast('Interview prep coming soon')}
+                className="rounded-lg bg-amber-500 text-black hover:bg-amber-400 font-medium h-8 px-4 text-sm"
+              >
+                <Sparkles className="h-3.5 w-3.5 mr-1.5" />
+                Generate Questions
+              </Button>
+            </div>
             {toast && <ToastBanner message={toast} />}
           </TabsContent>
         </Tabs>
-
-        {/* Global toast (for Overview tab actions, unlikely but safe) */}
-        {toast && <ToastBanner message={toast} />}
       </SheetContent>
     </Sheet>
   )

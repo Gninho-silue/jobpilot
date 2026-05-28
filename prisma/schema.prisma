@@ -50,6 +50,7 @@ model Application {
   link          String?
   notes         String?           @db.Text
   adaptedCvUrl  String?
+  adaptedCvText String?           @db.Text
   coverLetter   String?           @db.Text
   interviewQs   Json?
   createdAt     DateTime          @default(now())

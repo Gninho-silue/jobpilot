@@ -1,16 +1,16 @@
 ## Current Phase
 
-Phase 4 — Stripe integration complete
+Phase 5 — AI Features (Resume Adapter + Auto-Parse)
 
 ## Current Goal
 
-Build Resume Adapter (CV upload + AI adaptation)
+Build Cover Letter Generator
 
 ## Completed
 
 - [x] Next.js 16.2.6 project initialized (TypeScript, Tailwind v4, App Router, src/ dir)
 - [x] shadcn/ui v4 initialized + all required components added (button, card, badge, input, textarea, dialog, sheet, tabs, dropdown-menu, avatar, separator, tooltip, progress, table)
-- [x] All npm dependencies installed: @clerk/nextjs, prisma, @prisma/client, @supabase/supabase-js, stripe, @stripe/stripe-js, groq-sdk, next-themes, zod, @fontsource/jetbrains-mono, dotenv
+- [x] All npm dependencies installed: @clerk/nextjs, prisma, @prisma/client, @supabase/supabase-js, stripe, @stripe/stripe-js, groq-sdk, next-themes, zod, @fontsource/jetbrains-mono, dotenv, pdf-parse, @types/pdf-parse
 - [x] globals.css rewritten with full CSS token system (light + dark) and JetBrains Mono font
 - [x] next-themes ThemeProvider in src/components/providers.tsx, default theme: dark
 - [x] Root layout updated: ClerkProvider + Providers wrapper
@@ -47,13 +47,6 @@ Build Resume Adapter (CV upload + AI adaptation)
   - [x] Recent Applications Table — company avatar, language badge, status badge with kanban colors, relative date, action buttons
   - [x] Empty state — links to /applications to add first application
   - [x] Page is a Server Component — data fetched via Prisma directly, firstName from Clerk currentUser()
-
-## In Progress
-
-- None
-
-## Completed (continued)
-
 - [x] Stripe integration (Phase 4)
   - [x] Prisma schema: added `stripeCustomerId String? @unique` to User model
   - [x] `npx prisma generate` updated client
@@ -69,14 +62,41 @@ Build Resume Adapter (CV upload + AI adaptation)
   - [x] Dashboard: UpgradeSuccessToast shows on ?upgraded=true and removes param from URL
   - [x] /settings page — shows plan (FREE/PRO), Manage Subscription (PRO) or Upgrade (FREE)
   - [x] npm run build passes with no errors
+- [x] Auto-Parse Job Offer (Phase 5a)
+  - [x] lib/ai/parse-offer.ts — updated with language parameter, JSON mode, graceful fallback
+  - [x] POST /api/offers/parse — validates Clerk session, calls parseJobOffer(), returns nulls on failure
+  - [x] NewApplicationModal — debounce 800ms on offerText, auto-fills company/role/salary if fields empty, "Auto" badge on auto-filled fields, spinner while parsing
+- [x] Resume Adapter (Phase 5b)
+  - [x] prisma/schema.prisma — added `adaptedCvText String? @db.Text` to Application model
+  - [x] npx prisma generate — client updated
+  - [x] lib/ai/adapt-resume.ts — adaptResume(cvText, offerText, language) — 3000 tokens, temperature 0.3, bilingual
+  - [x] POST /api/applications/[id]/adapt-resume — ownership check, plan check, CV check, free tier limit, saves adaptedCvText to DB
+  - [x] GET /api/cv — returns hasCv, cvUrl, cvTextPreview (500 chars), updatedAt
+  - [x] POST /api/cv/upload — validates PDF (type + 5MB), extracts text via pdf-parse, uploads to Supabase Storage bucket 'cvs', updates user.cvUrl + user.cvText
+  - [x] EditApplicationSheet Resume tab — 4 states: no CV / empty / generating / has result; Copy button; Regenerate button; Upgrade modal on 403
+  - [x] /my-cv page — drag-and-drop upload zone, existing CV view with text preview, Replace CV flow
+  - [x] Sidebar: /cv → /my-cv
+  - [x] next.config.ts: serverExternalPackages: ['pdf-parse'] (CJS compat)
+  - [x] npm run build passes with no errors
+
+## In Progress
+
+- None
 
 ## Next Up
 
-1. Build Resume Adapter (CV upload + AI adaptation)
-4. Build Cover Letter Generator
-5. Build Interview Prep
-6. Setup GitLab CI/CD pipeline
-7. Setup Terraform IaC
+1. Build Cover Letter Generator
+2. Build Interview Prep
+3. Setup GitLab CI/CD pipeline
+4. Setup Terraform IaC
+
+## Schema Changes Needed (run in Supabase SQL Editor)
+
+```sql
+ALTER TABLE "Application" ADD COLUMN IF NOT EXISTS "adaptedCvText" TEXT;
+```
+
+Also create Supabase Storage bucket named `cvs` with public access.
 
 ## Open Questions
 
@@ -95,9 +115,11 @@ Build Resume Adapter (CV upload + AI adaptation)
 - Groq API (llama-3.3-70b) instead of Ollama — deployable, fast, free tier generous
 - Supabase for both PostgreSQL and file storage — single provider simplicity
 - Prisma 7 requires driver adapter: `pg` + `@prisma/adapter-pg` — `new PrismaClient({ adapter: new PrismaPg(...) })` in lib/prisma.ts; `schema.prisma` datasource has no `url` field (it lives in `prisma.config.ts` for CLI only)
+- pdf-parse loaded via `require()` (not ESM import) because `moduleResolution: "bundler"` resolves its ESM build which lacks a default export; `serverExternalPackages: ['pdf-parse']` in next.config.ts ensures CJS runtime load
+- adaptedCvText stored as TEXT in Application (not a URL) — avoids extra storage round-trip for text content
 
 ## Session Notes
 
-- Resume here: build the Job Tracker Kanban board (/applications)
 - For future schema changes: generate SQL with `npx prisma migrate diff --from-migrations prisma/migrations --to-schema prisma/schema.prisma --script`, run in Supabase SQL Editor, then register with the _prisma_migrations SQL pattern
 - Dev server: `npm run dev` → localhost:3000
+- Supabase bucket `cvs` must be created manually (public, no RLS) before CV upload will work

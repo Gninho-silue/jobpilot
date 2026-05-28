@@ -16,7 +16,7 @@ import { UpgradeButton } from '@/components/upgrade-button'
 const navItems = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/applications', label: 'Applications', icon: Briefcase },
-  { href: '/cv', label: 'My CV', icon: FileText },
+  { href: '/my-cv', label: 'My CV', icon: FileText },
   { href: '/interview', label: 'Interview Prep', icon: MessageSquare },
   { href: '/settings', label: 'Settings', icon: Settings },
 ]

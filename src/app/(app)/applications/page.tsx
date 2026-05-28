@@ -12,22 +12,10 @@ import {
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { NewApplicationModal } from '@/components/applications/new-application-modal'
-import { EditApplicationSheet } from '@/components/applications/edit-application-sheet'
+import { EditApplicationSheet, type Application } from '@/components/applications/edit-application-sheet'
 
 type ApplicationStatus = 'APPLIED' | 'PHONE' | 'TECHNICAL' | 'OFFER' | 'REJECTED'
 type Language = 'FR' | 'EN'
-
-interface Application {
-  id: string
-  company: string
-  role: string
-  status: ApplicationStatus
-  language: Language
-  salary: string | null
-  link: string | null
-  notes: string | null
-  createdAt: string
-}
 
 const COLUMNS: {
   status: ApplicationStatus
@@ -113,13 +101,15 @@ function ApplicationCard({ app, onEdit }: ApplicationCardProps) {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-1">
           <button
-            title="Adapt CV (coming soon)"
-            onClick={e => e.stopPropagation()}
+            type="button"
+            title="Adapt CV"
+            onClick={e => { e.stopPropagation(); onEdit(app) }}
             className="h-7 w-7 rounded-lg flex items-center justify-center text-[hsl(var(--text-muted))] hover:bg-[hsl(var(--bg-surface-raised))] hover:text-[hsl(var(--text-secondary))] transition-colors"
           >
             <FileText className="h-3.5 w-3.5" />
           </button>
           <button
+            type="button"
             title="Edit"
             onClick={e => { e.stopPropagation(); onEdit(app) }}
             className="h-7 w-7 rounded-lg flex items-center justify-center text-[hsl(var(--text-muted))] hover:bg-[hsl(var(--bg-surface-raised))] hover:text-[hsl(var(--text-secondary))] transition-colors"
@@ -127,6 +117,7 @@ function ApplicationCard({ app, onEdit }: ApplicationCardProps) {
             <Edit className="h-3.5 w-3.5" />
           </button>
           <button
+            type="button"
             title="Interview prep (coming soon)"
             onClick={e => e.stopPropagation()}
             className="h-7 w-7 rounded-lg flex items-center justify-center text-[hsl(var(--text-muted))] hover:bg-[hsl(var(--bg-surface-raised))] hover:text-[hsl(var(--text-secondary))] transition-colors"
@@ -135,6 +126,7 @@ function ApplicationCard({ app, onEdit }: ApplicationCardProps) {
           </button>
         </div>
         <button
+          type="button"
           title="More options"
           onClick={e => e.stopPropagation()}
           className="h-7 w-7 rounded-lg flex items-center justify-center text-[hsl(var(--text-muted))] hover:bg-[hsl(var(--bg-surface-raised))] hover:text-[hsl(var(--text-secondary))] transition-colors"
@@ -193,6 +185,7 @@ function KanbanColumn({ label, bgVar, textVar, apps, onAddClick, onEditApp }: Ka
       </div>
 
       <button
+        type="button"
         onClick={onAddClick}
         className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-dashed border-[hsl(var(--border-default))] text-xs text-[hsl(var(--text-muted))] hover:text-[hsl(var(--text-secondary))] hover:border-[hsl(var(--border-strong))] transition-colors"
       >
@@ -209,6 +202,7 @@ export default function ApplicationsPage() {
   const [modalOpen, setModalOpen] = useState(false)
   const [editApp, setEditApp] = useState<Application | null>(null)
   const [sheetOpen, setSheetOpen] = useState(false)
+  const [userHasCv, setUserHasCv] = useState(false)
 
   const fetchApplications = useCallback(async () => {
     try {
@@ -224,11 +218,22 @@ export default function ApplicationsPage() {
 
   useEffect(() => {
     void fetchApplications()
+    fetch('/api/cv')
+      .then(r => r.json() as Promise<{ data?: { hasCv: boolean } }>)
+      .then(j => { if (j.data?.hasCv) setUserHasCv(true) })
+      .catch(() => {})
   }, [fetchApplications])
 
   function openEdit(app: Application) {
     setEditApp(app)
     setSheetOpen(true)
+  }
+
+  function handleCvAdapted(id: string, text: string) {
+    setApplications(prev =>
+      prev.map(a => a.id === id ? { ...a, adaptedCvText: text } : a)
+    )
+    setEditApp(prev => prev?.id === id ? { ...prev, adaptedCvText: text } : prev)
   }
 
   const grouped = COLUMNS.reduce<Record<ApplicationStatus, Application[]>>(
@@ -309,9 +314,11 @@ export default function ApplicationsPage() {
       <EditApplicationSheet
         application={editApp}
         open={sheetOpen}
+        hasCv={userHasCv}
         onOpenChange={setSheetOpen}
         onUpdated={() => void fetchApplications()}
         onDeleted={() => void fetchApplications()}
+        onCvAdapted={handleCvAdapted}
       />
     </div>
   )

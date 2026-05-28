@@ -6,7 +6,12 @@ export interface ParsedOffer {
   salary: string | null
 }
 
-export async function parseJobOffer(offerText: string): Promise<ParsedOffer> {
+export async function parseJobOffer(
+  offerText: string,
+  language: 'FR' | 'EN' = 'EN'
+): Promise<ParsedOffer> {
+  const langHint = language === 'FR' ? 'The job posting is in French.' : 'The job posting is in English.'
+
   const completion = await groq.chat.completions.create({
     model: GROQ_MODEL,
     temperature: 0,
@@ -15,8 +20,7 @@ export async function parseJobOffer(offerText: string): Promise<ParsedOffer> {
     messages: [
       {
         role: 'system',
-        content:
-          'You extract structured data from job postings. Return only a JSON object with exactly three keys: "company" (string or null), "role" (string or null), "salary" (string or null). Do not add any other keys or explanation.',
+        content: `You extract structured data from job postings. ${langHint} Return only a JSON object with exactly three keys: "company" (string or null), "role" (string or null), "salary" (string or null). Do not add any other keys or explanation.`,
       },
       {
         role: 'user',
