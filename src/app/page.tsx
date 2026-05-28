@@ -1,3 +1,5 @@
+import { auth } from '@clerk/nextjs/server'
+import { redirect } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
 import { Plane, Check } from 'lucide-react'
@@ -42,7 +44,10 @@ const kanbanColumns = [
   { label: 'Rejected', varBg: '--kanban-rejected-bg', varText: '--kanban-rejected-text', cards: 1 },
 ]
 
-export default function LandingPage() {
+export default async function LandingPage() {
+  const { userId } = await auth()
+  if (userId) redirect('/dashboard')
+
   return (
     <div
       className="min-h-screen"
