@@ -1,11 +1,23 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { Check, FileText, Loader2, UploadCloud, X } from 'lucide-react'
+import {
+  Check,
+  FileText,
+  Loader2,
+  UploadCloud,
+  X,
+  ExternalLink,
+  Download,
+  Copy,
+  FileCode,
+  Eye,
+} from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
 interface CvData {
   cvUrl: string
+  cvText?: string | null
   cvTextPreview: string | null
   updatedAt: string | null
 }
@@ -25,10 +37,26 @@ export default function MyCvPage() {
 
   useEffect(() => {
     fetch('/api/cv')
-      .then(r => r.json() as Promise<{ data?: { hasCv: boolean; cvUrl: string | null; cvTextPreview: string | null; updatedAt: string | null } }>)
+      .then(
+        r =>
+          r.json() as Promise<{
+            data?: {
+              hasCv: boolean
+              cvUrl: string | null
+              cvText: string | null
+              cvTextPreview: string | null
+              updatedAt: string | null
+            }
+          }>
+      )
       .then(j => {
         if (j.data?.hasCv && j.data.cvUrl) {
-          setCvData({ cvUrl: j.data.cvUrl, cvTextPreview: j.data.cvTextPreview, updatedAt: j.data.updatedAt })
+          setCvData({
+            cvUrl: j.data.cvUrl,
+            cvText: j.data.cvText,
+            cvTextPreview: j.data.cvTextPreview,
+            updatedAt: j.data.updatedAt,
+          })
         }
       })
       .catch(() => {})
@@ -49,7 +77,7 @@ export default function MyCvPage() {
   }
 
   return (
-    <div className="max-w-2xl space-y-6">
+    <div className="max-w-5xl space-y-6">
       <div>
         <h1 className="text-xl font-semibold text-[hsl(var(--text-primary))]">My CV</h1>
         <p className="text-sm text-[hsl(var(--text-secondary))] mt-0.5">
@@ -63,7 +91,10 @@ export default function MyCvPage() {
           onReplace={() => setShowUploadZone(true)}
         />
       ) : (
-        <UploadZone onUploaded={handleUploaded} onCancel={cvData ? () => setShowUploadZone(false) : undefined} />
+        <UploadZone
+          onUploaded={handleUploaded}
+          onCancel={cvData ? () => setShowUploadZone(false) : undefined}
+        />
       )}
     </div>
   )
@@ -71,49 +102,156 @@ export default function MyCvPage() {
 
 // ── Existing CV View ──────────────────────────────────────────────────────────
 
-function ExistingCvView({ cvData, onReplace }: { cvData: CvData; onReplace: () => void }) {
+function ExistingCvView({
+  cvData,
+  onReplace,
+}: {
+  cvData: CvData
+  onReplace: () => void
+}) {
+  const [activeTab, setActiveTab] = useState<'pdf' | 'text'>('pdf')
+  const [copied, setCopied] = useState(false)
+
+  const fullText = cvData.cvText || cvData.cvTextPreview || ''
+
+  const handleCopyText = async () => {
+    if (!fullText) return
+    await navigator.clipboard.writeText(fullText)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+
   return (
     <div className="space-y-4">
-      <div className="rounded-xl bg-[hsl(var(--bg-surface))] border border-[hsl(var(--border-default))] p-4 flex items-center gap-4">
-        <div className="h-10 w-10 rounded-lg bg-[hsl(var(--state-success-light))] flex items-center justify-center shrink-0">
-          <FileText className="h-5 w-5 text-[hsl(var(--state-success))]" />
+      {/* Header Info Card */}
+      <div className="rounded-xl bg-[hsl(var(--bg-surface))] border border-[hsl(var(--border-default))] p-4 flex items-center justify-between gap-4 flex-wrap">
+        <div className="flex items-center gap-3.5 min-w-0">
+          <div className="h-10 w-10 rounded-lg bg-[hsl(var(--state-success-light))] flex items-center justify-center shrink-0">
+            <FileText className="h-5 w-5 text-[hsl(var(--state-success))]" />
+          </div>
+          <div className="min-w-0">
+            <div className="flex items-center gap-2">
+              <p className="text-sm font-medium text-[hsl(var(--text-primary))] truncate">
+                cv.pdf
+              </p>
+              <span className="flex items-center gap-1 text-[11px] font-medium text-[hsl(var(--state-success))] bg-[hsl(var(--state-success-light))] px-2 py-0.5 rounded-full shrink-0">
+                <Check className="h-3 w-3" />
+                Active
+              </span>
+            </div>
+            {cvData.updatedAt && (
+              <p className="text-xs text-[hsl(var(--text-muted))] mt-0.5">
+                Uploaded {formatDate(cvData.updatedAt)}
+              </p>
+            )}
+          </div>
         </div>
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium text-[hsl(var(--text-primary))]">cv.pdf</p>
-          {cvData.updatedAt && (
-            <p className="text-xs text-[hsl(var(--text-muted))] mt-0.5">
-              Uploaded {formatDate(cvData.updatedAt)}
-            </p>
-          )}
-        </div>
-        <div className="flex items-center gap-1.5 shrink-0">
-          <span className="flex items-center gap-1 text-xs text-[hsl(var(--state-success))]">
-            <Check className="h-3.5 w-3.5" />
-            Active
-          </span>
+
+        <div className="flex items-center gap-2 shrink-0">
+          <a
+            href={cvData.cvUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-1.5 h-8 px-2.5 rounded-lg border border-[hsl(var(--border-default))] bg-[hsl(var(--bg-surface))] text-xs font-medium text-[hsl(var(--text-secondary))] hover:bg-[hsl(var(--bg-surface-raised))] hover:text-[hsl(var(--text-primary))] transition-colors"
+          >
+            <ExternalLink className="h-3.5 w-3.5" />
+            Open in new tab
+          </a>
+          <a
+            href={cvData.cvUrl}
+            download="cv.pdf"
+            className="flex items-center gap-1.5 h-8 px-2.5 rounded-lg border border-[hsl(var(--border-default))] bg-[hsl(var(--bg-surface))] text-xs font-medium text-[hsl(var(--text-secondary))] hover:bg-[hsl(var(--bg-surface-raised))] hover:text-[hsl(var(--text-primary))] transition-colors"
+          >
+            <Download className="h-3.5 w-3.5" />
+            Download
+          </a>
           <Button
             type="button"
             variant="ghost"
             size="sm"
             onClick={onReplace}
-            className="h-7 px-2 text-xs rounded-lg text-[hsl(var(--text-secondary))] hover:bg-[hsl(var(--bg-surface-raised))]"
+            className="h-8 px-3 text-xs rounded-lg text-[hsl(var(--text-secondary))] hover:bg-[hsl(var(--bg-surface-raised))] cursor-pointer"
           >
             Replace CV
           </Button>
         </div>
       </div>
 
-      {cvData.cvTextPreview && (
-        <div className="rounded-xl bg-[hsl(var(--bg-surface))] border border-[hsl(var(--border-default))] p-4 space-y-2">
-          <p className="text-xs font-medium text-[hsl(var(--text-secondary))] uppercase tracking-wide">
-            Extracted Text Preview
-          </p>
-          <pre className="text-xs text-[hsl(var(--text-muted))] leading-relaxed whitespace-pre-wrap font-(family-name:--font-mono) max-h-48 overflow-y-auto">
-            {cvData.cvTextPreview}
-            {cvData.cvTextPreview.length >= 500 ? '…' : ''}
-          </pre>
+      {/* View Mode Toggle & Content Container */}
+      <div className="rounded-xl bg-[hsl(var(--bg-surface))] border border-[hsl(var(--border-default))] overflow-hidden shadow-xs">
+        {/* Toolbar Header */}
+        <div className="flex items-center justify-between px-4 py-2.5 border-b border-[hsl(var(--border-default))] bg-[hsl(var(--bg-surface))] flex-wrap gap-2">
+          {/* Tab buttons */}
+          <div className="flex items-center p-0.5 rounded-lg bg-[hsl(var(--bg-surface-raised))] border border-[hsl(var(--border-default))] text-xs">
+            <button
+              type="button"
+              onClick={() => setActiveTab('pdf')}
+              className={`flex items-center gap-1.5 px-3 py-1 rounded-md font-medium transition-colors cursor-pointer ${
+                activeTab === 'pdf'
+                  ? 'bg-amber-500 text-black font-semibold shadow-xs'
+                  : 'text-[hsl(var(--text-muted))] hover:text-[hsl(var(--text-primary))]'
+              }`}
+            >
+              <Eye className="h-3.5 w-3.5" />
+              PDF Preview
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab('text')}
+              className={`flex items-center gap-1.5 px-3 py-1 rounded-md font-medium transition-colors cursor-pointer ${
+                activeTab === 'text'
+                  ? 'bg-amber-500 text-black font-semibold shadow-xs'
+                  : 'text-[hsl(var(--text-muted))] hover:text-[hsl(var(--text-primary))]'
+              }`}
+            >
+              <FileCode className="h-3.5 w-3.5" />
+              Extracted Text
+            </button>
+          </div>
+
+          {/* Action buttons depending on tab */}
+          {activeTab === 'text' && (
+            <button
+              type="button"
+              onClick={handleCopyText}
+              className="flex items-center gap-1.5 text-xs text-[hsl(var(--text-secondary))] hover:text-[hsl(var(--text-primary))] transition-colors px-2 py-1 rounded-md hover:bg-[hsl(var(--bg-surface-raised))] cursor-pointer"
+            >
+              {copied ? (
+                <>
+                  <Check className="h-3.5 w-3.5 text-emerald-400" />
+                  <span className="text-emerald-400 font-medium">Copied!</span>
+                </>
+              ) : (
+                <>
+                  <Copy className="h-3.5 w-3.5" />
+                  <span>Copy extracted text</span>
+                </>
+              )}
+            </button>
+          )}
         </div>
-      )}
+
+        {/* Tab Content */}
+        {activeTab === 'pdf' ? (
+          <div className="relative w-full bg-zinc-950 flex flex-col">
+            {/* Embedded Native PDF Viewer */}
+            <iframe
+              src={`${cvData.cvUrl}#toolbar=1&navpanes=0`}
+              className="w-full min-h-[680px] h-[75vh] border-0"
+              title="CV Document PDF Preview"
+            />
+          </div>
+        ) : (
+          <div className="p-4 space-y-2">
+            <p className="text-[11px] font-semibold text-[hsl(var(--text-muted))] uppercase tracking-wider">
+              Text Parsed by JobPilot ({fullText.length} characters)
+            </p>
+            <pre className="text-xs text-[hsl(var(--text-secondary))] leading-relaxed whitespace-pre-wrap font-(family-name:--font-mono) max-h-[600px] overflow-y-auto bg-[hsl(var(--bg-surface-raised))] p-4 rounded-lg border border-[hsl(var(--border-default))]">
+              {fullText || 'No text extracted.'}
+            </pre>
+          </div>
+        )}
+      </div>
     </div>
   )
 }
