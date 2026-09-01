@@ -145,32 +145,58 @@ function ResumeTab({ applicationId, hasCv, initialAdaptedCvText, onAdapted }: Re
     setShowUpgrade(false)
   }, [applicationId, initialAdaptedCvText])
 
-  async function generate() {
+  async function generate(skipConfirm = false) {
+    if (adaptedCvText && !skipConfirm) {
+      if (!window.confirm('Regenerate the adapted CV? The current one will be replaced.')) return
+    }
     setError('')
     setShowUpgrade(false)
     setGenerating(true)
+    setAdaptedCvText('')
+
     try {
       const res = await fetch(`/api/applications/${applicationId}/adapt-resume`, {
         method: 'POST',
       })
-      const json = await res.json() as { data?: { adaptedCvText: string }; error?: string; upgrade?: boolean }
 
-      if (res.status === 403 && json.upgrade) {
-        setShowUpgrade(true)
-        return
+      if (res.status === 403) {
+        const json = await res.json().catch(() => ({})) as { upgrade?: boolean }
+        if (json.upgrade) {
+          setShowUpgrade(true)
+          return
+        }
       }
-      if (res.status === 400 && json.error === 'No CV uploaded yet') {
-        setError('no-cv')
-        return
+      if (res.status === 400) {
+        const json = await res.json().catch(() => ({})) as { error?: string }
+        if (json.error === 'No CV uploaded yet') {
+          setError('no-cv')
+          return
+        }
       }
       if (!res.ok) {
+        const json = await res.json().catch(() => ({})) as { error?: string }
         setError(json.error ?? 'Generation failed. Please try again.')
         return
       }
 
-      const text = json.data?.adaptedCvText ?? ''
-      setAdaptedCvText(text)
-      onAdapted(text)
+      if (!res.body) {
+        setError('No response body from server.')
+        return
+      }
+
+      const reader = res.body.getReader()
+      const decoder = new TextDecoder()
+      let accumulated = ''
+
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+        const chunk = decoder.decode(value, { stream: true })
+        accumulated += chunk
+        setAdaptedCvText(accumulated)
+      }
+
+      onAdapted(accumulated)
       trackEvent.cvAdapted()
     } catch {
       setError('Network error. Please try again.')
@@ -266,12 +292,20 @@ function ResumeTab({ applicationId, hasCv, initialAdaptedCvText, onAdapted }: Re
     )
   }
 
-  // Generating
+  // Live Streaming Generation State
   if (generating) {
     return (
-      <div className="flex flex-col items-center justify-center py-16 gap-3">
-        <Loader2 className="h-6 w-6 animate-spin text-amber-500" />
-        <p className="text-sm text-[hsl(var(--text-muted))]">Adapting your CV…</p>
+      <div className="p-5 space-y-3">
+        <div className="flex items-center gap-2 text-xs font-semibold text-amber-500">
+          <Sparkles className="h-3.5 w-3.5 animate-spin" />
+          <span>Adapting your CV in real-time…</span>
+        </div>
+        <div className="rounded-xl border border-[hsl(var(--border-default))] bg-[hsl(var(--bg-surface-raised))] p-4 max-h-[460px] overflow-y-auto">
+          <pre className="text-xs text-[hsl(var(--text-primary))] leading-relaxed whitespace-pre-wrap font-(family-name:--font-mono)">
+            {adaptedCvText || 'Analyzing candidate profile and matching keywords…'}
+            <span className="inline-block w-1.5 h-3.5 bg-amber-500 animate-pulse ml-0.5 align-middle" />
+          </pre>
+        </div>
       </div>
     )
   }
@@ -306,7 +340,7 @@ function ResumeTab({ applicationId, hasCv, initialAdaptedCvText, onAdapted }: Re
           </Button>
           <Button
             variant="ghost"
-            onClick={generate}
+            onClick={() => generate(false)}
             className="rounded-lg border border-[hsl(var(--border-default))] h-8 px-4 text-sm text-[hsl(var(--text-secondary))] hover:bg-[hsl(var(--bg-surface-raised))]"
           >
             <RefreshCw className="h-3.5 w-3.5 mr-1.5" />
@@ -331,7 +365,7 @@ function ResumeTab({ applicationId, hasCv, initialAdaptedCvText, onAdapted }: Re
         <p className="text-sm text-[hsl(var(--state-error))] text-center">{error}</p>
       )}
       <Button
-        onClick={generate}
+        onClick={() => generate(true)}
         className="rounded-lg bg-amber-500 text-black hover:bg-amber-400 font-medium h-8 px-4 text-sm"
       >
         <Sparkles className="h-3.5 w-3.5 mr-1.5" />
@@ -370,28 +404,51 @@ function CoverLetterTab({ applicationId, hasCv, initialCoverLetter, onGenerated 
     setError('')
     setShowUpgrade(false)
     setGenerating(true)
+    setCoverLetter('')
+
     try {
       const res = await fetch(`/api/applications/${applicationId}/cover-letter`, {
         method: 'POST',
       })
-      const json = await res.json() as { data?: { coverLetter: string }; error?: string; upgrade?: boolean }
 
-      if (res.status === 403 && json.upgrade) {
-        setShowUpgrade(true)
-        return
+      if (res.status === 403) {
+        const json = await res.json().catch(() => ({})) as { upgrade?: boolean }
+        if (json.upgrade) {
+          setShowUpgrade(true)
+          return
+        }
       }
-      if (res.status === 400 && json.error === 'No CV uploaded yet') {
-        setError('no-cv')
-        return
+      if (res.status === 400) {
+        const json = await res.json().catch(() => ({})) as { error?: string }
+        if (json.error === 'No CV uploaded yet') {
+          setError('no-cv')
+          return
+        }
       }
       if (!res.ok) {
+        const json = await res.json().catch(() => ({})) as { error?: string }
         setError(json.error ?? 'Generation failed. Please try again.')
         return
       }
 
-      const text = json.data?.coverLetter ?? ''
-      setCoverLetter(text)
-      onGenerated(text)
+      if (!res.body) {
+        setError('No response body from server.')
+        return
+      }
+
+      const reader = res.body.getReader()
+      const decoder = new TextDecoder()
+      let accumulated = ''
+
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+        const chunk = decoder.decode(value, { stream: true })
+        accumulated += chunk
+        setCoverLetter(accumulated)
+      }
+
+      onGenerated(accumulated)
       trackEvent.coverLetterGenerated()
     } catch {
       setError('Network error. Please try again.')
@@ -487,12 +544,20 @@ function CoverLetterTab({ applicationId, hasCv, initialCoverLetter, onGenerated 
     )
   }
 
-  // Generating
+  // Live Streaming Generation State
   if (generating) {
     return (
-      <div className="flex flex-col items-center justify-center py-16 gap-3">
-        <Loader2 className="h-6 w-6 animate-spin text-amber-500" />
-        <p className="text-sm text-[hsl(var(--text-muted))]">Writing your cover letter…</p>
+      <div className="p-5 space-y-3">
+        <div className="flex items-center gap-2 text-xs font-semibold text-amber-500">
+          <Sparkles className="h-3.5 w-3.5 animate-spin" />
+          <span>Writing your cover letter in real-time…</span>
+        </div>
+        <div className="rounded-xl border border-[hsl(var(--border-default))] bg-[hsl(var(--bg-surface-raised))] p-4 max-h-[460px] overflow-y-auto">
+          <pre className="text-xs text-[hsl(var(--text-primary))] leading-relaxed whitespace-pre-wrap font-(family-name:--font-mono)">
+            {coverLetter || 'Crafting personalized letter matching your achievements with the offer…'}
+            <span className="inline-block w-1.5 h-3.5 bg-amber-500 animate-pulse ml-0.5 align-middle" />
+          </pre>
+        </div>
       </div>
     )
   }

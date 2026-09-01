@@ -10,6 +10,7 @@ import {
   MoreHorizontal,
   SearchX,
 } from 'lucide-react'
+import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { NewApplicationModal } from '@/components/applications/new-application-modal'
@@ -67,16 +68,32 @@ function timeAgo(dateStr: string): string {
 interface ApplicationCardProps {
   app: Application
   onEdit: (app: Application) => void
+  isDragging?: boolean
+  onDragStart?: (e: React.DragEvent, id: string) => void
+  onDragEnd?: () => void
 }
 
-function ApplicationCard({ app, onEdit }: ApplicationCardProps) {
+function ApplicationCard({
+  app,
+  onEdit,
+  isDragging,
+  onDragStart,
+  onDragEnd,
+}: ApplicationCardProps) {
   const colorClass = getCompanyColor(app.company)
   const initial = app.company.charAt(0).toUpperCase()
 
   return (
     <div
+      draggable
+      onDragStart={e => onDragStart?.(e, app.id)}
+      onDragEnd={onDragEnd}
       onClick={() => onEdit(app)}
-      className="bg-[hsl(var(--bg-surface))] border border-[hsl(var(--border-default))] rounded-xl p-3 space-y-3 hover:border-[hsl(var(--border-strong))] transition-colors cursor-pointer"
+      className={`bg-[hsl(var(--bg-surface))] border rounded-xl p-3 space-y-3 transition-all select-none cursor-grab active:cursor-grabbing ${
+        isDragging
+          ? 'opacity-40 border-amber-500 scale-[0.98] shadow-lg'
+          : 'border-[hsl(var(--border-default))] hover:border-[hsl(var(--border-strong))] hover:shadow-2xs'
+      }`}
     >
       <div className="flex items-start justify-between gap-2">
         <div className="flex items-center gap-2 min-w-0">
@@ -152,13 +169,56 @@ interface KanbanColumnProps {
   textVar: string
   apps: Application[]
   totalAppsCount: number
+  draggedAppId: string | null
   onAddClick: () => void
   onEditApp: (app: Application) => void
+  onDragStart: (e: React.DragEvent, id: string) => void
+  onDragEnd: () => void
+  onDrop: (targetStatus: ApplicationStatus) => void
 }
 
-function KanbanColumn({ label, bgVar, textVar, apps, onAddClick, onEditApp }: KanbanColumnProps) {
+function KanbanColumn({
+  status,
+  label,
+  bgVar,
+  textVar,
+  apps,
+  draggedAppId,
+  onAddClick,
+  onEditApp,
+  onDragStart,
+  onDragEnd,
+  onDrop,
+}: KanbanColumnProps) {
+  const [isDragOver, setIsDragOver] = useState(false)
+
   return (
-    <div className="w-[280px] shrink-0 flex flex-col gap-3">
+    <div
+      onDragOver={e => {
+        e.preventDefault()
+        e.dataTransfer.dropEffect = 'move'
+        if (!isDragOver) setIsDragOver(true)
+      }}
+      onDragEnter={e => {
+        e.preventDefault()
+        setIsDragOver(true)
+      }}
+      onDragLeave={e => {
+        if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+          setIsDragOver(false)
+        }
+      }}
+      onDrop={e => {
+        e.preventDefault()
+        setIsDragOver(false)
+        onDrop(status)
+      }}
+      className={`w-[280px] shrink-0 flex flex-col gap-3 rounded-2xl p-1.5 transition-all duration-150 ${
+        isDragOver
+          ? 'bg-amber-500/10 ring-2 ring-amber-500/50 ring-dashed'
+          : 'bg-transparent'
+      }`}
+    >
       <div
         className="flex items-center justify-between px-3 py-2 rounded-xl"
         style={{ background: `hsl(var(${bgVar}))` }}
@@ -186,10 +246,22 @@ function KanbanColumn({ label, bgVar, textVar, apps, onAddClick, onEditApp }: Ka
         </div>
       </div>
 
-      <div className="flex flex-col gap-2 flex-1">
+      <div className="flex flex-col gap-2 flex-1 min-h-[90px]">
         {apps.map(app => (
-          <ApplicationCard key={app.id} app={app} onEdit={onEditApp} />
+          <ApplicationCard
+            key={app.id}
+            app={app}
+            onEdit={onEditApp}
+            isDragging={draggedAppId === app.id}
+            onDragStart={onDragStart}
+            onDragEnd={onDragEnd}
+          />
         ))}
+        {apps.length === 0 && isDragOver && (
+          <div className="h-24 rounded-xl border border-dashed border-amber-500/40 bg-amber-500/5 flex items-center justify-center text-xs text-amber-500 font-medium">
+            Drop here
+          </div>
+        )}
       </div>
 
       <button
@@ -213,6 +285,7 @@ export default function ApplicationsPage() {
   const [sheetOpen, setSheetOpen] = useState(false)
   const [userHasCv, setUserHasCv] = useState(false)
   const [userIsPro, setUserIsPro] = useState(false)
+  const [draggedAppId, setDraggedAppId] = useState<string | null>(null)
 
   const fetchApplications = useCallback(async () => {
     try {
@@ -284,6 +357,58 @@ export default function ApplicationsPage() {
       prev.map(a => a.id === id ? { ...a, interviewQs: questions } : a)
     )
     setEditApp(prev => prev?.id === id ? { ...prev, interviewQs: questions } : prev)
+  }
+
+  function handleDragStart(e: React.DragEvent, id: string) {
+    setDraggedAppId(id)
+    e.dataTransfer.setData('text/plain', id)
+    e.dataTransfer.effectAllowed = 'move'
+  }
+
+  function handleDragEnd() {
+    setDraggedAppId(null)
+  }
+
+  async function handleStatusDrop(targetStatus: ApplicationStatus) {
+    if (!draggedAppId) return
+    const appId = draggedAppId
+    setDraggedAppId(null)
+
+    const targetApp = applications.find(a => a.id === appId)
+    if (!targetApp || targetApp.status === targetStatus) return
+
+    const previousStatus = targetApp.status
+
+    // Optimistically update status in UI
+    setApplications(prev =>
+      prev.map(a => (a.id === appId ? { ...a, status: targetStatus } : a))
+    )
+
+    try {
+      const res = await fetch(`/api/applications/${appId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: targetStatus }),
+      })
+
+      if (!res.ok) {
+        // Rollback state on error
+        setApplications(prev =>
+          prev.map(a => (a.id === appId ? { ...a, status: previousStatus } : a))
+        )
+        toast.error('Failed to update application status.')
+        return
+      }
+
+      const statusLabel = COLUMNS.find(c => c.status === targetStatus)?.label ?? targetStatus
+      toast.success(`Moved to ${statusLabel}`)
+    } catch {
+      // Rollback state on network error
+      setApplications(prev =>
+        prev.map(a => (a.id === appId ? { ...a, status: previousStatus } : a))
+      )
+      toast.error('Network error. Failed to move application.')
+    }
   }
 
   // Filter and Sort applications
@@ -449,8 +574,12 @@ export default function ApplicationsPage() {
                 {...col}
                 apps={grouped[col.status]}
                 totalAppsCount={applications.length}
+                draggedAppId={draggedAppId}
                 onAddClick={() => setModalOpen(true)}
                 onEditApp={openEdit}
+                onDragStart={handleDragStart}
+                onDragEnd={handleDragEnd}
+                onDrop={handleStatusDrop}
               />
             ))}
           </div>
