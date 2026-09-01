@@ -5,6 +5,14 @@ const nextConfig: NextConfig = {
   // loaded via native require() at runtime without ESM/worker issues.
   serverExternalPackages: ['pdf-parse'],
 
+  // Pin the Turbopack root to this project. Without this, Turbopack's
+  // automatic root detection walks up the filesystem for a lockfile and
+  // picks up C:\Users\<user>\package-lock.json, which breaks resolution
+  // of the `next` package (intermittent "Next.js package not found" panics).
+  turbopack: {
+    root: __dirname,
+  },
+
   async headers() {
     return [
       {
