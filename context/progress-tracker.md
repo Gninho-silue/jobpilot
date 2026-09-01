@@ -119,28 +119,54 @@ GitHub push + Vercel deploy
   - [x] .github/workflows/deploy.yml — notifies on push to main (Vercel integration handles actual deploy)
   - [x] .github/PULL_REQUEST_TEMPLATE.md — checklist with build/lint/type/security gates
 
-- [x] Vercel Analytics + Speed Insights (Part 4 of prompt)
-  - [x] @vercel/analytics + @vercel/speed-insights installed
-  - [x] Analytics + SpeedInsights added to root layout
-  - [x] src/lib/analytics.ts — trackEvent helpers (applicationCreated, cvAdapted, coverLetterGenerated, interviewStarted, upgradeClicked, upgraded)
-  - [x] UpgradeButton — source prop + trackEvent.upgradeClicked(source) on click
-  - [x] All 5 UpgradeButton call sites wired with source labels
-  - [x] new-application-modal — trackEvent.applicationCreated(language) on success
-  - [x] edit-application-sheet — trackEvent.cvAdapted() + trackEvent.coverLetterGenerated() on success
-  - [x] mock-interview-modal — trackEvent.interviewStarted() on mount
-  - [x] webhooks/stripe — trackEvent.upgraded() on checkout.session.completed
+- [x] Dashboard Deep-Linking & Action Routing
+  - [x] "New Application" and row actions link to `/applications?new=1` and `/applications?edit=<id>`
+  - [x] applications page reads `useSearchParams()`, auto-opens modal/sheet, cleans URL
+
+- [x] Frontend Metadata, Favicon & Brand Identity
+  - [x] Custom amber jet brand SVG icons: `src/app/icon.svg` & `public/icon.svg`
+  - [x] Apple touch icon generated via `next/og` `ImageResponse`
+  - [x] OpenGraph, Twitter card, robots.txt, sitemap.xml, manifest.json
+
+- [x] Applications Search & Multi-Criteria Filtering
+  - [x] `src/components/applications/applications-filter-bar.tsx`
+  - [x] Real-time text search (company, role, notes)
+  - [x] Language filter pills (ALL, EN, FR)
+  - [x] Stage multi-select filter
+  - [x] AI Asset status toggles (Adapted CV, Cover Letter, Interview Prep)
+  - [x] Sorting options (Newest, Oldest, Company A-Z, Company Z-A, Role A-Z)
+  - [x] Active filter chips with individual remove & clear all
+  - [x] Empty search state with reset button
+
+- [x] My CV Dual-Mode PDF Viewer
+  - [x] `src/app/api/cv/route.ts` returns `cvText` and `cvUrl`
+  - [x] Native embedded PDF viewer with PDF Preview vs Extracted Text tabs
+  - [x] Toolbar: Copy text, Open in new tab, Download PDF
+
+- [x] Real-Time AI Text Streaming (Phase 11)
+  - [x] Backend `ReadableStream` responses for `/api/applications/[id]/adapt-resume` and `/api/applications/[id]/cover-letter`
+  - [x] Groq model streaming via `streamAdaptResume()` and `streamCoverLetter()`
+  - [x] Frontend stream reader with `TextDecoder` and blinking amber cursor UI
+
+- [x] Kanban Drag-and-Drop (Phase 12)
+  - [x] HTML5 drag handlers on `ApplicationCard` and `KanbanColumn`
+  - [x] Optimistic UI updates on card drop
+  - [x] Background `PATCH /api/applications/[id]` with automatic rollback and Sonner toast on failure
+  - [x] Drag-over dashed ring animations and drop zone placeholders
+
+- [x] LaTeX / Jake's Resume PDF Template & Zero-Hallucination Prompts (Phase 13)
+  - [x] `src/lib/pdf/generate-cv-pdf.tsx` rewritten for LaTeX / Jake's Resume standard
+  - [x] Strict anti-hallucination prompt rules in `adapt-resume.ts` and `generate-cover-letter.ts`
+  - [x] Clean Markdown stripping on cover letters and CVs
+  - [x] Clean multi-item language formatting (e.g. `Français: Langue maternelle · Anglais: Courant`)
+
+## Current Phase
+
+Phase 13 — Complete Production-Ready SaaS
 
 ## Current Goal
 
-GitHub push + Vercel deploy
-
-## In Progress
-
-- None
-
-## Next Up
-
-1. GitHub push + Vercel deploy
+Vercel Deploy & Production Verification
 
 ## Schema Changes Needed (run in Supabase SQL Editor)
 
