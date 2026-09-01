@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useState } from 'react'
+import { useSearchParams, useRouter } from 'next/navigation'
 import {
   Filter,
   Plus,
@@ -217,6 +218,28 @@ export default function ApplicationsPage() {
       setLoading(false)
     }
   }, [])
+
+  const searchParams = useSearchParams()
+  const router = useRouter()
+
+  // Auto-open modal from dashboard deep-links (?new=1 or ?edit=<id>)
+  useEffect(() => {
+    if (searchParams.get('new') === '1') {
+      setModalOpen(true)
+      router.replace('/applications')
+    }
+  }, [searchParams, router])
+
+  useEffect(() => {
+    const editId = searchParams.get('edit')
+    if (editId && applications.length > 0) {
+      const target = applications.find(a => a.id === editId)
+      if (target) {
+        openEdit(target)
+        router.replace('/applications')
+      }
+    }
+  }, [searchParams, applications, router])
 
   useEffect(() => {
     void fetchApplications()
