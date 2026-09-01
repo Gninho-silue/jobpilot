@@ -6,10 +6,33 @@ function stripNonPrintable(s: string): string {
   return s.replace(/[^\x20-\x7EÀ-ɏ]/g, '')
 }
 
+function stripMarkdown(s: string): string {
+  return s
+    .replace(/\*\*(.+?)\*\*/g, '$1')   // **bold** -> bold
+    .replace(/\*(.+?)\*/g, '$1')        // *italic* -> italic
+    .replace(/__(.+?)__/g, '$1')        // __bold__ -> bold
+    .replace(/_(.+?)_/g, '$1')          // _italic_ -> italic
+    .replace(/`(.+?)`/g, '$1')          // `code` -> code
+    .replace(/^#{1,4}\s*/gm, '')        // ### Heading -> Heading
+    .replace(/^\s*---+\s*$/gm, '')      // --- divider -> removed
+    .replace(/^\s*[*•-]\s+/gm, '')      // Bullet markers -> removed
+    .trim()
+}
+
 function extractCandidateHeader(cvText: string): { name: string; contact: string } {
   const lines = cvText.split('\n').map(l => l.trim()).filter(Boolean)
-  const name = stripNonPrintable(lines[0] ?? '')
-  const contact = stripNonPrintable(lines[1] ?? '')
+  const name = stripMarkdown(stripNonPrintable(lines[0] ?? ''))
+  const rawContact = stripMarkdown(stripNonPrintable(lines[1] ?? ''))
+  
+  const contactParts = rawContact
+    .split(/\$\|\$|\s*[|]\s*|\s{3,}|\s*·\s*/)
+    .map(p => p.trim())
+    .filter(p => {
+      const lower = p.toLowerCase()
+      return Boolean(p) && !['linkedin', 'github', 'portfolio', 'gitlab', 'website'].includes(lower)
+    })
+  
+  const contact = contactParts.join('  ·  ')
   return { name, contact }
 }
 
@@ -45,7 +68,7 @@ const S = StyleSheet.create({
     fontFamily: 'Helvetica-Bold',
     fontSize: 18,
     color: C.black,
-    marginBottom: 2,
+    marginBottom: 4,
   },
   contact: {
     fontFamily: 'Helvetica',
@@ -81,7 +104,7 @@ const S = StyleSheet.create({
     fontSize: 10,
     color: C.body,
     lineHeight: 1.7,
-    marginBottom: 18,
+    marginBottom: 16,
   },
   footer: {
     position: 'absolute',
@@ -109,9 +132,10 @@ interface CoverLetterDocProps {
 }
 
 function CoverLetterDoc({ candidateName, candidateContact, role, company, body }: CoverLetterDocProps) {
-  const paragraphs = body
+  const cleanBody = stripMarkdown(body)
+  const paragraphs = cleanBody
     .split(/\n{2,}/)
-    .map(p => p.replace(/\n/g, ' ').trim())
+    .map(p => stripMarkdown(p.replace(/\n/g, ' ').trim()))
     .filter(Boolean)
 
   return (

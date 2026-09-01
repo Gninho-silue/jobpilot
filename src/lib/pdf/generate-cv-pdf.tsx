@@ -1,241 +1,541 @@
-import { Document, Font, Page, StyleSheet, Text, View, renderToBuffer } from '@react-pdf/renderer'
+import { Document, Font, Page, StyleSheet, Text, View, renderToBuffer, Link } from '@react-pdf/renderer'
 
-// Disable hyphenation — no word splitting in CV text
+// Disable hyphenation
 Font.registerHyphenationCallback(w => [w])
 
-// ── Emoji / encoding sanitization ────────────────────────────────────────────
-// Built-in PDF fonts (Helvetica, Courier) support Basic Latin + Latin Extended
-// only. Emoji characters render as garbage (e.g. 📍→Í, 📞→ñ, ✉→ç).
-// We strip/replace them before the text reaches the renderer.
-
-const CONTACT_LINE_RE = /@\w|(?:\+?\d[\d \-().]{5,})|(github|linkedin|portfolio|gitlab|twitter|http)/i
-
-function replaceContactEmoji(s: string): string {
-  return s
-    .replace(/📍\s*/g, '')
-    .replace(/📞\s*|📱\s*/g, '')
-    .replace(/✉️?\s*/g, '')
-    .replace(/🔗\s*|🌐\s*/g, '')
-    .replace(/💼\s*|👤\s*/g, '')
-    // Garbled versions: same emoji rendered as wrong Latin chars by react-pdf
-    // Safe to strip only when the char appears as an isolated icon (surrounded by spaces)
-    .replace(/(^|\s)Í\s+/g, ' ')
-    .replace(/(^|\s)ñ\s+/g, ' ')
-    .replace(/(^|\s)ç\s+/g, ' ')
+// ── Color palette (mirrors the LaTeX template) ───────────────────────────────
+const C = {
+  black:   '#000000',
+  body:    '#1a1a1a',
+  muted:   '#444444',
+  rule:    '#000000',
+  white:   '#FFFFFF',
 }
 
-function stripNonPrintable(s: string): string {
-  // Keep Basic Latin (0x20–0x7E) + Latin Extended A/B (U+00C0–U+024F)
-  return s.replace(/[^\x20-\x7EÀ-ɏ]/g, '')
-}
+// ── Styles ────────────────────────────────────────────────────────────────────
+const S = StyleSheet.create({
+  page: {
+    backgroundColor: C.white,
+    paddingHorizontal: 42,
+    paddingTop: 36,
+    paddingBottom: 36,
+    fontSize: 9,
+    color: C.body,
+    fontFamily: 'Helvetica',
+    lineHeight: 1.35,
+  },
 
-function sanitizeLine(line: string): string {
-  if (CONTACT_LINE_RE.test(line)) {
-    // Contact info line: clean emoji icons then reformat segments with · separator
-    const cleaned = stripNonPrintable(replaceContactEmoji(line))
-    const parts = cleaned
-      .split(/\s{2,}|\s*[|]\s*|\s+·\s+/)
-      .map(p => p.trim())
-      .filter(Boolean)
-    return parts.length > 1 ? parts.join('  ·  ') : cleaned.trim()
-  }
-  // All other lines: just strip emoji / non-printable chars
-  return stripNonPrintable(line)
-}
+  // ── Header ────────────────────────────────────────────────────────────────
+  headerBlock: {
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  name: {
+    fontFamily: 'Helvetica-Bold',
+    fontSize: 18,
+    color: C.black,
+    textTransform: 'uppercase',
+    letterSpacing: 1.2,
+    marginBottom: 5,
+    textAlign: 'center',
+  },
+  subtitle: {
+    fontFamily: 'Helvetica-Bold',
+    fontSize: 8.5,
+    color: C.body,
+    marginTop: 2,
+    marginBottom: 5,
+    textAlign: 'center',
+  },
+  contactLine: {
+    fontFamily: 'Helvetica',
+    fontSize: 8,
+    color: C.muted,
+    textAlign: 'center',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    marginTop: 2,
+  },
+  contactPart: {
+    fontFamily: 'Helvetica',
+    fontSize: 8,
+    color: C.muted,
+  },
+  contactSep: {
+    fontFamily: 'Helvetica',
+    fontSize: 8,
+    color: C.muted,
+    paddingHorizontal: 4,
+  },
 
-function preprocessCvText(text: string): string {
-  return text.split('\n').map(sanitizeLine).join('\n')
-}
+  // ── Section ────────────────────────────────────────────────────────────────
+  section: { marginTop: 10 },
+  sectionTitle: {
+    fontFamily: 'Helvetica-Bold',
+    fontSize: 9.5,
+    color: C.black,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: 2,
+    paddingBottom: 2,
+    borderBottomWidth: 0.75,
+    borderBottomColor: C.rule,
+  },
 
-// ── Section parsing ───────────────────────────────────────────────────────────
+  // ── Experience / Education entry ───────────────────────────────────────────
+  entryBlock: {
+    marginTop: 4,
+    marginBottom: 1,
+  },
+  entryRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+  },
+  entryTitle: {
+    fontFamily: 'Helvetica-Bold',
+    fontSize: 9,
+    color: C.black,
+    flex: 1,
+  },
+  entryDate: {
+    fontFamily: 'Helvetica',
+    fontSize: 8.5,
+    color: C.muted,
+    textAlign: 'right',
+  },
+  entrySubRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginTop: 0.5,
+  },
+  entryCompany: {
+    fontFamily: 'Helvetica-Oblique',
+    fontSize: 8.5,
+    color: C.muted,
+    flex: 1,
+  },
+  entryTech: {
+    fontFamily: 'Helvetica-Oblique',
+    fontSize: 8,
+    color: C.muted,
+    flex: 1,
+  },
+  entryLink: {
+    fontFamily: 'Helvetica-Oblique',
+    fontSize: 8,
+    color: '#1155CC',
+    textAlign: 'right',
+  },
 
-const SECTION_KEYWORDS = new Set([
-  'PROFILE', 'SUMMARY', 'ABOUT', 'OBJECTIVE', 'RÉSUMÉ', 'RESUME',
-  'SKILLS', 'TECHNICAL SKILLS', 'TECHNOLOGIES', 'COMPETENCES', 'COMPÉTENCES',
-  'EXPERIENCE', 'WORK EXPERIENCE', 'PROFESSIONAL EXPERIENCE',
-  'EXPÉRIENCE', 'EXPÉRIENCES', 'EXPÉRIENCE PROFESSIONNELLE',
-  'PROJECTS', 'PROJETS', 'PORTFOLIO', 'OPEN SOURCE',
-  'EDUCATION', 'FORMATION', 'DIPLOMES', 'DIPLÔMES', 'STUDIES', 'ÉTUDES',
-  'CERTIFICATIONS', 'CERTIFICATIONS & AWARDS', 'AWARDS',
-  'LANGUAGES', 'LANGUES',
-  'CONTACT', 'CONTACTS', 'REFERENCES', 'RÉFÉRENCES',
-  'INTERESTS', 'HOBBIES', 'LOISIRS',
-])
+  // ── Bullets ────────────────────────────────────────────────────────────────
+  bulletList: {
+    marginTop: 2,
+    paddingLeft: 10,
+  },
+  bulletRow: {
+    flexDirection: 'row',
+    marginBottom: 1.5,
+    alignItems: 'flex-start',
+  },
+  bulletDot: {
+    fontFamily: 'Helvetica',
+    fontSize: 8,
+    color: C.body,
+    marginRight: 4,
+    marginTop: 0.5,
+    lineHeight: 1.35,
+  },
+  bulletText: {
+    fontFamily: 'Helvetica',
+    fontSize: 8.5,
+    color: C.body,
+    lineHeight: 1.35,
+    flex: 1,
+  },
 
-function isSectionHeader(line: string): boolean {
-  const t = line.trim()
-  if (t.length < 2 || t.length > 60) return false
-  const upper = t.toUpperCase()
-  if (SECTION_KEYWORDS.has(upper)) return true
-  // All-uppercase short line (letters, spaces, accents, & /)
-  return /^[A-ZÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖØÙÚÛÜÝÞ\s&\/\-]+$/.test(t) && t.length <= 40
+  // ── Skills / Profile plain text ───────────────────────────────────────────
+  bodyText: {
+    fontFamily: 'Helvetica',
+    fontSize: 8.5,
+    color: C.body,
+    lineHeight: 1.45,
+    marginTop: 3,
+  },
+  skillRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginTop: 1.5,
+  },
+  skillLabel: {
+    fontFamily: 'Helvetica-Bold',
+    fontSize: 8.5,
+    color: C.black,
+  },
+  skillValue: {
+    fontFamily: 'Helvetica',
+    fontSize: 8.5,
+    color: C.body,
+  },
+  emptyGap: { height: 3 },
+})
+
+// ── Structured CV types ───────────────────────────────────────────────────────
+
+interface CvEntry {
+  title: string
+  company?: string
+  date?: string
+  tech?: string
+  link?: string
+  bullets: string[]
 }
 
 interface CvSection {
-  title: string
-  lines: string[]
+  heading: string
+  paragraphs: string[]  // for profile / skills
+  entries: CvEntry[]
 }
 
 interface ParsedCv {
   name: string
   subtitle: string
+  contactParts: string[]
   sections: CvSection[]
 }
 
-export function parseCvText(cvText: string): ParsedCv {
-  const raw = cvText.split('\n').map(l => l.trimEnd())
+// ── Parser ────────────────────────────────────────────────────────────────────
 
-  const nameIdx = raw.findIndex(l => l.trim().length > 0)
-  const name = nameIdx >= 0 ? raw[nameIdx]!.trim() : ''
+const SECTION_HEADERS = new Set([
+  'PROFILE', 'PROFIL', 'SUMMARY', 'RÉSUMÉ',
+  'TECHNICAL SKILLS', 'COMPÉTENCES TECHNIQUES', 'SKILLS', 'COMPÉTENCES',
+  'PROFESSIONAL EXPERIENCE', 'EXPÉRIENCE PROFESSIONNELLE', 'EXPERIENCE',
+  'EXPÉRIENCE', 'FULL-STACK PROJECTS', 'PROJECTS', 'PROJETS',
+  'EDUCATION', 'FORMATION',
+  'CERTIFICATIONS & LANGUAGES', 'CERTIFICATIONS & LANGUES',
+  'CERTIFICATIONS', 'LANGUES', 'LANGUAGES',
+])
 
+function isSectionHeader(line: string): boolean {
+  const t = line.trim().toUpperCase().replace(/[:']/g, '')
+  if (SECTION_HEADERS.has(t)) return true
+  // Markdown ### heading
+  if (/^#{1,3}\s+/.test(line.trim())) return true
+  // All-caps line ≤ 50 chars
+  return /^[A-ZÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖØÙÚÛÜÝÞ\s&\-/]+$/.test(t) &&
+    t.length >= 3 && t.length <= 55
+}
+
+function cleanSectionTitle(line: string): string {
+  return line.trim()
+    .replace(/^#+\s*/, '')        // strip markdown #
+    .replace(/[*_`]/g, '')        // strip markdown inline
+    .replace(/\*\*/g, '')
+    .trim()
+    .toUpperCase()
+}
+
+function isEntryField(line: string): boolean {
+  return /^>(TITLE|COMPANY|DATE|TECH|LINK|SCHOOL|DEGREE):/.test(line.trim())
+}
+
+function stripMarkdown(s: string): string {
+  return s
+    .replace(/\*\*(.+?)\*\*/g, '$1')   // **bold** → bold
+    .replace(/\*(.+?)\*/g, '$1')        // *italic* → italic
+    .replace(/`(.+?)`/g, '$1')          // `code` → code
+    .replace(/^#{1,4}\s*/gm, '')        // ### Heading
+    .replace(/^\s*---+\s*$/gm, '')      // --- divider
+    .replace(/^\s*[|]\s*/gm, '')        // markdown table pipes
+    .replace(/\s*[|]\s*$/gm, '')
+    .trim()
+}
+
+function SkillLine({ line }: { line: string }) {
+  const sanitized = line.replace(/\$\|\$/g, ' · ').replace(/^[•\-]\s*/, '').trim()
+
+  // Handle multi-item lines separated by " · " (e.g. "Français: Langue maternelle · Anglais: Courant")
+  if (sanitized.includes(' · ') && sanitized.includes(':')) {
+    const parts = sanitized.split(/\s*·\s*/).filter(Boolean)
+    return (
+      <View style={S.skillRow}>
+        {parts.map((part, idx) => {
+          const colonIdx = part.indexOf(':')
+          if (colonIdx > 0 && colonIdx < 30) {
+            const label = part.slice(0, colonIdx).trim()
+            const value = part.slice(colonIdx + 1).trim()
+            return (
+              <View key={idx} style={{ flexDirection: 'row', alignItems: 'center' }}>
+                {idx > 0 && <Text style={{ fontSize: 8.5, color: C.muted, paddingHorizontal: 5 }}> · </Text>}
+                <Text style={S.skillLabel}>{label}: </Text>
+                <Text style={S.skillValue}>{value}</Text>
+              </View>
+            )
+          }
+          return (
+            <View key={idx} style={{ flexDirection: 'row', alignItems: 'center' }}>
+              {idx > 0 && <Text style={{ fontSize: 8.5, color: C.muted, paddingHorizontal: 5 }}> · </Text>}
+              <Text style={S.skillValue}>{part}</Text>
+            </View>
+          )
+        })}
+      </View>
+    )
+  }
+
+  // Try to parse "Label: value" lines
+  const colonIdx = sanitized.indexOf(':')
+  if (colonIdx > 0 && colonIdx < 30) {
+    const label = sanitized.slice(0, colonIdx).trim()
+    const value = sanitized.slice(colonIdx + 1).trim()
+    return (
+      <View style={S.skillRow}>
+        <Text style={S.skillLabel}>{label}: </Text>
+        <Text style={S.skillValue}>{value}</Text>
+      </View>
+    )
+  }
+  return <Text style={S.bodyText}>{sanitized}</Text>
+}
+
+export function parseCvStructured(raw: string): ParsedCv {
+  const lines = raw.split('\n').map(l => l.trimEnd())
+
+  // Find name (first non-empty line)
+  let i = 0
+  while (i < lines.length && !lines[i]!.trim()) i++
+  const nameLine = (lines[i] ?? '').trim()
+  const name = stripMarkdown(nameLine).replace(/^#+\s*/, '').trim()
+  i++
+
+  // Subtitle (2nd non-empty, non-section line)
   let subtitle = ''
-  let bodyStart = nameIdx + 1
-  for (let i = nameIdx + 1; i < Math.min(nameIdx + 4, raw.length); i++) {
-    const t = raw[i]!.trim()
-    if (!t) continue
-    if (!isSectionHeader(t) && t.length < 80) {
-      subtitle = t
-      bodyStart = i + 1
-    }
-    break
+  while (i < lines.length && !lines[i]!.trim()) i++
+  const subtitleLine = (lines[i] ?? '').trim()
+  if (subtitleLine && !isSectionHeader(subtitleLine) && subtitleLine.length < 120) {
+    subtitle = stripMarkdown(subtitleLine)
+    i++
   }
 
-  const sections: CvSection[] = []
-  let current: CvSection | null = null
+  // Contact line (3rd non-empty, has $|$ or @ or + digit)
+  let contactParts: string[] = []
+  while (i < lines.length && !lines[i]!.trim()) i++
+  const contactLine = (lines[i] ?? '').trim()
+  if (contactLine && !isSectionHeader(contactLine)) {
+    // Split by $|$ (our custom sep) or  ·  or  |
+    const rawParts = contactLine
+      .split(/\$\|\$|\s*[|]\s*|\s{3,}|\s*·\s*/)
+      .map(p => stripMarkdown(p).trim())
+      .filter(Boolean)
 
-  for (let i = bodyStart; i < raw.length; i++) {
-    const trimmed = raw[i]!.trim()
-    if (isSectionHeader(trimmed)) {
-      if (current) sections.push(current)
-      current = { title: trimmed, lines: [] }
-    } else {
-      if (!current) current = { title: '', lines: [] }
-      current.lines.push(trimmed)
-    }
-  }
-  if (current) sections.push(current)
-
-  const clean = sections
-    .map(s => {
-      const lines = [...s.lines]
-      while (lines.length && lines[lines.length - 1] === '') lines.pop()
-      return { ...s, lines }
+    // Filter out placeholders that are just labels without URL (e.g. standalone "LinkedIn", "GitHub", "Portfolio")
+    contactParts = rawParts.filter(p => {
+      const lower = p.toLowerCase()
+      if (lower === 'linkedin' || lower === 'github' || lower === 'portfolio' || lower === 'gitlab' || lower === 'website') {
+        return false
+      }
+      return true
     })
-    .filter(s => s.lines.length > 0)
-
-  return { name, subtitle, sections: clean }
-}
-
-// ── Styles ────────────────────────────────────────────────────────────────────
-// Built-in PDF fonts used (no external files needed — always renders reliably).
-// Helvetica-Bold for name/headings, Helvetica for body.
-
-const C = {
-  black:    '#0F172A',
-  body:     '#1E293B',
-  muted:    '#64748B',
-  accent:   '#92400E',   // amber-800 — legible on white
-  border:   '#CBD5E1',
-  white:    '#FFFFFF',
-}
-
-const S = StyleSheet.create({
-  page: {
-    backgroundColor: C.white,
-    paddingHorizontal: 44,
-    paddingTop: 44,
-    paddingBottom: 44,
-    fontSize: 9.5,
-    color: C.body,
-    lineHeight: 1.5,
-  },
-  // Header
-  name: {
-    fontFamily: 'Helvetica-Bold',
-    fontSize: 22,
-    color: C.black,
-    marginBottom: 3,
-  },
-  subtitle: {
-    fontFamily: 'Helvetica',
-    fontSize: 10,
-    color: C.muted,
-    marginBottom: 10,
-  },
-  headerRule: {
-    borderBottomWidth: 1.5,
-    borderBottomColor: C.accent,
-    marginBottom: 2,
-  },
-  // Section
-  section: { marginTop: 14 },
-  sectionTitle: {
-    fontFamily: 'Helvetica-Bold',
-    fontSize: 7,
-    color: C.accent,
-    textTransform: 'uppercase',
-    letterSpacing: 2.2,
-    marginBottom: 5,
-    paddingBottom: 3,
-    borderBottomWidth: 0.5,
-    borderBottomColor: C.border,
-  },
-  // Content lines — bullet items use Courier for monospace feel
-  bullet: {
-    fontFamily: 'Courier',
-    fontSize: 9,
-    color: C.body,
-    lineHeight: 1.5,
-    marginBottom: 1.5,
-  },
-  normal: {
-    fontFamily: 'Helvetica',
-    fontSize: 9.5,
-    color: C.body,
-    lineHeight: 1.5,
-    marginBottom: 1,
-  },
-  gap: { marginBottom: 5 },
-})
-
-// ── Helpers ───────────────────────────────────────────────────────────────────
-
-const BULLET_RE = /^[-•*·▸►>]\s+/
-
-function ContentLine({ line }: { line: string }) {
-  if (BULLET_RE.test(line)) {
-    return <Text style={S.bullet}>{line}</Text>
+    i++
   }
-  return <Text style={S.normal}>{line}</Text>
+
+  // Parse sections
+  const sections: CvSection[] = []
+  let currentSection: CvSection | null = null
+  let currentEntry: CvEntry | null = null
+
+  const flushEntry = () => {
+    if (currentEntry && currentSection) {
+      currentSection.entries.push(currentEntry)
+      currentEntry = null
+    }
+  }
+  const flushSection = () => {
+    flushEntry()
+    if (currentSection) {
+      sections.push(currentSection)
+      currentSection = null
+    }
+  }
+
+  for (; i < lines.length; i++) {
+    const raw_line = lines[i] ?? ''
+    const trimmed = raw_line.trim()
+
+    if (!trimmed || trimmed === '---' || trimmed === '***') {
+      // blank / divider
+      if (currentEntry && currentEntry.title) {
+        // entry separator — flush entry
+        flushEntry()
+      }
+      continue
+    }
+
+    if (isSectionHeader(trimmed)) {
+      flushSection()
+      currentSection = {
+        heading: cleanSectionTitle(trimmed),
+        paragraphs: [],
+        entries: [],
+      }
+      continue
+    }
+
+    if (!currentSection) continue
+
+    // Entry field lines: >TITLE: ...
+    if (isEntryField(trimmed)) {
+      const match = trimmed.match(/^>(TITLE|COMPANY|DATE|TECH|LINK|SCHOOL|DEGREE):\s*(.*)/)
+      if (match) {
+        const field = match[1]!
+        const value = stripMarkdown(match[2]!)
+        if (field === 'TITLE') {
+          flushEntry()
+          currentEntry = { title: value, bullets: [] }
+        } else if (field === 'SCHOOL') {
+          // Education: school acts as the company row
+          if (!currentEntry) currentEntry = { title: '', bullets: [] }
+          currentEntry.company = value
+        } else if (field === 'DEGREE') {
+          // Education: degree is the title row
+          if (!currentEntry) currentEntry = { title: '', bullets: [] }
+          currentEntry.title = value
+        } else if (currentEntry) {
+          if (field === 'COMPANY') currentEntry.company = value
+          else if (field === 'DATE') currentEntry.date = value
+          else if (field === 'TECH') currentEntry.tech = value
+          else if (field === 'LINK') currentEntry.link = value
+        }
+      }
+      continue
+    }
+
+    // Bullet line
+    if (/^[-•*·▸►>]\s+/.test(trimmed)) {
+      const bulletText = stripMarkdown(trimmed.replace(/^[-•*·▸►>]\s+/, ''))
+      if (currentEntry) {
+        currentEntry.bullets.push(bulletText)
+      } else {
+        // Bullet without entry (e.g. skills section)
+        currentSection.paragraphs.push('• ' + bulletText)
+      }
+      continue
+    }
+
+    // Plain paragraph / skill line
+    const clean = stripMarkdown(trimmed)
+    if (clean) {
+      if (currentEntry) {
+        // Might be a continuation bullet
+        currentEntry.bullets.push(clean)
+      } else {
+        currentSection.paragraphs.push(clean)
+      }
+    }
+  }
+
+  flushSection()
+
+  return { name, subtitle, contactParts, sections }
 }
 
-// ── Document ─────────────────────────────────────────────────────────────────
+// ── React-PDF components ──────────────────────────────────────────────────────
 
-function CvDocument({ name, subtitle, sections }: ParsedCv) {
+function BulletPoint({ text }: { text: string }) {
+  return (
+    <View style={S.bulletRow}>
+      <Text style={S.bulletDot}>•</Text>
+      <Text style={S.bulletText}>{text}</Text>
+    </View>
+  )
+}
+
+function EntryBlock({ entry }: { entry: CvEntry }) {
+  return (
+    <View style={S.entryBlock} wrap={false}>
+      <View style={S.entryRow}>
+        <Text style={S.entryTitle}>{entry.title}</Text>
+        {entry.date && <Text style={S.entryDate}>{entry.date}</Text>}
+      </View>
+      {(entry.company || entry.tech || entry.link) && (
+        <View style={S.entrySubRow}>
+          {entry.company && <Text style={S.entryCompany}>{entry.company}</Text>}
+          {entry.tech && <Text style={S.entryTech}>{entry.tech}</Text>}
+          {entry.link ? (
+            <Link src={entry.link} style={S.entryLink}>GitHub ↗</Link>
+          ) : null}
+        </View>
+      )}
+      {entry.bullets.length > 0 && (
+        <View style={S.bulletList}>
+          {entry.bullets.map((b, bi) => (
+            <BulletPoint key={bi} text={b} />
+          ))}
+        </View>
+      )}
+    </View>
+  )
+}
+
+
+
+function SectionBlock({ section }: { section: CvSection }) {
+  const isSkills = section.heading.includes('SKILL') || section.heading.includes('COMPÉTENCE')
+  const isCerts = section.heading.includes('CERTIF') || section.heading.includes('LANGUAGE') || section.heading.includes('LANGUE')
+  return (
+    <View style={S.section} wrap={section.entries.length === 0}>
+      <Text style={S.sectionTitle}>{section.heading}</Text>
+
+      {section.paragraphs.map((p, pi) => {
+        // Strip leading bullet marker for cert/language paragraphs
+        const clean = isCerts ? p.replace(/^[•\-]\s*/, '') : p
+        return (isSkills || isCerts) ? (
+          <SkillLine key={pi} line={clean} />
+        ) : (
+          <Text key={pi} style={S.bodyText}>{p}</Text>
+        )
+      })}
+
+      {section.entries.map((e, ei) => (
+        <EntryBlock key={ei} entry={e} />
+      ))}
+    </View>
+  )
+}
+
+function ContactRow({ parts }: { parts: string[] }) {
+  return (
+    <View style={S.contactLine}>
+      {parts.map((part, idx) => (
+        <View key={idx} style={{ flexDirection: 'row', alignItems: 'center' }}>
+          {idx > 0 && <Text style={S.contactSep}> · </Text>}
+          <Text style={S.contactPart}>{part}</Text>
+        </View>
+      ))}
+    </View>
+  )
+}
+
+function CvDocument({ name, subtitle, contactParts, sections }: ParsedCv) {
   return (
     <Document
       title={name ? `${name} — Adapted CV` : 'Adapted CV'}
       author="JobPilot"
       creator="JobPilot"
     >
-      <Page size="A4" style={S.page}>
-        {/* Header */}
-        {name ? <Text style={S.name}>{name}</Text> : null}
-        {subtitle ? <Text style={S.subtitle}>{subtitle}</Text> : null}
-        <View style={S.headerRule} />
+      <Page size="LETTER" style={S.page}>
+        {/* ── Header ── */}
+        <View style={S.headerBlock}>
+          {name && <Text style={S.name}>{name}</Text>}
+          {subtitle && <Text style={S.subtitle}>{subtitle}</Text>}
+          {contactParts.length > 0 && <ContactRow parts={contactParts} />}
+        </View>
 
-        {/* Sections */}
-        {sections.map((sec, i) => (
-          <View key={i} style={S.section} wrap={false}>
-            {sec.title ? <Text style={S.sectionTitle}>{sec.title}</Text> : null}
-            {sec.lines.map((line, j) =>
-              line === '' ? (
-                <View key={j} style={S.gap} />
-              ) : (
-                <ContentLine key={j} line={line} />
-              )
-            )}
-          </View>
+        {/* ── Sections ── */}
+        {sections.map((sec, si) => (
+          <SectionBlock key={si} section={sec} />
         ))}
       </Page>
     </Document>
@@ -245,11 +545,12 @@ function CvDocument({ name, subtitle, sections }: ParsedCv) {
 // ── Public API ────────────────────────────────────────────────────────────────
 
 export async function generateCvPdf(adaptedCvText: string): Promise<Buffer> {
-  const parsed = parseCvText(preprocessCvText(adaptedCvText))
+  const parsed = parseCvStructured(adaptedCvText)
   return renderToBuffer(
     <CvDocument
       name={parsed.name}
       subtitle={parsed.subtitle}
+      contactParts={parsed.contactParts}
       sections={parsed.sections}
     />
   )
