@@ -11,7 +11,6 @@ import {
   ArrowUpRight,
   FileText,
   Edit,
-  MoreHorizontal,
 } from 'lucide-react'
 import { prisma } from '@/lib/prisma'
 import { FREE_TIER_LIMITS } from '@/lib/config'
@@ -149,7 +148,7 @@ export default async function DashboardPage() {
           </p>
         </div>
         <Link
-          href="/applications"
+          href="/applications?new=1"
           className="flex items-center gap-1.5 h-9 px-3 rounded-lg bg-amber-500 text-black hover:bg-amber-400 font-medium text-sm transition-colors"
         >
           <Plus className="h-4 w-4" />
@@ -210,7 +209,7 @@ export default async function DashboardPage() {
             <FileText className="h-10 w-10 text-[hsl(var(--text-muted))]" />
             <p className="text-sm text-[hsl(var(--text-secondary))]">No applications yet</p>
             <Link
-              href="/applications"
+              href="/applications?new=1"
               className="flex items-center gap-1.5 h-8 px-3 rounded-lg bg-amber-500 text-black hover:bg-amber-400 font-medium text-sm transition-colors mt-1"
             >
               <Plus className="h-4 w-4" />
@@ -290,25 +289,20 @@ export default async function DashboardPage() {
                       {/* Actions */}
                       <td className="px-5 py-3">
                         <div className="flex items-center gap-1">
-                          <button
-                            title="View CV"
+                          <Link
+                            href={`/applications?edit=${app.id}`}
+                            title="View / Edit"
                             className="h-7 w-7 rounded-lg flex items-center justify-center text-[hsl(var(--text-muted))] hover:bg-[hsl(var(--bg-surface-raised))] hover:text-[hsl(var(--text-secondary))] transition-colors"
                           >
                             <FileText className="h-3.5 w-3.5" />
-                          </button>
+                          </Link>
                           <Link
-                            href="/applications"
+                            href={`/applications?edit=${app.id}`}
                             title="Edit"
                             className="h-7 w-7 rounded-lg flex items-center justify-center text-[hsl(var(--text-muted))] hover:bg-[hsl(var(--bg-surface-raised))] hover:text-[hsl(var(--text-secondary))] transition-colors"
                           >
                             <Edit className="h-3.5 w-3.5" />
                           </Link>
-                          <button
-                            title="More options"
-                            className="h-7 w-7 rounded-lg flex items-center justify-center text-[hsl(var(--text-muted))] hover:bg-[hsl(var(--bg-surface-raised))] hover:text-[hsl(var(--text-secondary))] transition-colors"
-                          >
-                            <MoreHorizontal className="h-3.5 w-3.5" />
-                          </button>
                         </div>
                       </td>
                     </tr>
