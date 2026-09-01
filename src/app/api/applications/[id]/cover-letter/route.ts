@@ -2,7 +2,7 @@ import { auth } from '@clerk/nextjs/server'
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { checkAndIncrementUsage } from '@/lib/usage'
-import { generateCoverLetter } from '@/lib/ai/generate-cover-letter'
+import { streamCoverLetter } from '@/lib/ai/generate-cover-letter'
 import { checkRateLimit } from '@/lib/rate-limit'
 
 export async function POST(
@@ -46,24 +46,53 @@ export async function POST(
     )
   }
 
-  let coverLetter: string
   try {
-    coverLetter = await generateCoverLetter(
+    const stream = await streamCoverLetter(
       user.cvText,
       application.offerText,
       application.company,
       application.role,
       application.language
     )
+    const encoder = new TextEncoder()
+    let accumulatedText = ''
+
+    const customStream = new ReadableStream({
+      async start(controller) {
+        try {
+          for await (const chunk of stream) {
+            const content = chunk.choices[0]?.delta?.content || ''
+            if (content) {
+              accumulatedText += content
+              controller.enqueue(encoder.encode(content))
+            }
+          }
+
+          // Save final cover letter text to database
+          if (accumulatedText) {
+            await prisma.application.update({
+              where: { id },
+              data: { coverLetter: accumulatedText },
+            })
+          }
+
+          controller.close()
+        } catch (streamErr) {
+          console.error('[cover-letter] Stream processing error:', streamErr)
+          controller.error(streamErr)
+        }
+      },
+    })
+
+    return new Response(customStream, {
+      headers: {
+        'Content-Type': 'text/plain; charset=utf-8',
+        'Cache-Control': 'no-cache',
+        'Connection': 'keep-alive',
+      },
+    })
   } catch (err) {
     console.error('[cover-letter] AI generation failed:', err)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
-
-  await prisma.application.update({
-    where: { id },
-    data: { coverLetter },
-  })
-
-  return NextResponse.json({ data: { coverLetter } })
 }

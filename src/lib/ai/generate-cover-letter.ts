@@ -1,15 +1,14 @@
 import { groq, GROQ_MODEL } from '@/lib/groq'
 
-export async function generateCoverLetter(
+function getCoverLetterPrompt(
   cvText: string,
   offerText: string,
   company: string,
   role: string,
   language: 'FR' | 'EN'
-): Promise<string> {
-  const prompt =
-    language === 'FR'
-      ? `Tu es un expert en recrutement et rédaction de lettres de motivation.
+): string {
+  return language === 'FR'
+    ? `Tu es un expert en recrutement et rédaction de lettres de motivation.
 
 Voici le profil du candidat (extrait de son CV):
 ${cvText}
@@ -29,7 +28,7 @@ Rules:
 - Commencer directement par le contenu, sans "Objet:" ni en-tête
 
 Réponds uniquement avec la lettre, sans explication.`
-      : `You are an expert recruiter and cover letter writer.
+    : `You are an expert recruiter and cover letter writer.
 
 Here is the candidate's profile (extracted from their CV):
 ${cvText}
@@ -49,6 +48,16 @@ Rules:
 - Start directly with content, no "Subject:" or header
 
 Respond only with the letter, no explanation.`
+}
+
+export async function generateCoverLetter(
+  cvText: string,
+  offerText: string,
+  company: string,
+  role: string,
+  language: 'FR' | 'EN'
+): Promise<string> {
+  const prompt = getCoverLetterPrompt(cvText, offerText, company, role, language)
 
   const response = await groq.chat.completions.create({
     model: GROQ_MODEL,
@@ -58,4 +67,22 @@ Respond only with the letter, no explanation.`
   })
 
   return response.choices[0]?.message?.content ?? ''
+}
+
+export async function streamCoverLetter(
+  cvText: string,
+  offerText: string,
+  company: string,
+  role: string,
+  language: 'FR' | 'EN'
+) {
+  const prompt = getCoverLetterPrompt(cvText, offerText, company, role, language)
+
+  return groq.chat.completions.create({
+    model: GROQ_MODEL,
+    messages: [{ role: 'user', content: prompt }],
+    max_tokens: 2048,
+    temperature: 0.4,
+    stream: true,
+  })
 }

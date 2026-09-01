@@ -1,13 +1,12 @@
 import { groq, GROQ_MODEL } from '@/lib/groq'
 
-export async function adaptResume(
+function getAdaptResumePrompt(
   cvText: string,
   offerText: string,
   language: 'FR' | 'EN'
-): Promise<string> {
-  const prompt =
-    language === 'FR'
-      ? `Tu es un expert en recrutement et rédaction de CV.
+): string {
+  return language === 'FR'
+    ? `Tu es un expert en recrutement et rédaction de CV.
 
 Voici le CV du candidat:
 ${cvText}
@@ -23,7 +22,7 @@ Adapte le CV pour maximiser les chances de sélection:
 - Langue: Français
 
 Réponds uniquement avec le CV adapté, sans explication.`
-      : `You are an expert recruiter and CV writer.
+    : `You are an expert recruiter and CV writer.
 
 Here is the candidate's CV:
 ${cvText}
@@ -39,6 +38,14 @@ Adapt the CV to maximize selection chances:
 - Language: English
 
 Respond only with the adapted CV, no explanation.`
+}
+
+export async function adaptResume(
+  cvText: string,
+  offerText: string,
+  language: 'FR' | 'EN'
+): Promise<string> {
+  const prompt = getAdaptResumePrompt(cvText, offerText, language)
 
   const response = await groq.chat.completions.create({
     model: GROQ_MODEL,
@@ -48,4 +55,20 @@ Respond only with the adapted CV, no explanation.`
   })
 
   return response.choices[0]?.message?.content ?? ''
+}
+
+export async function streamAdaptResume(
+  cvText: string,
+  offerText: string,
+  language: 'FR' | 'EN'
+) {
+  const prompt = getAdaptResumePrompt(cvText, offerText, language)
+
+  return groq.chat.completions.create({
+    model: GROQ_MODEL,
+    messages: [{ role: 'user', content: prompt }],
+    max_tokens: 3000,
+    temperature: 0.3,
+    stream: true,
+  })
 }
