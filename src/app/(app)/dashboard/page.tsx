@@ -1,6 +1,11 @@
+import type { Metadata } from 'next'
 import { auth, currentUser } from '@clerk/nextjs/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
+
+export const metadata: Metadata = {
+  title: 'Dashboard',
+}
 import { Suspense } from 'react'
 import {
   Briefcase,
