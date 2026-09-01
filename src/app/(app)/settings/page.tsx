@@ -1,6 +1,11 @@
+import type { Metadata } from 'next'
 import { auth } from '@clerk/nextjs/server'
 import { redirect } from 'next/navigation'
 import { Zap, Crown, CreditCard } from 'lucide-react'
+
+export const metadata: Metadata = {
+  title: 'Settings',
+}
 import { prisma } from '@/lib/prisma'
 import { UpgradeButton } from '@/components/upgrade-button'
 import { ManageSubscriptionButton } from '@/components/manage-subscription-button'
