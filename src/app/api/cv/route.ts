@@ -17,6 +17,7 @@ export async function GET() {
     data: {
       hasCv: !!user?.cvUrl,
       cvUrl: user?.cvUrl ?? null,
+      cvText: user?.cvText ?? null,
       cvTextPreview: user?.cvText ? user.cvText.slice(0, 500) : null,
       updatedAt: user?.updatedAt ?? null,
     },
