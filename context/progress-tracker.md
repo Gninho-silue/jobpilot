@@ -197,7 +197,7 @@ Vercel Deploy & Production Verification
 - After changing dependencies on Windows, check the lock file with `npm ci` in a Linux `node:22` container before pushing (npm bug: optional platform packages of nested deps are dropped).
 - Tests still marked KNOWN BUG / KNOWN GAP: unvalidated LLM JSON shapes, misleading "vs last month" delta.
 - The DB column is still named `User.stripeCustomerId`; a second billing provider will need it renamed (e.g. `billingCustomerId`).
-- Not verified: whether Row Level Security is enabled on the existing tables in Supabase. The "Supabase Security" CI job will report it once its secrets are set.
+- RLS: enabled by hand in production on `User`, `Application`, `UsageCounter`, `_prisma_migrations` (confirmed by the owner, app working); recorded in migration `20261124000150`. The "Supabase Security" CI job checks it on every push to `main` once its secrets are set.
 
 ## Schema Changes (Prisma Migrate)
 
@@ -206,11 +206,12 @@ Production is managed by `prisma migrate` (`_prisma_migrations` exists). History
 - `20260527000000_init`
 - `20261124000000_baseline_manual_columns`: `adaptedCvText`, `stripeCustomerId` + unique index, which had been added by hand. `IF NOT EXISTS`: a no-op in production
 - `20261124000100_rate_limit_billing_events_cv_path` (phase 1): `RateLimitHit`, `ProcessedBillingEvent` (both with RLS), `User.cvPath` + backfill. Apply BEFORE deploying step 2, otherwise every LLM route and the billing webhook fail
+- `20261124000150_enable_rls_existing_tables`: RLS on `User`, `Application`, `UsageCounter`, `_prisma_migrations` (already enabled by hand in production: a no-op there; a database rebuilt from migrations gets RLS)
 - `prisma/pending-migrations/20261124000200_drop_cv_url` (phase 2, NOT in `prisma/migrations` on purpose, since `migrate deploy` applies everything there): catch-up backfill + `DROP COLUMN "cvUrl"`. Move it into `prisma/migrations/` only after the CV preview and an adaptation are verified in production
 
-Applying to production: `DATABASE_URL` in `.env.local` is the transaction pooler (port 6543), which Prisma Migrate does not support. Point `DATABASE_URL` at `DIRECT_URL` (or the session pooler, port 5432) for the command only, run `npx prisma migrate status` (must list only the expected pending migrations), then `npx prisma migrate deploy`.
+Applying to production: `DATABASE_URL` in `.env.local` is the transaction pooler (port 6543), which Prisma Migrate does not support. Point `DATABASE_URL` at `DIRECT_URL` (or the session pooler, port 5432) for the command only, run `npx prisma migrate status` (must list only `20261124000000_baseline_manual_columns`, `20261124000100_rate_limit_billing_events_cv_path` and `20261124000150_enable_rls_existing_tables`), then `npx prisma migrate deploy`.
 
-Verified on a throwaway Postgres 16 shaped like production (init + the hand-added columns, init marked applied): status lists the two new migrations, deploy applies them, the backfill sets `cvPath` only for users with a CV, and after phase 2 the database matches `schema.prisma` exactly.
+Verified on a throwaway Postgres 16 shaped like production (init + the hand-added columns, init marked applied, RLS already on): status lists the three new migrations, deploy applies them, the backfill sets `cvPath` only for users with a CV, and after phase 2 the database matches `schema.prisma` exactly.
 
 After phase 1 and the deploy: make the `cvs` bucket private (Storage → cvs → Edit bucket → Public off). New environments: create `cvs` as a PRIVATE bucket.
 
