@@ -204,14 +204,15 @@ Vercel Deploy & Production Verification
 Production is managed by `prisma migrate` (`_prisma_migrations` exists). History:
 
 - `20260527000000_init`
-- `20261124000000_baseline_manual_columns`: `adaptedCvText`, `stripeCustomerId` + unique index, which had been added by hand. `IF NOT EXISTS`: a no-op in production
+- `20260528000000_add_stripe_customer_id`: applied in production (registered by hand in `_prisma_migrations`) but its file was never committed. Rebuilt as Prisma generates it (`stripeCustomerId` + unique index); its checksum is the SHA-256 of the file bytes (`d068e672…`). Prisma does not re-check applied migrations, so `migrate deploy` works even if production stored another checksum
+- `20261124000000_baseline_adapted_cv_text`: `adaptedCvText`, added by hand without a migration. `IF NOT EXISTS`: a no-op in production
 - `20261124000100_rate_limit_billing_events_cv_path` (phase 1): `RateLimitHit`, `ProcessedBillingEvent` (both with RLS), `User.cvPath` + backfill. Apply BEFORE deploying step 2, otherwise every LLM route and the billing webhook fail
 - `20261124000150_enable_rls_existing_tables`: RLS on `User`, `Application`, `UsageCounter`, `_prisma_migrations` (already enabled by hand in production: a no-op there; a database rebuilt from migrations gets RLS)
 - `prisma/pending-migrations/20261124000200_drop_cv_url` (phase 2, NOT in `prisma/migrations` on purpose, since `migrate deploy` applies everything there): catch-up backfill + `DROP COLUMN "cvUrl"`. Move it into `prisma/migrations/` only after the CV preview and an adaptation are verified in production
 
-Applying to production: `DATABASE_URL` in `.env.local` is the transaction pooler (port 6543), which Prisma Migrate does not support. Point `DATABASE_URL` at `DIRECT_URL` (or the session pooler, port 5432) for the command only, run `npx prisma migrate status` (must list only `20261124000000_baseline_manual_columns`, `20261124000100_rate_limit_billing_events_cv_path` and `20261124000150_enable_rls_existing_tables`), then `npx prisma migrate deploy`.
+Applying to production: `DATABASE_URL` in `.env.local` is the transaction pooler (port 6543), which Prisma Migrate does not support. Point `DATABASE_URL` at `DIRECT_URL` (or the session pooler, port 5432) for the command only, run `npx prisma migrate status` (must list only `20261124000000_baseline_adapted_cv_text`, `20261124000100_rate_limit_billing_events_cv_path` and `20261124000150_enable_rls_existing_tables`), then `npx prisma migrate deploy`.
 
-Verified on a throwaway Postgres 16 shaped like production (init + the hand-added columns, init marked applied, RLS already on): status lists the three new migrations, deploy applies them, the backfill sets `cvPath` only for users with a CV, and after phase 2 the database matches `schema.prisma` exactly.
+Verified on a throwaway Postgres 16 with production's exact history (init + add_stripe_customer_id applied and registered, adaptedCvText by hand, RLS already on), once with a matching and once with a different stored checksum: status lists only the three new migrations (no "not found locally"), deploy applies them, the backfill sets `cvPath` only for users with a CV, and after phase 2 the database matches `schema.prisma` exactly.
 
 After phase 1 and the deploy: make the `cvs` bucket private (Storage → cvs → Edit bucket → Public off). New environments: create `cvs` as a PRIVATE bucket.
 

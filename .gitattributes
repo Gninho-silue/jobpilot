@@ -1,0 +1,3 @@
+# Prisma stores a SHA-256 of each migration file: keep the bytes identical on every OS.
+prisma/migrations/**/*.sql text eol=lf
+prisma/pending-migrations/**/*.sql text eol=lf
