@@ -176,11 +176,17 @@ Vercel Deploy & Production Verification
   - [x] Cross-user access on `/api/applications/[id]/*` now returns 404 (was 403)
   - [x] CI: `test` job (Node 22, Postgres service) runs before `build`; CI badge in README
   - [x] Node 22 required (Vitest 5)
+- [x] Dependency security fixes (`npm audit --audit-level=high` clean)
+  - [x] next 16.2.6 → 16.4.6 (+ eslint-config-next), prisma / @prisma/client / @prisma/adapter-pg 7.8.0 → 7.10.1, zod 4.4.3 → 4.6.7, shadcn 4.8.1 → 4.23.0, transitive fixes via `npm audit fix` / `npm update` (brace-expansion…); proxy-addr left the tree with the shadcn update
+  - [x] `overrides` pins `effect` ^3.22.5 under `@prisma/config` (Prisma 7.10.1 still pins the vulnerable 3.20.0; used by the Prisma CLI config loader only)
+  - [x] Lock file regenerated with Linux npm 10 (`npm install --package-lock-only` in a `node:22` container): a Windows-generated lock lacked Vite's nested `lightningcss@1.33.0` platform binaries, so `npm ci` failed in CI
+  - [x] Test DB setup uses `prisma db push` without `--accept-data-loss` (the DB starts empty; Prisma 7.10 also refuses that flag when run by an AI agent)
 
 ## Known Issues (found while writing tests)
 
-- pdf-parse 1.1.1 is flaky: the same valid PDF fails with "bad XRef entry" on roughly one parse in three → CV uploads can fail at random. Tests use a fake parser. Fix in step 2 (replace or upgrade the parser).
-- `npm audit --audit-level=high` already fails on main (critical: next, proxy-addr; high: prisma, zod, shadcn deps…), so the Security Scan CI job is red independently of the tests.
+- pdf-parse 1.1.1 is flaky: the same valid PDF fails with "bad XRef entry" on roughly one parse in three → CV uploads can fail at random. Tests use a fake parser. Replaced in step 2 (see JOBPILOT_PLAN.md).
+- 10 moderate `npm audit` findings remain, all in dev tooling (Testcontainers' `archiver`/`glob`, the shadcn CLI's `ts-morph`/`minimatch`); npm's only fix is downgrading those packages to older majors. CI gates on high and above.
+- After changing dependencies on Windows, check the lock file with `npm ci` in a Linux `node:22` container before pushing (npm bug: optional platform packages of nested deps are dropped).
 - Tests marked KNOWN BUG / KNOWN GAP: in-memory rate limit, `/api/offers/parse` without quota or rate limit, non-idempotent Stripe webhook, prompt injection via offer text, unvalidated LLM JSON shapes, misleading "vs last month" delta.
 
 ## Schema Changes Needed (run in Supabase SQL Editor)

@@ -23,7 +23,8 @@ function assertThrowaway(url: string): void {
  * Starts Postgres for the integration tests.
  * - CI provides TEST_DATABASE_URL (a Postgres service container).
  * - Locally, Testcontainers starts postgres:16-alpine (Docker must be running).
- * The schema is applied with `prisma db push`.
+ * The schema is applied with `prisma db push` (the database starts empty, so
+ * nothing is ever dropped and --accept-data-loss is not needed).
  */
 export default async function setup(project: TestProject) {
   let container: StartedPostgreSqlContainer | undefined
@@ -36,7 +37,7 @@ export default async function setup(project: TestProject) {
 
   assertThrowaway(url)
 
-  execSync('npx prisma db push --accept-data-loss', {
+  execSync('npx prisma db push', {
     env: { ...process.env, DATABASE_URL: url },
     stdio: 'pipe',
   })
