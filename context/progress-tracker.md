@@ -188,7 +188,7 @@ Vercel Deploy & Production Verification
   - [x] `BillingProvider` interface (`lib/billing`): checkout, portal, webhook → internal `subscription.activated` / `subscription.canceled` events; Stripe is the only implementation; checkout and portal routes tested with a fake provider
   - [x] Idempotent billing webhook: `ProcessedBillingEvent` (id = `stripe:<event id>`) inserted in the same transaction as the plan change; redelivered or concurrent duplicates are no-ops
   - [x] Private CV storage: the DB stores `User.cvPath` (`<userId>/cv.pdf`), never a URL; `GET /api/cv/file` checks the path is the user's own and redirects to a 10-minute signed URL (`?download=1` for a download); no `getPublicUrl` / `/object/public/` anywhere (test-enforced). AI routes never download the PDF: they use the text extracted at upload (`User.cvText`)
-  - [x] CI job "Supabase Security" (`scripts/check-supabase-security.mjs`): fails if a Storage bucket is public or a `public` table has RLS disabled; skipped with a warning until the `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_DB_URL` (optional `SUPABASE_DB_CA_CERT`) repository secrets are set
+  - [x] CI job "Supabase Security" (`scripts/check-supabase-security.mjs`): fails if a Storage bucket is public or a `public` table has RLS disabled; skipped with a warning until the `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` (bucket check) and `SUPABASE_AUDIT_DB_URL` (RLS check, read-only role `jobpilot_ci_audit` from `scripts/sql/create-ci-audit-role.sql`, never the DB owner; optional `SUPABASE_DB_CA_CERT`) repository secrets are set. Runs only on push to `main`
   - [x] Prompt injection: system message = instructions + `UNTRUSTED_DATA_RULE`; user text only in `wrapUntrusted()` tags (angle brackets neutralised, length capped by `PROMPT_LIMITS`); Zod max lengths on company, role, offer, notes, salary, interview question and answer
 
 ## Known Issues (found while writing tests)
@@ -197,53 +197,22 @@ Vercel Deploy & Production Verification
 - After changing dependencies on Windows, check the lock file with `npm ci` in a Linux `node:22` container before pushing (npm bug: optional platform packages of nested deps are dropped).
 - Tests still marked KNOWN BUG / KNOWN GAP: unvalidated LLM JSON shapes, misleading "vs last month" delta.
 - The DB column is still named `User.stripeCustomerId`; a second billing provider will need it renamed (e.g. `billingCustomerId`).
-- Not verified: whether Row Level Security is enabled on the existing tables in Supabase (see Schema Changes Needed).
+- Not verified: whether Row Level Security is enabled on the existing tables in Supabase. The "Supabase Security" CI job will report it once its secrets are set.
 
-## Schema Changes Needed (run in Supabase SQL Editor)
+## Schema Changes (Prisma Migrate)
 
-```sql
-ALTER TABLE "Application" ADD COLUMN IF NOT EXISTS "adaptedCvText" TEXT;
-```
+Production is managed by `prisma migrate` (`_prisma_migrations` exists). History:
 
-Step 2 (run BEFORE deploying the step 2 commit, otherwise every LLM route and the billing webhook fail):
+- `20260527000000_init`
+- `20261124000000_baseline_manual_columns`: `adaptedCvText`, `stripeCustomerId` + unique index, which had been added by hand. `IF NOT EXISTS`: a no-op in production
+- `20261124000100_rate_limit_billing_events_cv_path` (phase 1): `RateLimitHit`, `ProcessedBillingEvent` (both with RLS), `User.cvPath` + backfill. Apply BEFORE deploying step 2, otherwise every LLM route and the billing webhook fail
+- `prisma/pending-migrations/20261124000200_drop_cv_url` (phase 2, NOT in `prisma/migrations` on purpose, since `migrate deploy` applies everything there): catch-up backfill + `DROP COLUMN "cvUrl"`. Move it into `prisma/migrations/` only after the CV preview and an adaptation are verified in production
 
-```sql
-CREATE TABLE "RateLimitHit" (
-    "id" BIGSERIAL NOT NULL,
-    "key" TEXT NOT NULL,
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT "RateLimitHit_pkey" PRIMARY KEY ("id")
-);
-CREATE INDEX "RateLimitHit_key_createdAt_idx" ON "RateLimitHit"("key", "createdAt");
+Applying to production: `DATABASE_URL` in `.env.local` is the transaction pooler (port 6543), which Prisma Migrate does not support. Point `DATABASE_URL` at `DIRECT_URL` (or the session pooler, port 5432) for the command only, run `npx prisma migrate status` (must list only the expected pending migrations), then `npx prisma migrate deploy`.
 
-CREATE TABLE "ProcessedBillingEvent" (
-    "id" TEXT NOT NULL,
-    "type" TEXT NOT NULL,
-    "processedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT "ProcessedBillingEvent_pkey" PRIMARY KEY ("id")
-);
+Verified on a throwaway Postgres 16 shaped like production (init + the hand-added columns, init marked applied): status lists the two new migrations, deploy applies them, the backfill sets `cvPath` only for users with a CV, and after phase 2 the database matches `schema.prisma` exactly.
 
--- Not reachable through Supabase's public REST API (anon key). Prisma connects
--- as the table owner (postgres), which RLS does not apply to.
-ALTER TABLE "RateLimitHit" ENABLE ROW LEVEL SECURITY;
-ALTER TABLE "ProcessedBillingEvent" ENABLE ROW LEVEL SECURITY;
-
--- Private CV storage: store the file path, not a public URL.
--- (The old upload code always wrote the file to "<userId>/cv.pdf".)
-ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "cvPath" TEXT;
-UPDATE "User" SET "cvPath" = "id" || '/cv.pdf' WHERE "cvUrl" IS NOT NULL AND "cvPath" IS NULL;
-```
-
-AFTER the deploy is live (catches CVs uploaded by the old code in between, then removes the public URLs):
-
-```sql
-UPDATE "User" SET "cvPath" = "id" || '/cv.pdf' WHERE "cvUrl" IS NOT NULL AND "cvPath" IS NULL;
-ALTER TABLE "User" DROP COLUMN "cvUrl";
-```
-
-Then make the `cvs` bucket private (Storage → cvs → Edit bucket → Public off).
-
-Also create a PRIVATE Supabase Storage bucket named `cvs` (files are served through signed URLs only).
+After phase 1 and the deploy: make the `cvs` bucket private (Storage → cvs → Edit bucket → Public off). New environments: create `cvs` as a PRIVATE bucket.
 
 ## Open Questions
 
@@ -267,6 +236,6 @@ Also create a PRIVATE Supabase Storage bucket named `cvs` (files are served thro
 
 ## Session Notes
 
-- For future schema changes: generate SQL with `npx prisma migrate diff --from-migrations prisma/migrations --to-schema prisma/schema.prisma --script`, run in Supabase SQL Editor, then register with the _prisma_migrations SQL pattern
+- For future schema changes: write a migration in `prisma/migrations/<timestamp>_<name>/migration.sql` (generate it with `npx prisma migrate diff --from-migrations prisma/migrations --to-schema prisma/schema.prisma --script`, which needs a shadow database in the Prisma config) and apply it with `npx prisma migrate deploy`. Never change production by hand in the SQL Editor
 - Dev server: `npm run dev` → localhost:3000
-- Supabase bucket `cvs` must be created manually (public, no RLS) before CV upload will work
+- Supabase bucket `cvs` must be created manually (PRIVATE) before CV upload will work

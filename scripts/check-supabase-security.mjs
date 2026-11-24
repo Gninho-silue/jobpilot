@@ -4,13 +4,15 @@
 //
 // Configuration (GitHub repository secrets):
 //   SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY  → bucket check
-//   SUPABASE_DB_URL                          → RLS check
+//   SUPABASE_AUDIT_DB_URL                    → RLS check. Connection URL of the read-only
+//                                              role jobpilot_ci_audit (scripts/sql/create-ci-audit-role.sql),
+//                                              never the database owner
 //   SUPABASE_DB_CA_CERT (optional)           → PEM of the Supabase CA, enables TLS certificate verification
 // A check whose secrets are missing is reported as skipped (a warning), not passed.
 import pg from 'pg'
 import { auditSupabase } from './supabase-audit.mjs'
 
-const { SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, SUPABASE_DB_URL, SUPABASE_DB_CA_CERT } = process.env
+const { SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, SUPABASE_AUDIT_DB_URL, SUPABASE_DB_CA_CERT } = process.env
 
 async function listBuckets() {
   const res = await fetch(`${SUPABASE_URL.replace(/\/$/, '')}/storage/v1/bucket`, {
@@ -22,9 +24,12 @@ async function listBuckets() {
 
 async function listTablesWithoutRls() {
   const client = new pg.Client({
-    connectionString: SUPABASE_DB_URL,
+    connectionString: SUPABASE_AUDIT_DB_URL,
     // Without the CA the connection is still encrypted, but the certificate is not verified.
-    ssl: SUPABASE_DB_CA_CERT ? { ca: SUPABASE_DB_CA_CERT } : { rejectUnauthorized: false },
+    // `sslmode=disable` in the URL is for local testing only.
+    ssl: /[?&]sslmode=disable\b/.test(SUPABASE_AUDIT_DB_URL)
+      ? false
+      : SUPABASE_DB_CA_CERT ? { ca: SUPABASE_DB_CA_CERT } : { rejectUnauthorized: false },
   })
   await client.connect()
   try {
@@ -42,7 +47,7 @@ async function listTablesWithoutRls() {
 
 const { problems, skipped } = await auditSupabase({
   listBuckets: SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY ? listBuckets : null,
-  listTablesWithoutRls: SUPABASE_DB_URL ? listTablesWithoutRls : null,
+  listTablesWithoutRls: SUPABASE_AUDIT_DB_URL ? listTablesWithoutRls : null,
 })
 
 for (const name of skipped) {

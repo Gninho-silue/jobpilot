@@ -55,6 +55,8 @@
 - Never write raw SQL unless Prisma cannot handle the query (e.g. `lib/usage.ts` uses `INSERT … ON CONFLICT` and a conditional `UPDATE … RETURNING` so quota checks are atomic)
 - Always include userId filter on every query that returns user data
 - Use transactions for operations that modify multiple tables
+- Every schema change ships as a Prisma migration in `prisma/migrations/` (applied with `prisma migrate deploy`, never by hand). Never edit an existing migration. A migration that must wait (e.g. a destructive cleanup after a deploy) lives in `prisma/pending-migrations/` until it can run
+- New tables in the `public` schema get `ENABLE ROW LEVEL SECURITY` in their migration (Supabase exposes `public` through its REST API)
 
 ## Testing
 
