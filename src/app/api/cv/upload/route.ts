@@ -2,6 +2,7 @@ import { auth, currentUser } from '@clerk/nextjs/server'
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { supabase } from '@/lib/supabase'
+import { CV_MAX_BYTES } from '@/lib/validation'
 
 // pdf-parse v1 is CJS-only. serverExternalPackages in next.config.ts ensures
 // Next.js loads it via native require() at runtime instead of bundling it,
@@ -31,7 +32,7 @@ export async function POST(request: Request) {
   if (file.type !== 'application/pdf') {
     return NextResponse.json({ error: 'Only PDF files are accepted' }, { status: 400 })
   }
-  if (file.size > 5 * 1024 * 1024) {
+  if (file.size > CV_MAX_BYTES) {
     return NextResponse.json({ error: 'File too large. Maximum size is 5MB' }, { status: 400 })
   }
 

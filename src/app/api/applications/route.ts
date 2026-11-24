@@ -1,18 +1,8 @@
 import { auth, currentUser } from '@clerk/nextjs/server'
 import { NextResponse } from 'next/server'
-import { z } from 'zod'
+import { createApplicationSchema } from '@/lib/validation'
 import { prisma } from '@/lib/prisma'
 import { checkAndIncrementUsage } from '@/lib/usage'
-
-const createSchema = z.object({
-  company: z.string().min(1),
-  role: z.string().min(1),
-  offerText: z.string().min(1),
-  language: z.enum(['FR', 'EN']).default('EN'),
-  salary: z.string().optional(),
-  link: z.string().url().optional().or(z.literal('')),
-  notes: z.string().optional(),
-})
 
 export async function GET() {
   const { userId } = await auth()
@@ -41,7 +31,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 })
   }
 
-  const parsed = createSchema.safeParse(body)
+  const parsed = createApplicationSchema.safeParse(body)
   if (!parsed.success) {
     return NextResponse.json({ error: parsed.error.issues[0]?.message ?? 'Invalid input' }, { status: 400 })
   }

@@ -1,14 +1,7 @@
 import { auth } from '@clerk/nextjs/server'
 import { NextResponse } from 'next/server'
-import { z } from 'zod'
+import { updateApplicationSchema } from '@/lib/validation'
 import { prisma } from '@/lib/prisma'
-
-const patchSchema = z.object({
-  status: z.enum(['APPLIED', 'PHONE', 'TECHNICAL', 'OFFER', 'REJECTED']).optional(),
-  notes: z.string().optional(),
-  salary: z.string().optional(),
-  link: z.string().url().optional().or(z.literal('')),
-})
 
 export async function PATCH(
   request: Request,
@@ -26,7 +19,7 @@ export async function PATCH(
 
   const existing = await prisma.application.findUnique({ where: { id } })
   if (!existing || existing.userId !== userId) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    return NextResponse.json({ error: 'Not found' }, { status: 404 })
   }
 
   let body: unknown
@@ -36,7 +29,7 @@ export async function PATCH(
     return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 })
   }
 
-  const parsed = patchSchema.safeParse(body)
+  const parsed = updateApplicationSchema.safeParse(body)
   if (!parsed.success) {
     return NextResponse.json({ error: parsed.error.issues[0]?.message ?? 'Invalid input' }, { status: 400 })
   }
@@ -71,7 +64,7 @@ export async function DELETE(
 
   const existing = await prisma.application.findUnique({ where: { id } })
   if (!existing || existing.userId !== userId) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    return NextResponse.json({ error: 'Not found' }, { status: 404 })
   }
 
   await prisma.application.delete({ where: { id } })

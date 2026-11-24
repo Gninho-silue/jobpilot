@@ -1,12 +1,7 @@
 import { auth } from '@clerk/nextjs/server'
 import { NextResponse } from 'next/server'
-import { z } from 'zod'
+import { parseOfferSchema } from '@/lib/validation'
 import { parseJobOffer } from '@/lib/ai/parse-offer'
-
-const bodySchema = z.object({
-  offerText: z.string().min(1),
-  language: z.enum(['FR', 'EN']).default('EN'),
-})
 
 export async function POST(request: Request) {
   const { userId } = await auth()
@@ -21,7 +16,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 })
   }
 
-  const parsed = bodySchema.safeParse(body)
+  const parsed = parseOfferSchema.safeParse(body)
   if (!parsed.success) {
     return NextResponse.json(
       { error: parsed.error.issues[0]?.message ?? 'Invalid input' },

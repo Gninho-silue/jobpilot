@@ -168,6 +168,21 @@ Phase 13 — Complete Production-Ready SaaS
 
 Vercel Deploy & Production Verification
 
+- [x] Test safety net + CI (JOBPILOT_PLAN.md, step 1)
+  - [x] Vitest 5 with two projects: `unit` (no DB) and `integration` (Postgres 16 via Testcontainers, or `TEST_DATABASE_URL`)
+  - [x] Fakes for Clerk, Groq, Supabase, Stripe API and analytics in `test/mocks/`, registered globally
+  - [x] Unit: Zod schemas (moved to `lib/validation.ts`), dashboard stats (moved to `lib/dashboard-stats.ts`), prompt construction and LLM response parsing, rate limiter, FreeTierBanner + UpgradeButton (Testing Library), 401 on all 17 authenticated route handlers
+  - [x] Integration: free-tier quotas (5/3/3, PRO unlimited, monthly reset), IDOR on all 7 `/api/applications/[id]` handlers, CV upload validation, Stripe webhook signature + plan transitions
+  - [x] Cross-user access on `/api/applications/[id]/*` now returns 404 (was 403)
+  - [x] CI: `test` job (Node 22, Postgres service) runs before `build`; CI badge in README
+  - [x] Node 22 required (Vitest 5)
+
+## Known Issues (found while writing tests)
+
+- pdf-parse 1.1.1 is flaky: the same valid PDF fails with "bad XRef entry" on roughly one parse in three → CV uploads can fail at random. Tests use a fake parser. Fix in step 2 (replace or upgrade the parser).
+- `npm audit --audit-level=high` already fails on main (critical: next, proxy-addr; high: prisma, zod, shadcn deps…), so the Security Scan CI job is red independently of the tests.
+- Tests marked KNOWN BUG / KNOWN GAP: in-memory rate limit, `/api/offers/parse` without quota or rate limit, non-idempotent Stripe webhook, prompt injection via offer text, unvalidated LLM JSON shapes, misleading "vs last month" delta.
+
 ## Schema Changes Needed (run in Supabase SQL Editor)
 
 ```sql

@@ -18,6 +18,12 @@ const eslintConfig = defineConfig([
       // Hydration guards (setMounted), form resets on close, and state sync on prop
       // change are all documented valid exceptions to this rule.
       "react-hooks/set-state-in-effect": "warn",
+      // A leading underscore marks a parameter or binding as intentionally unused
+      // (typed fakes in tests, omitted keys in rest destructuring).
+      "@typescript-eslint/no-unused-vars": [
+        "warn",
+        { argsIgnorePattern: "^_", varsIgnorePattern: "^_", ignoreRestSiblings: true },
+      ],
     },
   },
 ]);

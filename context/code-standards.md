@@ -36,6 +36,8 @@
 - Return consistent response shapes: `{ data: T }` for success, `{ error: string }` for errors
 - Never expose internal error messages or stack traces in responses
 - HTTP status codes: 200 success, 400 validation error, 401 unauthorized, 403 forbidden (tier limit), 404 not found, 500 internal error
+- A resource owned by another user returns 404, exactly like one that does not exist (no existence leak)
+- Request schemas live in `lib/validation.ts` (route files may only export HTTP handlers)
 
 ## AI (Groq)
 
@@ -51,6 +53,16 @@
 - Never write raw SQL unless Prisma cannot handle the query
 - Always include userId filter on every query that returns user data
 - Use transactions for operations that modify multiple tables
+
+## Testing
+
+- Vitest. Unit tests: `*.test.ts(x)` next to the code (no database). Integration tests: `*.int.test.ts` (real Postgres via Testcontainers locally, a service container in CI)
+- Route handlers are tested by calling the exported `GET`/`POST`/… directly, with Clerk mocked (`signInAs()` / `signOut()` from `test/mocks/clerk.ts`)
+- Never call Groq, Stripe, Clerk or Supabase from a test. Their fakes are registered for every test in `test/setup/mocks.ts`; an unprepared Groq or Stripe API call throws
+- Integration tests refuse to run against a non-local database
+- Pure logic used by pages (e.g. dashboard numbers) lives in `lib/` so it can be unit-tested
+- Tests named `KNOWN BUG` / `KNOWN GAP` pin current, wrong behavior; flip them when the fix lands
+- New code is written test-first
 
 ## Stripe
 

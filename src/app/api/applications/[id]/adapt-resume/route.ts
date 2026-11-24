@@ -26,7 +26,7 @@ export async function POST(
 
   const application = await prisma.application.findUnique({ where: { id } })
   if (!application || application.userId !== userId) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    return NextResponse.json({ error: 'Not found' }, { status: 404 })
   }
 
   const user = await prisma.user.findUnique({

@@ -23,7 +23,7 @@ export async function GET(
   })
 
   if (!application || application.userId !== userId) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    return NextResponse.json({ error: 'Not found' }, { status: 404 })
   }
   if (!application.adaptedCvText) {
     return NextResponse.json({ error: 'No adapted CV yet. Generate it first.' }, { status: 400 })

@@ -19,10 +19,9 @@ import {
 } from 'lucide-react'
 import { prisma } from '@/lib/prisma'
 import { FREE_TIER_LIMITS } from '@/lib/config'
+import { computeDashboardStats, type AppStatus } from '@/lib/dashboard-stats'
 import { FreeTierBanner } from '@/components/dashboard/free-tier-banner'
 import { UpgradeSuccessToast } from '@/components/dashboard/upgrade-success-toast'
-
-type AppStatus = 'APPLIED' | 'PHONE' | 'TECHNICAL' | 'OFFER' | 'REJECTED'
 
 const STATUS_CONFIG: Record<AppStatus, { label: string; bgVar: string; textVar: string }> = {
   APPLIED:   { label: 'Applied',      bgVar: '--kanban-applied-bg',   textVar: '--kanban-applied-text' },
@@ -61,9 +60,6 @@ export default async function DashboardPage() {
   const firstName = clerkUser?.firstName ?? 'there'
 
   const now = new Date()
-  const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
-  const firstOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
-  const firstOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1)
   const firstOfNextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1)
 
   const [user, allApps, usageCounter] = await Promise.all([
@@ -77,27 +73,14 @@ export default async function DashboardPage() {
   ])
 
   const plan = user?.plan ?? 'FREE'
-  const totalApplications = allApps.length
-
-  const byStatus: Record<AppStatus, number> = { APPLIED: 0, PHONE: 0, TECHNICAL: 0, OFFER: 0, REJECTED: 0 }
-  for (const app of allApps) {
-    byStatus[app.status as AppStatus]++
-  }
-
-  const thisWeekApps = allApps.filter(a => a.createdAt >= sevenDaysAgo).length
-  const thisWeekOffers = allApps.filter(a => a.status === 'OFFER' && a.createdAt >= sevenDaysAgo).length
-
-  const movedPast = byStatus.PHONE + byStatus.TECHNICAL + byStatus.OFFER + byStatus.REJECTED
-  const responseRate = totalApplications > 0 ? Math.round((movedPast / totalApplications) * 100) : 0
-
-  const lastMonthApps = allApps.filter(a => a.createdAt >= firstOfLastMonth && a.createdAt < firstOfMonth)
-  const lastMonthMoved = lastMonthApps.filter(a =>
-    a.status === 'PHONE' || a.status === 'TECHNICAL' || a.status === 'OFFER' || a.status === 'REJECTED'
-  ).length
-  const lastMonthRate = lastMonthApps.length > 0
-    ? Math.round((lastMonthMoved / lastMonthApps.length) * 100)
-    : 0
-  const responseRateDelta = responseRate - lastMonthRate
+  const {
+    totalApplications,
+    byStatus,
+    thisWeekCount: thisWeekApps,
+    thisWeekOffers,
+    responseRate,
+    responseRateDelta,
+  } = computeDashboardStats(allApps, now)
 
   const recentApps = allApps.slice(0, 5)
   const usedThisMonth = usageCounter?.applications ?? 0

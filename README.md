@@ -1,5 +1,7 @@
 # ✈️ JobPilot — AI-Powered Job Search SaaS
 
+[![CI](https://github.com/Gninho-silue/jobpilot/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Gninho-silue/jobpilot/actions/workflows/ci.yml)
+
 > Land your dream job faster with AI. Adapt your CV, generate cover letters and prepare for interviews — all in one place. Bilingual FR/EN.
 
 🔗 **Live:** [jobpilot-jet.vercel.app](https://jobpilot-jet.vercel.app)
@@ -65,7 +67,8 @@
 ## 🚀 Getting Started
 
 ### Prerequisites
-- Node.js 20+
+- Node.js 22+
+- Docker (only for the integration tests)
 - npm
 - A Supabase account
 - A Clerk account
@@ -153,10 +156,27 @@ GitHub Actions runs on every push to `main` and `develop`:
 
 1. **Lint** — ESLint
 2. **Type check** — TypeScript strict mode
-3. **Build** — Next.js production build
-4. **Security scan** — `npm audit`
+3. **Tests** — Vitest unit tests, then integration tests against a Postgres service container
+4. **Build** — Next.js production build (only runs if tests pass)
+5. **Security scan** — `npm audit`
 
 Vercel auto-deploys on push to `main`.
+
+---
+
+## 🧪 Tests
+
+```bash
+npm run test:unit          # fast, no database
+npm run test:integration   # needs Docker (Testcontainers starts Postgres 16)
+npm test                   # both
+```
+
+- **Unit** (`*.test.ts[x]`): Zod schemas, dashboard statistics, prompt construction and LLM response parsing, rate limiter, React components (Testing Library), and a 401 check on every authenticated API route.
+- **Integration** (`*.int.test.ts`): route handlers called directly against a real Postgres: free-tier quotas, cross-user access (every `/api/applications/[id]` route returns 404 for someone else's application), CV upload validation, Stripe webhook signature and plan changes.
+- No test calls Groq, Stripe, Clerk or Supabase. They are replaced by fakes in `test/mocks/`; Stripe signatures are checked offline with the real SDK.
+- Integration tests only run against a local database (`localhost`); set `TEST_DATABASE_URL` to use your own instead of Testcontainers.
+- Tests named `KNOWN BUG` / `KNOWN GAP` pin current behavior that is scheduled to change (see `JOBPILOT_PLAN.md`).
 
 ---
 
