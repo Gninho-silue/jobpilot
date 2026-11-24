@@ -1,7 +1,7 @@
 import { auth } from '@clerk/nextjs/server'
-import { stripe } from '@/lib/stripe'
-import { prisma } from '@/lib/prisma'
 import { NextResponse } from 'next/server'
+import { billing } from '@/lib/billing'
+import { prisma } from '@/lib/prisma'
 
 export async function POST() {
   const { userId } = await auth()
@@ -12,10 +12,16 @@ export async function POST() {
     return NextResponse.json({ error: 'No subscription found' }, { status: 400 })
   }
 
-  const session = await stripe.billingPortal.sessions.create({
-    customer: dbUser.stripeCustomerId,
-    return_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard`,
-  })
+  let portal
+  try {
+    portal = await billing.createPortal({
+      customerId: dbUser.stripeCustomerId,
+      returnUrl: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard`,
+    })
+  } catch (err) {
+    console.error('[billing/portal] provider error:', err)
+    return NextResponse.json({ error: 'Could not open the billing portal. Please try again.' }, { status: 500 })
+  }
 
-  return NextResponse.json({ url: session.url })
+  return NextResponse.json({ url: portal.url })
 }

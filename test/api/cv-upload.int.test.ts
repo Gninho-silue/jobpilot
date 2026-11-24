@@ -1,7 +1,6 @@
 import { readFileSync } from 'node:fs'
-import { createRequire } from 'node:module'
 import { fileURLToPath } from 'node:url'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
 import { prisma } from '@/lib/prisma'
 import { CV_MAX_BYTES } from '@/lib/validation'
 import { signInAs } from '@test/mocks/clerk'
@@ -9,6 +8,7 @@ import { upload } from '@test/mocks/supabase'
 import { SAMPLE_CV, createUser } from '@test/helpers/db'
 import { formRequest, readJson } from '@test/helpers/http'
 import { uid } from '@test/helpers/ids'
+import { POST } from '@/app/api/cv/upload/route'
 
 function send(file?: File): Promise<Response> {
   const form = new FormData()
@@ -16,34 +16,17 @@ function send(file?: File): Promise<Response> {
   return POST(formRequest('/api/cv/upload', form))
 }
 
-// One-page PDF with the text "Jane Doe Backend Developer" (made with @react-pdf/renderer).
-const FIXTURE_PDF = readFileSync(fileURLToPath(new URL('../fixtures/cv.pdf', import.meta.url)))
+// Real PDFs, parsed by the real parser (see test/fixtures/make-fixtures.mjs).
+const fixture = (name: string) => readFileSync(fileURLToPath(new URL(`../fixtures/${name}`, import.meta.url)))
 
-function pdfFile(): File {
-  return new File([new Uint8Array(FIXTURE_PDF)], 'cv.pdf', { type: 'application/pdf' })
+function pdfFile(name = 'cv-1-page.pdf'): File {
+  return new File([new Uint8Array(fixture(name))], 'cv.pdf', { type: 'application/pdf' })
 }
-
-// pdf-parse is loaded with a plain require() by the route, which vi.mock does
-// not intercept. Put a fake in Node's require cache before importing the route.
-// Reason: pdf-parse 1.1.1 is flaky — the same valid PDF fails with "bad XRef
-// entry" on roughly one parse in three (KNOWN BUG, to fix in step 2), so tests
-// cannot depend on it.
-const fakePdfParse = vi.fn(async (_buffer: Buffer) => ({ text: 'Jane Doe Backend Developer', numpages: 1 }))
-const nodeRequire = createRequire(import.meta.url)
-const pdfParsePath = nodeRequire.resolve('pdf-parse')
-nodeRequire.cache[pdfParsePath] = {
-  id: pdfParsePath,
-  filename: pdfParsePath,
-  loaded: true,
-  exports: fakePdfParse,
-} as unknown as NodeJS.Module
-const { POST } = await import('@/app/api/cv/upload/route')
 
 describe('POST /api/cv/upload', () => {
   let user: string
 
   beforeEach(async () => {
-    fakePdfParse.mockClear()
     user = uid('cv')
     await createUser(user)
     signInAs(user)
@@ -80,27 +63,43 @@ describe('POST /api/cv/upload', () => {
     )
   })
 
-  it('accepts a real PDF: extracts the text, stores the file under the user folder, saves the text', async () => {
-    const res = await send(pdfFile())
+  it('accepts a one-page CV: extracts the text, stores the original file under the user folder, saves the text', async () => {
+    const res = await send(pdfFile('cv-1-page.pdf'))
 
     expect(res.status).toBe(200)
-    expect(fakePdfParse).toHaveBeenCalledWith(Buffer.from(FIXTURE_PDF))
-    expect(upload).toHaveBeenCalledWith(`${user}/cv.pdf`, expect.any(Buffer), { contentType: 'application/pdf', upsert: true })
+    expect(upload).toHaveBeenCalledWith(`${user}/cv.pdf`, fixture('cv-1-page.pdf'), { contentType: 'application/pdf', upsert: true })
     const saved = await prisma.user.findUniqueOrThrow({ where: { id: user } })
-    expect(saved.cvText).toContain('Jane Doe Backend Developer')
+    expect(saved.cvText).toContain('Jane Doe')
+    expect(saved.cvText).toContain('Backend Developer')
     expect(saved.cvUrl).toContain(`${user}/cv.pdf`)
+    expect((await readJson<{ data: { cvText: string } }>(res)).data.cvText).toBe(saved.cvText)
   })
 
-  it('400 when the PDF cannot be parsed', async () => {
-    fakePdfParse.mockRejectedValueOnce(new Error('bad XRef entry'))
-    await expectRejected(await send(pdfFile()), 'Failed to extract text from PDF')
+  it('accepts a two-page CV and keeps the text of both pages', async () => {
+    const res = await send(pdfFile('cv-2-pages.pdf'))
+    expect(res.status).toBe(200)
+    const saved = await prisma.user.findUniqueOrThrow({ where: { id: user } })
+    expect(saved.cvText).toContain('PAGE ONE MARKER')
+    expect(saved.cvText).toContain('PAGE TWO MARKER')
   })
 
-  it('400 when the PDF has no text layer (scanned image)', async () => {
-    fakePdfParse.mockResolvedValueOnce({ text: '   \n ', numpages: 1 })
+  it('uploads the same valid PDF 10 times in a row without a single parse failure', async () => {
+    for (let i = 0; i < 10; i++) {
+      expect((await send(pdfFile())).status).toBe(200)
+    }
+  })
+
+  it('400 with a clear message for a scanned PDF (image only, no text layer)', async () => {
     await expectRejected(
-      await send(pdfFile()),
-      'Could not extract text from this PDF. Make sure it is not a scanned image.'
+      await send(pdfFile('cv-scanned.pdf')),
+      'This PDF contains no text, it is probably a scan. Export your CV to PDF from Word, Google Docs or a similar tool and upload it again.'
+    )
+  })
+
+  it('400 when the PDF is corrupt (valid header, unreadable body)', async () => {
+    await expectRejected(
+      await send(new File(['%PDF-1.7\nthis is not a real pdf body'], 'cv.pdf', { type: 'application/pdf' })),
+      'Failed to extract text from PDF'
     )
   })
 

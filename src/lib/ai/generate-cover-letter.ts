@@ -1,26 +1,15 @@
 import { groq, GROQ_MODEL } from '@/lib/groq'
+import { PROMPT_LIMITS, UNTRUSTED_DATA_RULE, inlineField, wrapUntrusted } from './untrusted'
 
-function getCoverLetterPrompt(
-  cvText: string,
-  offerText: string,
-  company: string,
-  role: string,
-  language: 'FR' | 'EN'
-): string {
-  return language === 'FR'
-    ? `Tu es un expert en recrutement et rédaction de lettres de motivation.
+const SYSTEM_FR = `Tu es un expert en recrutement et rédaction de lettres de motivation.
 
-Voici le profil du candidat (extrait de son CV):
-${cvText}
+Tu reçois le profil du candidat (extrait de son CV) dans <cv>, l'offre d'emploi dans <job_offer>, le nom de l'entreprise dans <company> et l'intitulé du poste dans <role>.
 
-Voici l'offre d'emploi pour le poste de ${role} chez ${company}:
-${offerText}
-
-Rédige une lettre de motivation professionnelle et personnalisée en français.
+Rédige une lettre de motivation professionnelle et personnalisée en français pour ce poste dans cette entreprise.
 
 Règles de rédaction et d'authenticité (TRÈS STRICTES) :
 - Longueur: 3 paragraphes, maximum 280 mots
-- Paragraphe 1: accroche forte montrant la connaissance et l'intérêt pour ${company} et ses missions
+- Paragraphe 1: accroche forte montrant la connaissance et l'intérêt pour l'entreprise et ses missions
 - Paragraphe 2: 2-3 réalisations CONCRÈTES et VRAIES issues du CV qui correspondent aux besoins de l'offre
 - Paragraphe 3: conclusion dynamique avec appel à l'action pour un entretien
 
@@ -33,20 +22,19 @@ Règles ANTI-HALLUCINATION & VÉRACITÉ (OBLIGATOIRES) :
 - Français naturel sans slashes d'échappement : écris "100%", "Next.js 14", "Tailwind CSS", "Synertic :", et non "100/%", "Next.js/14", "Synertic/:".
 - Commencer directement par le texte de la lettre, sans "Objet:" ni en-tête.
 
-Réponds uniquement avec le texte de la lettre, sans commentaire.`
-    : `You are an expert recruiter and cover letter writer.
+Réponds uniquement avec le texte de la lettre, sans commentaire.
 
-Here is the candidate's profile (extracted from their CV):
-${cvText}
+${UNTRUSTED_DATA_RULE}`
 
-Here is the job offer for ${role} at ${company}:
-${offerText}
+const SYSTEM_EN = `You are an expert recruiter and cover letter writer.
 
-Write a professional, highly tailored cover letter in English.
+You receive the candidate's profile (extracted from their CV) in <cv>, the job offer in <job_offer>, the company name in <company> and the job title in <role>.
+
+Write a professional, highly tailored cover letter in English for this role at this company.
 
 Writing & Structure Rules:
 - Length: 3 paragraphs, maximum 280 words
-- Paragraph 1: strong opening showing genuine knowledge and enthusiasm for ${company}
+- Paragraph 1: strong opening showing genuine knowledge and enthusiasm for the company
 - Paragraph 2: 2-3 CONCRETE, TRUTHFUL achievements from the CV matching the role
 - Paragraph 3: enthusiastic closing with call to action for an interview
 
@@ -57,7 +45,28 @@ ANTI-HALLUCINATION & TRUTHFULNESS RULES (MANDATORY):
 - Output pure clean plain text with NO markdown asterisks (**bold**), NO backticks, and NO escaped slashes (e.g. write "100%", not "100/%").
 - Start directly with the letter body, no "Subject:" line or header.
 
-Respond ONLY with the cover letter text, no explanations.`
+Respond ONLY with the cover letter text, no explanations.
+
+${UNTRUSTED_DATA_RULE}`
+
+function getCoverLetterMessages(
+  cvText: string,
+  offerText: string,
+  company: string,
+  role: string,
+  language: 'FR' | 'EN'
+) {
+  const user = [
+    wrapUntrusted('company', inlineField(company, PROMPT_LIMITS.company), PROMPT_LIMITS.company),
+    wrapUntrusted('role', inlineField(role, PROMPT_LIMITS.role), PROMPT_LIMITS.role),
+    wrapUntrusted('cv', cvText, PROMPT_LIMITS.cv),
+    wrapUntrusted('job_offer', offerText, PROMPT_LIMITS.offer),
+  ].join('\n\n')
+
+  return [
+    { role: 'system' as const, content: language === 'FR' ? SYSTEM_FR : SYSTEM_EN },
+    { role: 'user' as const, content: user },
+  ]
 }
 
 export async function generateCoverLetter(
@@ -67,11 +76,9 @@ export async function generateCoverLetter(
   role: string,
   language: 'FR' | 'EN'
 ): Promise<string> {
-  const prompt = getCoverLetterPrompt(cvText, offerText, company, role, language)
-
   const response = await groq.chat.completions.create({
     model: GROQ_MODEL,
-    messages: [{ role: 'user', content: prompt }],
+    messages: getCoverLetterMessages(cvText, offerText, company, role, language),
     max_tokens: 2048,
     temperature: 0.2,
   })
@@ -86,11 +93,9 @@ export async function streamCoverLetter(
   role: string,
   language: 'FR' | 'EN'
 ) {
-  const prompt = getCoverLetterPrompt(cvText, offerText, company, role, language)
-
   return groq.chat.completions.create({
     model: GROQ_MODEL,
-    messages: [{ role: 'user', content: prompt }],
+    messages: getCoverLetterMessages(cvText, offerText, company, role, language),
     max_tokens: 2048,
     temperature: 0.2,
     stream: true,

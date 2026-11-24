@@ -181,18 +181,50 @@ Vercel Deploy & Production Verification
   - [x] `overrides` pins `effect` ^3.22.5 under `@prisma/config` (Prisma 7.10.1 still pins the vulnerable 3.20.0; used by the Prisma CLI config loader only)
   - [x] Lock file regenerated with Linux npm 10 (`npm install --package-lock-only` in a `node:22` container): a Windows-generated lock lacked Vite's nested `lightningcss@1.33.0` platform binaries, so `npm ci` failed in CI
   - [x] Test DB setup uses `prisma db push` without `--accept-data-loss` (the DB starts empty; Prisma 7.10 also refuses that flag when run by an AI agent)
+- [x] Security and costs (JOBPILOT_PLAN.md, step 2)
+  - [x] CV text extraction: pdf-parse 1.1.1 replaced by `unpdf` (`lib/pdf/extract-text.ts`); tests use real PDFs (`test/fixtures/`, regenerate with `node test/fixtures/make-fixtures.mjs`): one page, two pages, image-only scan → clear 400 message; the fake parser is gone
+  - [x] Rate limit in Postgres (`RateLimitHit`, sliding window, advisory lock per key): 10 LLM calls / minute / user shared by offers/parse, adapt-resume, cover-letter, interview, interview/feedback; 429 + `Retry-After`; checked before a free-tier credit is consumed
+  - [x] Atomic quotas: `INSERT … ON CONFLICT` (monthly reset) + conditional `UPDATE … RETURNING`; 10 concurrent requests with 1 credit left → 1 succeeds
+  - [x] `BillingProvider` interface (`lib/billing`): checkout, portal, webhook → internal `subscription.activated` / `subscription.canceled` events; Stripe is the only implementation; checkout and portal routes tested with a fake provider
+  - [x] Idempotent billing webhook: `ProcessedBillingEvent` (id = `stripe:<event id>`) inserted in the same transaction as the plan change; redelivered or concurrent duplicates are no-ops
+  - [x] Prompt injection: system message = instructions + `UNTRUSTED_DATA_RULE`; user text only in `wrapUntrusted()` tags (angle brackets neutralised, length capped by `PROMPT_LIMITS`); Zod max lengths on company, role, offer, notes, salary, interview question and answer
 
 ## Known Issues (found while writing tests)
 
-- pdf-parse 1.1.1 is flaky: the same valid PDF fails with "bad XRef entry" on roughly one parse in three → CV uploads can fail at random. Tests use a fake parser. Replaced in step 2 (see JOBPILOT_PLAN.md).
 - 10 moderate `npm audit` findings remain, all in dev tooling (Testcontainers' `archiver`/`glob`, the shadcn CLI's `ts-morph`/`minimatch`); npm's only fix is downgrading those packages to older majors. CI gates on high and above.
 - After changing dependencies on Windows, check the lock file with `npm ci` in a Linux `node:22` container before pushing (npm bug: optional platform packages of nested deps are dropped).
-- Tests marked KNOWN BUG / KNOWN GAP: in-memory rate limit, `/api/offers/parse` without quota or rate limit, non-idempotent Stripe webhook, prompt injection via offer text, unvalidated LLM JSON shapes, misleading "vs last month" delta.
+- Tests still marked KNOWN BUG / KNOWN GAP: unvalidated LLM JSON shapes, misleading "vs last month" delta.
+- The DB column is still named `User.stripeCustomerId`; a second billing provider will need it renamed (e.g. `billingCustomerId`).
+- Not verified: whether Row Level Security is enabled on the existing tables in Supabase (see Schema Changes Needed).
 
 ## Schema Changes Needed (run in Supabase SQL Editor)
 
 ```sql
 ALTER TABLE "Application" ADD COLUMN IF NOT EXISTS "adaptedCvText" TEXT;
+```
+
+Step 2 (run BEFORE deploying the step 2 commit, otherwise every LLM route and the billing webhook fail):
+
+```sql
+CREATE TABLE "RateLimitHit" (
+    "id" BIGSERIAL NOT NULL,
+    "key" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "RateLimitHit_pkey" PRIMARY KEY ("id")
+);
+CREATE INDEX "RateLimitHit_key_createdAt_idx" ON "RateLimitHit"("key", "createdAt");
+
+CREATE TABLE "ProcessedBillingEvent" (
+    "id" TEXT NOT NULL,
+    "type" TEXT NOT NULL,
+    "processedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "ProcessedBillingEvent_pkey" PRIMARY KEY ("id")
+);
+
+-- Not reachable through Supabase's public REST API (anon key). Prisma connects
+-- as the table owner (postgres), which RLS does not apply to.
+ALTER TABLE "RateLimitHit" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "ProcessedBillingEvent" ENABLE ROW LEVEL SECURITY;
 ```
 
 Also create Supabase Storage bucket named `cvs` with public access.

@@ -73,3 +73,47 @@ describe('checkAndIncrementUsage', () => {
     expect(usage).toMatchObject({ month: currentMonth(), applications: 1, cvAdaptations: 0, coverLetters: 0 })
   })
 })
+
+describe('checkAndIncrementUsage — concurrency (check + increment is atomic)', () => {
+  it('10 simultaneous requests with 1 credit left → exactly 1 succeeds', async () => {
+    await createUser('user_race')
+    await prisma.usageCounter.create({ data: { userId: 'user_race', month: currentMonth(), cvAdaptations: 2 } })
+
+    const results = await Promise.all(
+      Array.from({ length: 10 }, () => checkAndIncrementUsage('user_race', 'cvAdaptations'))
+    )
+
+    expect(results.filter(r => r.allowed)).toHaveLength(1)
+    const usage = await prisma.usageCounter.findUniqueOrThrow({ where: { userId: 'user_race' } })
+    expect(usage.cvAdaptations).toBe(3)
+  })
+
+  it('10 simultaneous first requests (no counter row yet) → 5 applications, never more', async () => {
+    await createUser('user_first')
+
+    const results = await Promise.all(
+      Array.from({ length: 10 }, () => checkAndIncrementUsage('user_first', 'applications'))
+    )
+
+    expect(results.filter(r => r.allowed)).toHaveLength(5)
+    expect((await prisma.usageCounter.findUniqueOrThrow({ where: { userId: 'user_first' } })).applications).toBe(5)
+  })
+
+  it('simultaneous requests on a new month reset the counters once, not once per request', async () => {
+    await createUser('user_month')
+    await prisma.usageCounter.create({
+      data: { userId: 'user_month', month: '2000-01', applications: 5, cvAdaptations: 3, coverLetters: 3 },
+    })
+
+    const results = await Promise.all(
+      Array.from({ length: 10 }, () => checkAndIncrementUsage('user_month', 'coverLetters'))
+    )
+
+    expect(results.filter(r => r.allowed)).toHaveLength(3)
+    expect(await prisma.usageCounter.findUniqueOrThrow({ where: { userId: 'user_month' } })).toMatchObject({
+      month: currentMonth(),
+      coverLetters: 3,
+      applications: 0,
+    })
+  })
+})

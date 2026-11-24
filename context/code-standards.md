@@ -35,7 +35,8 @@
 - Always check Free tier limits before calling Groq API
 - Return consistent response shapes: `{ data: T }` for success, `{ error: string }` for errors
 - Never expose internal error messages or stack traces in responses
-- HTTP status codes: 200 success, 400 validation error, 401 unauthorized, 403 forbidden (tier limit), 404 not found, 500 internal error
+- HTTP status codes: 200 success, 400 validation error, 401 unauthorized, 403 forbidden (tier limit), 404 not found, 429 rate limited (with `Retry-After`), 500 internal error
+- Every route that calls the LLM starts with `checkLlmRateLimit(userId)` and returns `tooManyRequests(result)` when refused, before consuming a free-tier credit
 - A resource owned by another user returns 404, exactly like one that does not exist (no existence leak)
 - Request schemas live in `lib/validation.ts` (route files may only export HTTP handlers)
 
@@ -45,12 +46,13 @@
 - Always include language parameter in every AI function
 - Always handle Groq API errors gracefully — return a user-friendly error, never crash
 - Streaming responses for cover letters and CV adaptation (better UX)
+- Prompt structure: a `system` message with our instructions ending with `UNTRUSTED_DATA_RULE`, and a `user` message holding each piece of user text in `wrapUntrusted(tag, text, PROMPT_LIMITS.x)`. Short values interpolated anywhere go through `inlineField()`. Never put CV, offer, company, role or answer text in the system message
 - Max tokens: 2048 for cover letters, 3000 for CV adaptation, 1500 for interview questions
 
 ## Database (Prisma)
 
 - All DB operations go through the Prisma client in `lib/prisma.ts`
-- Never write raw SQL unless Prisma cannot handle the query
+- Never write raw SQL unless Prisma cannot handle the query (e.g. `lib/usage.ts` uses `INSERT … ON CONFLICT` and a conditional `UPDATE … RETURNING` so quota checks are atomic)
 - Always include userId filter on every query that returns user data
 - Use transactions for operations that modify multiple tables
 
@@ -64,10 +66,11 @@
 - Tests named `KNOWN BUG` / `KNOWN GAP` pin current, wrong behavior; flip them when the fix lands
 - New code is written test-first
 
-## Stripe
+## Billing (Stripe today)
 
-- Subscription status is updated only via Stripe webhooks — never trust client-side claims
-- Webhook handler in `app/api/webhooks/stripe/route.ts`
+- Routes depend only on the `BillingProvider` interface (`lib/billing/types.ts`); the Stripe SDK is used only in `lib/billing/stripe-provider.ts`. A Merchant of Record (Lemon Squeezy / Paddle) is added as another provider
+- Subscription status is updated only via billing webhooks — never trust client-side claims
+- Webhook handler in `app/api/webhooks/stripe/route.ts`: `billing.parseWebhook()` verifies the signature, `applyBillingEvent()` applies each event id once (`ProcessedBillingEvent`, same transaction as the plan change)
 - Always verify webhook signature before processing
 - Plan stored in DB: `FREE` or `PRO` — checked server-side before every AI call
 

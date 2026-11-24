@@ -1,4 +1,9 @@
 import { groq, GROQ_MODEL } from '@/lib/groq'
+import { UNTRUSTED_DATA_RULE, wrapUntrusted } from './untrusted'
+
+// Company, role and salary are near the top of a posting: 3000 characters keep
+// this call small (128 output tokens).
+const PARSE_OFFER_MAX_CHARS = 3000
 
 export interface ParsedOffer {
   company: string | null
@@ -20,11 +25,11 @@ export async function parseJobOffer(
     messages: [
       {
         role: 'system',
-        content: `You extract structured data from job postings. ${langHint} Return only a JSON object with exactly three keys: "company" (string or null), "role" (string or null), "salary" (string or null). Do not add any other keys or explanation.`,
+        content: `You extract structured data from job postings. ${langHint} Extract the company name, job title/role, and salary (if mentioned) from the job posting in <job_offer>. Return only a JSON object with exactly three keys: "company" (string or null), "role" (string or null), "salary" (string or null). Do not add any other keys or explanation.\n\n${UNTRUSTED_DATA_RULE}`,
       },
       {
         role: 'user',
-        content: `Extract the company name, job title/role, and salary (if mentioned) from this job posting:\n\n${offerText.slice(0, 3000)}`,
+        content: wrapUntrusted('job_offer', offerText, PARSE_OFFER_MAX_CHARS),
       },
     ],
   })

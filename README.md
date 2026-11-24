@@ -41,7 +41,14 @@
 ### 💳 Stripe Payments
 - Free tier: 5 applications, 3 CV adaptations, 3 cover letters/month
 - Pro plan: $9/month — unlimited everything + AI feedback
-- Stripe Customer Portal for subscription management
+- Stripe Customer Portal for subscription management (test mode)
+
+### 🔒 Security & Cost Controls
+- **Rate limit stored in Postgres**: 10 AI calls per minute per user across every AI route, enforced across all serverless instances (429 + `Retry-After`)
+- **Atomic free-tier quotas**: simultaneous requests can never spend more credits than the plan allows
+- **Idempotent billing webhooks**: a redelivered Stripe event is applied once
+- **Prompt-injection hardening**: CV, job offer and answers are sent to the model as tagged data, separate from the instructions, with length limits
+- **Payment provider behind an interface** (`lib/billing`), so Stripe can be swapped for a Merchant of Record
 
 ---
 
@@ -57,7 +64,7 @@
 | File Storage | Supabase Storage |
 | AI / LLM | Groq API (`openai/gpt-oss-120b` / `llama-3.3-70b-versatile`) |
 | Payments | Stripe |
-| PDF Engine | @react-pdf/renderer |
+| PDF Engine | @react-pdf/renderer (export), unpdf (CV text extraction) |
 | Analytics | Vercel Analytics + Speed Insights |
 | Deploy | Vercel |
 | CI/CD | GitHub Actions |
@@ -172,8 +179,8 @@ npm run test:integration   # needs Docker (Testcontainers starts Postgres 16)
 npm test                   # both
 ```
 
-- **Unit** (`*.test.ts[x]`): Zod schemas, dashboard statistics, prompt construction and LLM response parsing, rate limiter, React components (Testing Library), and a 401 check on every authenticated API route.
-- **Integration** (`*.int.test.ts`): route handlers called directly against a real Postgres: free-tier quotas, cross-user access (every `/api/applications/[id]` route returns 404 for someone else's application), CV upload validation, Stripe webhook signature and plan changes.
+- **Unit** (`*.test.ts[x]`): Zod schemas, dashboard statistics, prompt construction, prompt-injection guards and LLM response parsing, PDF text extraction on real PDFs, the Stripe billing adapter, React components (Testing Library), and a 401 check on every authenticated API route.
+- **Integration** (`*.int.test.ts`): route handlers called directly against a real Postgres: free-tier quotas (including concurrent requests), the distributed rate limit, cross-user access (every `/api/applications/[id]` route returns 404 for someone else's application), CV upload with real PDFs, billing webhook signature, plan changes and idempotence, checkout and portal against a fake billing provider.
 - No test calls Groq, Stripe, Clerk or Supabase. They are replaced by fakes in `test/mocks/`; Stripe signatures are checked offline with the real SDK.
 - Integration tests only run against a local database (`localhost`); set `TEST_DATABASE_URL` to use your own instead of Testcontainers.
 - Tests named `KNOWN BUG` / `KNOWN GAP` pin current behavior that is scheduled to change (see `JOBPILOT_PLAN.md`).

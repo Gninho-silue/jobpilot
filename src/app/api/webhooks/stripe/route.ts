@@ -1,66 +1,37 @@
-import { stripe } from '@/lib/stripe'
-import { prisma } from '@/lib/prisma'
 import { NextRequest, NextResponse } from 'next/server'
-import Stripe from 'stripe'
+import { billing } from '@/lib/billing'
+import { applyBillingEvent } from '@/lib/billing/apply-event'
+import { type BillingEvent, InvalidWebhookSignatureError } from '@/lib/billing/types'
 import { trackEvent } from '@/lib/analytics'
 
-async function getUserIdFromCustomer(customerId: string): Promise<string | undefined> {
-  const user = await prisma.user.findFirst({ where: { stripeCustomerId: customerId } })
-  return user?.id
-}
-
+// Billing webhooks are the only source of truth for plan status.
 export async function POST(req: NextRequest) {
   const body = await req.text()
-  const sig = req.headers.get('stripe-signature')
 
-  if (!sig) return NextResponse.json({ error: 'Missing signature' }, { status: 400 })
-
-  let event: Stripe.Event
+  let event: BillingEvent
   try {
-    event = stripe.webhooks.constructEvent(body, sig, process.env.STRIPE_WEBHOOK_SECRET!)
-  } catch {
-    return NextResponse.json({ error: 'Invalid signature' }, { status: 400 })
+    event = await billing.parseWebhook(body, req.headers)
+  } catch (err) {
+    if (err instanceof InvalidWebhookSignatureError) {
+      return NextResponse.json({ error: err.message }, { status: 400 })
+    }
+    throw err
   }
 
-  switch (event.type) {
-    case 'checkout.session.completed': {
-      const session = event.data.object as Stripe.Checkout.Session
-      const clerkUserId = session.metadata?.clerkUserId
-      if (clerkUserId) {
-        await prisma.user.update({
-          where: { id: clerkUserId },
-          data: { plan: 'PRO' },
-        })
-        trackEvent.upgraded()
-      }
-      break
-    }
-
-    case 'customer.subscription.deleted': {
-      const sub = event.data.object as Stripe.Subscription
-      const userId = await getUserIdFromCustomer(sub.customer as string)
-      if (userId) {
-        await prisma.user.update({
-          where: { id: userId },
-          data: { plan: 'FREE' },
-        })
-      }
-      break
-    }
-
-    case 'customer.subscription.updated': {
-      const sub = event.data.object as Stripe.Subscription
-      const userId = await getUserIdFromCustomer(sub.customer as string)
-      if (userId) {
-        const isActive = sub.status === 'active' || sub.status === 'trialing'
-        await prisma.user.update({
-          where: { id: userId },
-          data: { plan: isActive ? 'PRO' : 'FREE' },
-        })
-      }
-      break
-    }
+  let result
+  try {
+    result = await applyBillingEvent(billing.name, event)
+  } catch (err) {
+    // Nothing was recorded (the transaction rolled back): a 500 makes the provider retry.
+    console.error('[webhooks/billing] failed to apply event', event.id, err)
+    return NextResponse.json({ error: 'Failed to process event' }, { status: 500 })
   }
 
+  if (result === 'duplicate') {
+    return NextResponse.json({ received: true, duplicate: true })
+  }
+  if (result === 'applied' && event.type === 'subscription.activated' && event.isNewSubscription) {
+    trackEvent.upgraded()
+  }
   return NextResponse.json({ received: true })
 }

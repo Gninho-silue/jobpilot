@@ -2,6 +2,7 @@ import { auth } from '@clerk/nextjs/server'
 import { NextResponse } from 'next/server'
 import { parseOfferSchema } from '@/lib/validation'
 import { parseJobOffer } from '@/lib/ai/parse-offer'
+import { checkLlmRateLimit, tooManyRequests } from '@/lib/rate-limit'
 
 export async function POST(request: Request) {
   const { userId } = await auth()
@@ -22,6 +23,11 @@ export async function POST(request: Request) {
       { error: parsed.error.issues[0]?.message ?? 'Invalid input' },
       { status: 400 }
     )
+  }
+
+  const rateLimit = await checkLlmRateLimit(userId)
+  if (!rateLimit.allowed) {
+    return tooManyRequests(rateLimit)
   }
 
   try {

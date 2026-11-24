@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { prisma } from '@/lib/prisma'
 import { TEST_STRIPE_WEBHOOK_SECRET } from '@test/setup/env'
 import { createUser } from '@test/helpers/db'
+import { readJson } from '@test/helpers/http'
 import { uid } from '@test/helpers/ids'
 import { POST } from '@/app/api/webhooks/stripe/route'
 
@@ -99,16 +100,30 @@ describe('POST /api/webhooks/stripe', () => {
     expect(res.status).toBe(200)
   })
 
-  // Characterization of audit item 3 (fixed in step 2): no idempotence. Stripe
-  // retries deliveries; a late retry of an old checkout event re-upgrades a
-  // user whose subscription was cancelled in between.
-  it('KNOWN GAP: a replayed checkout event re-upgrades a cancelled user', async () => {
-    const checkout = event('checkout.session.completed', { object: 'checkout.session', metadata: { clerkUserId: user } }, 'evt_same_id')
-    await deliver(checkout)
-    await deliver(event('customer.subscription.deleted', { object: 'subscription', customer }))
-    expect(await planOf(user)).toBe('FREE')
+  describe('idempotence (Stripe redelivers events)', () => {
+    it('a late redelivery of an old checkout event does not re-upgrade a cancelled user', async () => {
+      const checkout = event('checkout.session.completed', { object: 'checkout.session', metadata: { clerkUserId: user } }, 'evt_same_id')
+      await deliver(checkout)
+      await deliver(event('customer.subscription.deleted', { object: 'subscription', customer }))
+      expect(await planOf(user)).toBe('FREE')
 
-    await deliver(checkout) // same event id, delivered again
-    expect(await planOf(user)).toBe('PRO')
+      const res = await deliver(checkout) // same event id, delivered again
+      expect(res.status).toBe(200)
+      expect(await readJson(res)).toEqual({ received: true, duplicate: true })
+      expect(await planOf(user)).toBe('FREE')
+    })
+
+    it('records each processed event id once', async () => {
+      const payload = event('customer.subscription.deleted', { object: 'subscription', customer }, 'evt_once')
+      await deliver(payload)
+      await deliver(payload)
+      expect(await prisma.processedBillingEvent.findMany({ where: { id: { contains: 'evt_once' } } })).toHaveLength(1)
+    })
+
+    it('an event with a bad signature is not recorded', async () => {
+      const payload = event('customer.subscription.deleted', { object: 'subscription', customer }, 'evt_forged')
+      await deliver(payload, signer.webhooks.generateTestHeaderString({ payload, secret: 'whsec_attacker' }))
+      expect(await prisma.processedBillingEvent.count()).toBe(0)
+    })
   })
 })

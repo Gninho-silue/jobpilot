@@ -7,7 +7,7 @@ process.env.DATABASE_URL = inject('databaseUrl')
 const { prisma } = await import('@/lib/prisma')
 
 beforeEach(async () => {
-  await prisma.$executeRawUnsafe('TRUNCATE TABLE "Application", "UsageCounter", "User" CASCADE')
+  await prisma.$executeRawUnsafe('TRUNCATE TABLE "Application", "UsageCounter", "User", "RateLimitHit", "ProcessedBillingEvent" CASCADE')
 })
 
 afterAll(async () => {

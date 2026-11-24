@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server'
 import { interviewFeedbackSchema } from '@/lib/validation'
 import { prisma } from '@/lib/prisma'
 import { generateInterviewFeedback } from '@/lib/ai/interview-feedback'
-import { checkRateLimit } from '@/lib/rate-limit'
+import { checkLlmRateLimit, tooManyRequests } from '@/lib/rate-limit'
 
 export async function POST(request: Request) {
   const { userId } = await auth()
@@ -11,9 +11,9 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const rateLimit = checkRateLimit(userId)
+  const rateLimit = await checkLlmRateLimit(userId)
   if (!rateLimit.allowed) {
-    return NextResponse.json({ error: 'Too many requests. Please wait before trying again.' }, { status: 429 })
+    return tooManyRequests(rateLimit)
   }
 
   const user = await prisma.user.findUnique({

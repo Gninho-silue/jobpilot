@@ -1,7 +1,7 @@
 import { auth, currentUser } from '@clerk/nextjs/server'
-import { stripe } from '@/lib/stripe'
-import { prisma } from '@/lib/prisma'
 import { NextResponse } from 'next/server'
+import { billing } from '@/lib/billing'
+import { prisma } from '@/lib/prisma'
 
 export async function POST() {
   const { userId } = await auth()
@@ -11,29 +11,28 @@ export async function POST() {
   const email = user?.emailAddresses[0]?.emailAddress
 
   const dbUser = await prisma.user.findUnique({ where: { id: userId } })
-  let customerId = dbUser?.stripeCustomerId
+  const savedCustomerId = dbUser?.stripeCustomerId ?? null
 
-  if (!customerId) {
-    const customer = await stripe.customers.create({
-      email: email ?? undefined,
-      metadata: { clerkUserId: userId },
+  let checkout
+  try {
+    checkout = await billing.createCheckout({
+      userId,
+      email,
+      customerId: savedCustomerId,
+      successUrl: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard?upgraded=true`,
+      cancelUrl: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard`,
     })
-    customerId = customer.id
+  } catch (err) {
+    console.error('[billing/checkout] provider error:', err)
+    return NextResponse.json({ error: 'Could not start checkout. Please try again.' }, { status: 500 })
+  }
+
+  if (checkout.customerId !== savedCustomerId) {
     await prisma.user.update({
       where: { id: userId },
-      data: { stripeCustomerId: customerId },
+      data: { stripeCustomerId: checkout.customerId },
     })
   }
 
-  const session = await stripe.checkout.sessions.create({
-    customer: customerId,
-    payment_method_types: ['card'],
-    mode: 'subscription',
-    line_items: [{ price: process.env.STRIPE_PRO_PRICE_ID!, quantity: 1 }],
-    success_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard?upgraded=true`,
-    cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard`,
-    metadata: { clerkUserId: userId },
-  })
-
-  return NextResponse.json({ url: session.url })
+  return NextResponse.json({ url: checkout.url })
 }

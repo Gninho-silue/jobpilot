@@ -8,8 +8,8 @@
 | Database     | Supabase (PostgreSQL) + Prisma                    | Application data, user data, applications    |
 | File Storage | Supabase Storage                                  | CV PDFs, generated documents                 |
 | LLM          | Groq API (llama-3.3-70b)                          | CV adaptation, cover letters, interview prep |
-| Payment      | Stripe                                            | Subscriptions, Free + Pro tiers              |
-| PDF Parse    | PyMuPDF (Python microservice) or pdf-parse (Node) | Extract text from uploaded CVs               |
+| Payment      | Stripe (test mode) behind `lib/billing`           | Subscriptions, Free + Pro tiers              |
+| PDF Parse    | unpdf (serverless build of pdf.js)                | Extract text from uploaded CVs               |
 | Deploy       | Vercel (frontend + API)                           | Auto-deploy on push                          |
 | CI/CD        | GitLab CI                                         | lint → test → build → deploy pipeline        |
 | IaC          | Terraform                                         | Provision Railway/Vercel environments        |
@@ -21,14 +21,16 @@
 - `components/` — Reusable UI components
 - `components/ui/` — shadcn/ui generated components (DO NOT modify manually)
 - `lib/` — Shared utilities: groq client, stripe client, supabase client, prisma client
-- `lib/ai/` — All Groq AI prompt functions (CV adapt, cover letter, interview prep)
+- `lib/ai/` — All Groq AI prompt functions (CV adapt, cover letter, interview prep); `lib/ai/untrusted.ts` wraps user text as data
+- `lib/billing/` — `BillingProvider` interface, Stripe implementation, idempotent event handling. Routes import `billing` from here, never Stripe directly
+- `lib/rate-limit.ts` — Postgres sliding-window rate limit shared by all LLM routes
 - `lib/pdf/` — PDF parsing and generation utilities
 - `prisma/` — Database schema and migrations
 - `context/` — Claude Code context files (this folder)
 
 ## Storage Model
 
-- **PostgreSQL (Supabase via Prisma)**: User profiles, applications, subscription status, usage counters, generated text content (cover letters, interview questions)
+- **PostgreSQL (Supabase via Prisma)**: User profiles, applications, subscription status, usage counters, generated text content (cover letters, interview questions), rate-limit hits (`RateLimitHit`, pruned to the window), processed billing event ids (`ProcessedBillingEvent`)
 - **Supabase Storage**: CV PDF files, generated PDF exports
 - **Never store**: Large file content in PostgreSQL, API keys in the database
 
@@ -91,4 +93,6 @@ UsageCounter
 3. CV text is extracted once on upload and stored — never re-parsed on every request
 4. All AI prompts are defined in `lib/ai/` — no prompt strings inline in route handlers
 5. `components/ui/` is never modified manually — use shadcn CLI only
-6. Stripe webhooks are the only source of truth for subscription status
+6. Billing webhooks (`lib/billing`, Stripe today) are the only source of truth for subscription status; each event id is applied at most once
+7. Every route that calls the LLM checks the per-user rate limit (`checkLlmRateLimit`) before any work
+8. User text reaches a prompt only inside `wrapUntrusted()` tags in the user message; system messages hold our instructions only

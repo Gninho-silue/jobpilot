@@ -1,4 +1,5 @@
 import { groq, GROQ_MODEL } from '@/lib/groq'
+import { PROMPT_LIMITS, UNTRUSTED_DATA_RULE, wrapUntrusted } from './untrusted'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Structured plain-text format the AI must follow.
@@ -52,25 +53,20 @@ Rules:
 - Separate entries with a blank line
 `
 
-function getAdaptResumePrompt(
+function getAdaptResumeMessages(
   cvText: string,
   offerText: string,
   language: 'FR' | 'EN'
-): string {
+) {
   const langInstruction = language === 'FR'
     ? 'Write the ENTIRE adapted CV in French.'
     : 'Write the ENTIRE adapted CV in English.'
 
-  return `You are an expert recruiter and CV writer.
+  const system = `You are an expert recruiter and CV writer.
+You receive the candidate's CV in <cv> and the job offer in <job_offer>, and you adapt the CV to the offer.
 ${langInstruction}
 
 ${FORMAT_SPEC}
-
-CANDIDATE CV:
-${cvText}
-
-JOB OFFER:
-${offerText}
 
 CRITICAL ANTI-HALLUCINATION & TRUTHFULNESS RULES (MANDATORY):
 1. ZERO-HALLUCINATION on past experiences:
@@ -84,7 +80,18 @@ CRITICAL ANTI-HALLUCINATION & TRUTHFULNESS RULES (MANDATORY):
 3. NO ESCAPED CHARACTERS / NO SLASHES:
    - Never write slashes before percentages or punctuation (write 100%, 30%, 60%, 8 mois, not 100/%, 30/%, 60/%, 8/mois).
 4. Follow the OUTPUT FORMAT strictly — no markdown asterisks, no hash signs.
-5. Respond ONLY with the adapted CV text.`
+5. Respond ONLY with the adapted CV text.
+
+${UNTRUSTED_DATA_RULE}`
+
+  const user = `${wrapUntrusted('cv', cvText, PROMPT_LIMITS.cv)}
+
+${wrapUntrusted('job_offer', offerText, PROMPT_LIMITS.offer)}`
+
+  return [
+    { role: 'system' as const, content: system },
+    { role: 'user' as const, content: user },
+  ]
 }
 
 export async function adaptResume(
@@ -92,11 +99,9 @@ export async function adaptResume(
   offerText: string,
   language: 'FR' | 'EN'
 ): Promise<string> {
-  const prompt = getAdaptResumePrompt(cvText, offerText, language)
-
   const response = await groq.chat.completions.create({
     model: GROQ_MODEL,
-    messages: [{ role: 'user', content: prompt }],
+    messages: getAdaptResumeMessages(cvText, offerText, language),
     max_tokens: 3000,
     temperature: 0.2,
   })
@@ -109,11 +114,9 @@ export async function streamAdaptResume(
   offerText: string,
   language: 'FR' | 'EN'
 ) {
-  const prompt = getAdaptResumePrompt(cvText, offerText, language)
-
   return groq.chat.completions.create({
     model: GROQ_MODEL,
-    messages: [{ role: 'user', content: prompt }],
+    messages: getAdaptResumeMessages(cvText, offerText, language),
     max_tokens: 3000,
     temperature: 0.2,
     stream: true,

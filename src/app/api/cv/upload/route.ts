@@ -3,12 +3,7 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { supabase } from '@/lib/supabase'
 import { CV_MAX_BYTES } from '@/lib/validation'
-
-// pdf-parse v1 is CJS-only. serverExternalPackages in next.config.ts ensures
-// Next.js loads it via native require() at runtime instead of bundling it,
-// which sidesteps the ESM default-export issue at the TypeScript/bundler level.
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const pdfParse = require('pdf-parse') as (buf: Buffer) => Promise<{ text: string; numpages: number }>
+import { extractPdfText } from '@/lib/pdf/extract-text'
 
 const PDF_MAGIC = [0x25, 0x50, 0x44, 0x46] // %PDF
 
@@ -51,16 +46,18 @@ export async function POST(request: Request) {
 
   let cvText: string
   try {
-    const data = await pdfParse(buffer)
-    cvText = data.text.trim()
+    cvText = (await extractPdfText(buffer)).text
   } catch (err) {
-    console.error('[cv/upload] pdf-parse error:', err)
+    console.error('[cv/upload] PDF text extraction failed:', err)
     return NextResponse.json({ error: 'Failed to extract text from PDF' }, { status: 400 })
   }
 
   if (!cvText) {
     return NextResponse.json(
-      { error: 'Could not extract text from this PDF. Make sure it is not a scanned image.' },
+      {
+        error:
+          'This PDF contains no text, it is probably a scan. Export your CV to PDF from Word, Google Docs or a similar tool and upload it again.',
+      },
       { status: 400 }
     )
   }

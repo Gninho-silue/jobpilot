@@ -1,4 +1,5 @@
 import { groq, GROQ_MODEL } from '@/lib/groq'
+import { PROMPT_LIMITS, UNTRUSTED_DATA_RULE, wrapUntrusted } from './untrusted'
 
 export interface InterviewFeedback {
   score: number
@@ -7,19 +8,11 @@ export interface InterviewFeedback {
   betterAnswer: string
 }
 
-export async function generateInterviewFeedback(
-  question: string,
-  answer: string,
-  type: 'technical' | 'behavioral',
-  language: 'FR' | 'EN'
-): Promise<InterviewFeedback> {
-  const prompt =
-    language === 'FR'
-      ? `Tu es un interviewer expert. Évalue cette réponse d'entretien.
+function systemPrompt(type: 'technical' | 'behavioral', language: 'FR' | 'EN'): string {
+  return language === 'FR'
+    ? `Tu es un interviewer expert. Évalue une réponse d'entretien.
 
-Question (${type === 'technical' ? 'technique' : 'comportementale'}): ${question}
-
-Réponse du candidat: ${answer}
+Tu reçois la question (${type === 'technical' ? 'technique' : 'comportementale'}) dans <question> et la réponse du candidat dans <answer>.
 
 Réponds UNIQUEMENT avec un JSON valide:
 {
@@ -27,12 +20,12 @@ Réponds UNIQUEMENT avec un JSON valide:
   "strengths": ["point fort 1", "point fort 2"],
   "improvements": ["amélioration 1", "amélioration 2"],
   "betterAnswer": "Voici une meilleure réponse..."
-}`
-      : `You are an expert interviewer. Evaluate this interview answer.
+}
 
-Question (${type}): ${question}
+${UNTRUSTED_DATA_RULE}`
+    : `You are an expert interviewer. Evaluate an interview answer.
 
-Candidate answer: ${answer}
+You receive the question (${type}) in <question> and the candidate's answer in <answer>.
 
 Respond ONLY with valid JSON:
 {
@@ -40,11 +33,28 @@ Respond ONLY with valid JSON:
   "strengths": ["strength 1", "strength 2"],
   "improvements": ["improvement 1", "improvement 2"],
   "betterAnswer": "Here is a better answer..."
-}`
+}
+
+${UNTRUSTED_DATA_RULE}`
+}
+
+export async function generateInterviewFeedback(
+  question: string,
+  answer: string,
+  type: 'technical' | 'behavioral',
+  language: 'FR' | 'EN'
+): Promise<InterviewFeedback> {
+  const user = [
+    wrapUntrusted('question', question, PROMPT_LIMITS.question),
+    wrapUntrusted('answer', answer, PROMPT_LIMITS.answer),
+  ].join('\n\n')
 
   const response = await groq.chat.completions.create({
     model: GROQ_MODEL,
-    messages: [{ role: 'user', content: prompt }],
+    messages: [
+      { role: 'system', content: systemPrompt(type, language) },
+      { role: 'user', content: user },
+    ],
     max_tokens: 1000,
     temperature: 0.3,
   })

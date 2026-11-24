@@ -1,4 +1,5 @@
 import { groq, GROQ_MODEL } from '@/lib/groq'
+import { PROMPT_LIMITS, UNTRUSTED_DATA_RULE, inlineField, wrapUntrusted } from './untrusted'
 
 export interface InterviewQuestion {
   id: string
@@ -7,24 +8,11 @@ export interface InterviewQuestion {
   hint: string
 }
 
-export async function generateInterviewQuestions(
-  cvText: string,
-  offerText: string,
-  company: string,
-  role: string,
-  language: 'FR' | 'EN'
-): Promise<InterviewQuestion[]> {
-  const prompt =
-    language === 'FR'
-      ? `Tu es un expert RH et interviewer technique.
+const SYSTEM_FR = `Tu es un expert RH et interviewer technique.
 
-CV du candidat:
-${cvText}
+Tu reçois le CV du candidat dans <cv>, l'offre d'emploi dans <job_offer>, le nom de l'entreprise dans <company> et l'intitulé du poste dans <role>.
 
-Offre d'emploi pour ${role} chez ${company}:
-${offerText}
-
-Génère exactement 10 questions d'entretien en JSON.
+Génère exactement 10 questions d'entretien en JSON pour ce poste dans cette entreprise.
 Réponds UNIQUEMENT avec un tableau JSON valide.
 5 questions techniques basées sur les compétences demandées.
 5 questions comportementales (méthode STAR).
@@ -36,16 +24,15 @@ Réponds UNIQUEMENT avec un tableau JSON valide.
     "question": "...",
     "hint": "Conseil pour répondre: ..."
   }
-]`
-      : `You are an expert HR interviewer and technical screener.
+]
 
-Candidate CV:
-${cvText}
+${UNTRUSTED_DATA_RULE}`
 
-Job offer for ${role} at ${company}:
-${offerText}
+const SYSTEM_EN = `You are an expert HR interviewer and technical screener.
 
-Generate exactly 10 interview questions as JSON.
+You receive the candidate's CV in <cv>, the job offer in <job_offer>, the company name in <company> and the job title in <role>.
+
+Generate exactly 10 interview questions as JSON for this role at this company.
 Respond ONLY with a valid JSON array.
 5 technical questions based on required skills.
 5 behavioral questions (STAR method).
@@ -57,11 +44,30 @@ Respond ONLY with a valid JSON array.
     "question": "...",
     "hint": "How to answer: ..."
   }
-]`
+]
+
+${UNTRUSTED_DATA_RULE}`
+
+export async function generateInterviewQuestions(
+  cvText: string,
+  offerText: string,
+  company: string,
+  role: string,
+  language: 'FR' | 'EN'
+): Promise<InterviewQuestion[]> {
+  const user = [
+    wrapUntrusted('company', inlineField(company, PROMPT_LIMITS.company), PROMPT_LIMITS.company),
+    wrapUntrusted('role', inlineField(role, PROMPT_LIMITS.role), PROMPT_LIMITS.role),
+    wrapUntrusted('cv', cvText, PROMPT_LIMITS.cv),
+    wrapUntrusted('job_offer', offerText, PROMPT_LIMITS.offer),
+  ].join('\n\n')
 
   const response = await groq.chat.completions.create({
     model: GROQ_MODEL,
-    messages: [{ role: 'user', content: prompt }],
+    messages: [
+      { role: 'system', content: language === 'FR' ? SYSTEM_FR : SYSTEM_EN },
+      { role: 'user', content: user },
+    ],
     max_tokens: 2000,
     temperature: 0.3,
   })

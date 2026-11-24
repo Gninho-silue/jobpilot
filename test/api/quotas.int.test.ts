@@ -45,6 +45,22 @@ describe('POST /api/applications — free plan: 5 per month', () => {
     expect(await prisma.application.count({ where: { userId: user } })).toBe(5)
   })
 
+  // End-to-end check. At this level the old read-then-write race only showed up
+  // in about one run out of three; src/lib/usage.int.test.ts reproduces it reliably.
+  it('10 simultaneous requests with 1 credit left → exactly 1 application is created', async () => {
+    const user = uid('race')
+    await createUser(user)
+    await prisma.usageCounter.create({
+      data: { userId: user, month: new Date().toISOString().slice(0, 7), applications: 4 },
+    })
+    signInAs(user)
+
+    const responses = await Promise.all(Array.from({ length: 10 }, (_, i) => newApplication(user, i)))
+
+    expect(responses.map(r => r.res.status).sort()).toEqual([201, ...Array(9).fill(403)])
+    expect(await prisma.application.count({ where: { userId: user } })).toBe(1)
+  })
+
   it('creates the user row on first use (signed in with Clerk, unknown to the DB)', async () => {
     const user = uid('new')
     signInAs(user)
@@ -163,18 +179,5 @@ describe('POST /api/offers/parse', () => {
     expect(res.status).toBe(200)
     expect(await readJson(res)).toEqual({ data: { company: null, role: null, salary: null } })
   })
-
-  // Characterization of audit item 2 (fixed in step 2): no rate limit and no
-  // quota, so a free account can call the LLM as often as it likes.
-  it('KNOWN GAP: a free user can call it 25 times in a row, every call reaches Groq', async () => {
-    const user = uid('free')
-    await createUser(user)
-    signInAs(user)
-    for (let i = 0; i < 25; i++) {
-      mockCompletion('{}')
-      const res = await offersParse.POST(jsonRequest('/api/offers/parse', { offerText: `offer ${i}` }))
-      expect(res.status).toBe(200)
-    }
-    expect(groqCreate).toHaveBeenCalledTimes(25)
-  })
+  // Rate limiting of this route (audit item 2) is covered in test/api/rate-limit.int.test.ts.
 })

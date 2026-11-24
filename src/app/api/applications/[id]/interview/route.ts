@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server'
 import { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
 import { generateInterviewQuestions } from '@/lib/ai/generate-interview-questions'
-import { checkRateLimit } from '@/lib/rate-limit'
+import { checkLlmRateLimit, tooManyRequests } from '@/lib/rate-limit'
 
 export async function POST(
   _request: Request,
@@ -19,9 +19,9 @@ export async function POST(
     return NextResponse.json({ error: 'Invalid request' }, { status: 400 })
   }
 
-  const rateLimit = checkRateLimit(userId)
+  const rateLimit = await checkLlmRateLimit(userId)
   if (!rateLimit.allowed) {
-    return NextResponse.json({ error: 'Too many requests. Please wait before trying again.' }, { status: 429 })
+    return tooManyRequests(rateLimit)
   }
 
   const application = await prisma.application.findUnique({ where: { id } })

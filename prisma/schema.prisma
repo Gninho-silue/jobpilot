@@ -70,3 +70,21 @@ model UsageCounter {
   applications  Int      @default(0)
   updatedAt     DateTime @updatedAt
 }
+
+// One row per rate-limited request, kept only for the length of the window
+// (see src/lib/rate-limit.ts). Shared by every serverless instance.
+model RateLimitHit {
+  id        BigInt   @id @default(autoincrement())
+  key       String
+  createdAt DateTime @default(now())
+
+  @@index([key, createdAt])
+}
+
+// Billing webhook events already applied, so a redelivered event is a no-op.
+// id = "<provider>:<provider event id>" (see src/lib/billing).
+model ProcessedBillingEvent {
+  id          String   @id
+  type        String
+  processedAt DateTime @default(now())
+}
