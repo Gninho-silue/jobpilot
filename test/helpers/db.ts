@@ -24,7 +24,7 @@ export async function createUser(
       email: testEmail(id),
       plan: opts.plan ?? 'FREE',
       cvText: opts.cvText === undefined ? SAMPLE_CV : opts.cvText,
-      cvUrl: opts.cvText === null ? null : `http://supabase.invalid/${id}/cv.pdf`,
+      cvPath: opts.cvText === null ? null : `${id}/cv.pdf`,
       stripeCustomerId: opts.stripeCustomerId,
     },
   })

@@ -1,7 +1,7 @@
 import { auth, currentUser } from '@clerk/nextjs/server'
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { supabase } from '@/lib/supabase'
+import { CV_FILE_ROUTE, uploadCv } from '@/lib/cv-storage'
 import { CV_MAX_BYTES } from '@/lib/validation'
 import { extractPdfText } from '@/lib/pdf/extract-text'
 
@@ -62,20 +62,12 @@ export async function POST(request: Request) {
     )
   }
 
-  const { error: uploadError } = await supabase.storage
-    .from('cvs')
-    .upload(`${userId}/cv.pdf`, buffer, {
-      contentType: 'application/pdf',
-      upsert: true,
-    })
-
-  if (uploadError) {
-    console.error('[cv/upload] supabase error:', uploadError.message)
+  const uploaded = await uploadCv(userId, buffer)
+  if ('error' in uploaded) {
+    console.error('[cv/upload] storage error:', uploaded.error)
     return NextResponse.json({ error: 'Failed to upload file' }, { status: 500 })
   }
-
-  const { data: urlData } = supabase.storage.from('cvs').getPublicUrl(`${userId}/cv.pdf`)
-  const cvUrl = urlData.publicUrl
+  const cvPath = uploaded.path
 
   const clerkUser = await currentUser()
   await prisma.user.upsert({
@@ -83,11 +75,11 @@ export async function POST(request: Request) {
     create: {
       id: userId,
       email: clerkUser?.emailAddresses[0]?.emailAddress ?? '',
-      cvUrl,
+      cvPath,
       cvText,
     },
-    update: { cvUrl, cvText },
+    update: { cvPath, cvText },
   })
 
-  return NextResponse.json({ data: { cvUrl, cvText } })
+  return NextResponse.json({ data: { fileUrl: CV_FILE_ROUTE, cvText } })
 }

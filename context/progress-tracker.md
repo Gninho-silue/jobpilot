@@ -187,6 +187,8 @@ Vercel Deploy & Production Verification
   - [x] Atomic quotas: `INSERT … ON CONFLICT` (monthly reset) + conditional `UPDATE … RETURNING`; 10 concurrent requests with 1 credit left → 1 succeeds
   - [x] `BillingProvider` interface (`lib/billing`): checkout, portal, webhook → internal `subscription.activated` / `subscription.canceled` events; Stripe is the only implementation; checkout and portal routes tested with a fake provider
   - [x] Idempotent billing webhook: `ProcessedBillingEvent` (id = `stripe:<event id>`) inserted in the same transaction as the plan change; redelivered or concurrent duplicates are no-ops
+  - [x] Private CV storage: the DB stores `User.cvPath` (`<userId>/cv.pdf`), never a URL; `GET /api/cv/file` checks the path is the user's own and redirects to a 10-minute signed URL (`?download=1` for a download); no `getPublicUrl` / `/object/public/` anywhere (test-enforced). AI routes never download the PDF: they use the text extracted at upload (`User.cvText`)
+  - [x] CI job "Supabase Security" (`scripts/check-supabase-security.mjs`): fails if a Storage bucket is public or a `public` table has RLS disabled; skipped with a warning until the `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_DB_URL` (optional `SUPABASE_DB_CA_CERT`) repository secrets are set
   - [x] Prompt injection: system message = instructions + `UNTRUSTED_DATA_RULE`; user text only in `wrapUntrusted()` tags (angle brackets neutralised, length capped by `PROMPT_LIMITS`); Zod max lengths on company, role, offer, notes, salary, interview question and answer
 
 ## Known Issues (found while writing tests)
@@ -225,9 +227,23 @@ CREATE TABLE "ProcessedBillingEvent" (
 -- as the table owner (postgres), which RLS does not apply to.
 ALTER TABLE "RateLimitHit" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "ProcessedBillingEvent" ENABLE ROW LEVEL SECURITY;
+
+-- Private CV storage: store the file path, not a public URL.
+-- (The old upload code always wrote the file to "<userId>/cv.pdf".)
+ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "cvPath" TEXT;
+UPDATE "User" SET "cvPath" = "id" || '/cv.pdf' WHERE "cvUrl" IS NOT NULL AND "cvPath" IS NULL;
 ```
 
-Also create Supabase Storage bucket named `cvs` with public access.
+AFTER the deploy is live (catches CVs uploaded by the old code in between, then removes the public URLs):
+
+```sql
+UPDATE "User" SET "cvPath" = "id" || '/cv.pdf' WHERE "cvUrl" IS NOT NULL AND "cvPath" IS NULL;
+ALTER TABLE "User" DROP COLUMN "cvUrl";
+```
+
+Then make the `cvs` bucket private (Storage → cvs → Edit bucket → Public off).
+
+Also create a PRIVATE Supabase Storage bucket named `cvs` (files are served through signed URLs only).
 
 ## Open Questions
 

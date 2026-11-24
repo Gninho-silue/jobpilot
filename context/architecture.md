@@ -31,7 +31,7 @@
 ## Storage Model
 
 - **PostgreSQL (Supabase via Prisma)**: User profiles, applications, subscription status, usage counters, generated text content (cover letters, interview questions), rate-limit hits (`RateLimitHit`, pruned to the window), processed billing event ids (`ProcessedBillingEvent`)
-- **Supabase Storage**: CV PDF files, generated PDF exports
+- **Supabase Storage**: CV PDF files in the private bucket `cvs` at `<userId>/cv.pdf`. The DB stores that path (`User.cvPath`), never a URL; browsers get the file only via `GET /api/cv/file` (ownership check → 10-minute signed URL). Server code uses the service-role client and works from the extracted text
 - **Never store**: Large file content in PostgreSQL, API keys in the database
 
 ## Database Schema (Prisma)
@@ -78,7 +78,7 @@ UsageCounter
 - Clerk user ID is the primary key in our database
 - Every application belongs to exactly one user
 - API routes validate Clerk session before any data access
-- Supabase Storage files are namespaced by userId: `cvs/{userId}/cv.pdf`
+- Supabase Storage files are namespaced by userId: `cvs/{userId}/cv.pdf`; the bucket is private and no public URL is ever built (`lib/cv-storage.ts`)
 
 ## Language Detection
 
@@ -96,3 +96,4 @@ UsageCounter
 6. Billing webhooks (`lib/billing`, Stripe today) are the only source of truth for subscription status; each event id is applied at most once
 7. Every route that calls the LLM checks the per-user rate limit (`checkLlmRateLimit`) before any work
 8. User text reaches a prompt only inside `wrapUntrusted()` tags in the user message; system messages hold our instructions only
+9. No public Storage URL: files are served through short-lived signed URLs after an ownership check; buckets are private and public tables have RLS (checked in CI)

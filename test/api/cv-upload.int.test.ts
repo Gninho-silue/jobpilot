@@ -71,8 +71,11 @@ describe('POST /api/cv/upload', () => {
     const saved = await prisma.user.findUniqueOrThrow({ where: { id: user } })
     expect(saved.cvText).toContain('Jane Doe')
     expect(saved.cvText).toContain('Backend Developer')
-    expect(saved.cvUrl).toContain(`${user}/cv.pdf`)
-    expect((await readJson<{ data: { cvText: string } }>(res)).data.cvText).toBe(saved.cvText)
+    expect(saved.cvPath).toBe(`${user}/cv.pdf`)
+    const body = await readJson<{ data: { cvText: string; fileUrl: string } }>(res)
+    expect(body.data.cvText).toBe(saved.cvText)
+    expect(body.data.fileUrl).toBe('/api/cv/file')
+    expect(JSON.stringify(body)).not.toContain('supabase')
   })
 
   it('accepts a two-page CV and keeps the text of both pages', async () => {

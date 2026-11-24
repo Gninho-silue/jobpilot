@@ -66,6 +66,11 @@
 - Tests named `KNOWN BUG` / `KNOWN GAP` pin current, wrong behavior; flip them when the fix lands
 - New code is written test-first
 
+## Storage (Supabase)
+
+- Never call `getPublicUrl` or build `/object/public/` URLs (a test fails on any occurrence). Store the object path; serve files through a route that checks ownership and redirects to `createSignedUrl` (5–10 min)
+- Storage access goes through `lib/cv-storage.ts` (service-role client, server only)
+
 ## Billing (Stripe today)
 
 - Routes depend only on the `BillingProvider` interface (`lib/billing/types.ts`); the Stripe SDK is used only in `lib/billing/stripe-provider.ts`. A Merchant of Record (Lemon Squeezy / Paddle) is added as another provider

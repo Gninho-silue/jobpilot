@@ -37,6 +37,7 @@
 ### 📂 My CV Management
 - Dual-mode viewer: Embedded interactive PDF Previewer + extracted text viewer
 - Drag-and-drop PDF upload zone with magic bytes validation
+- CVs stored in a private bucket, served only through 10-minute signed URLs after an ownership check
 
 ### 💳 Stripe Payments
 - Free tier: 5 applications, 3 CV adaptations, 3 cover letters/month

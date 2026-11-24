@@ -16,7 +16,8 @@ import {
 import { Button } from '@/components/ui/button'
 
 interface CvData {
-  cvUrl: string
+  /** App route serving the CV through a short-lived signed URL (never a Storage URL). */
+  fileUrl: string
   cvText?: string | null
   cvTextPreview: string | null
   updatedAt: string | null
@@ -42,7 +43,7 @@ export default function MyCvPage() {
           r.json() as Promise<{
             data?: {
               hasCv: boolean
-              cvUrl: string | null
+              fileUrl: string | null
               cvText: string | null
               cvTextPreview: string | null
               updatedAt: string | null
@@ -50,9 +51,9 @@ export default function MyCvPage() {
           }>
       )
       .then(j => {
-        if (j.data?.hasCv && j.data.cvUrl) {
+        if (j.data?.hasCv && j.data.fileUrl) {
           setCvData({
-            cvUrl: j.data.cvUrl,
+            fileUrl: j.data.fileUrl,
             cvText: j.data.cvText,
             cvTextPreview: j.data.cvTextPreview,
             updatedAt: j.data.updatedAt,
@@ -149,7 +150,7 @@ function ExistingCvView({
 
         <div className="flex items-center gap-2 shrink-0">
           <a
-            href={cvData.cvUrl}
+            href={cvData.fileUrl}
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center gap-1.5 h-8 px-2.5 rounded-lg border border-[hsl(var(--border-default))] bg-[hsl(var(--bg-surface))] text-xs font-medium text-[hsl(var(--text-secondary))] hover:bg-[hsl(var(--bg-surface-raised))] hover:text-[hsl(var(--text-primary))] transition-colors"
@@ -158,8 +159,7 @@ function ExistingCvView({
             Open in new tab
           </a>
           <a
-            href={cvData.cvUrl}
-            download="cv.pdf"
+            href={`${cvData.fileUrl}?download=1`}
             className="flex items-center gap-1.5 h-8 px-2.5 rounded-lg border border-[hsl(var(--border-default))] bg-[hsl(var(--bg-surface))] text-xs font-medium text-[hsl(var(--text-secondary))] hover:bg-[hsl(var(--bg-surface-raised))] hover:text-[hsl(var(--text-primary))] transition-colors"
           >
             <Download className="h-3.5 w-3.5" />
@@ -236,7 +236,7 @@ function ExistingCvView({
           <div className="relative w-full bg-zinc-950 flex flex-col">
             {/* Embedded Native PDF Viewer */}
             <iframe
-              src={`${cvData.cvUrl}#toolbar=1&navpanes=0`}
+              src={`${cvData.fileUrl}#toolbar=1&navpanes=0`}
               className="w-full min-h-[680px] h-[75vh] border-0"
               title="CV Document PDF Preview"
             />
@@ -287,7 +287,7 @@ function UploadZone({ onUploaded, onCancel }: { onUploaded: (data: CvData) => vo
       setProgress(50)
       const res = await fetch('/api/cv/upload', { method: 'POST', body: formData })
       setProgress(90)
-      const json = await res.json() as { data?: { cvUrl: string; cvText: string }; error?: string }
+      const json = await res.json() as { data?: { fileUrl: string; cvText: string }; error?: string }
 
       if (!res.ok) {
         setError(json.error ?? 'Upload failed. Please try again.')
@@ -296,7 +296,7 @@ function UploadZone({ onUploaded, onCancel }: { onUploaded: (data: CvData) => vo
 
       setProgress(100)
       onUploaded({
-        cvUrl: json.data!.cvUrl,
+        fileUrl: json.data!.fileUrl,
         cvTextPreview: json.data!.cvText.slice(0, 500),
         updatedAt: new Date().toISOString(),
       })

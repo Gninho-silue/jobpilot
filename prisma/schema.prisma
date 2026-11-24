@@ -29,7 +29,7 @@ model User {
   email            String        @unique
   plan             Plan          @default(FREE)
   stripeCustomerId String?       @unique
-  cvUrl            String?
+  cvPath           String?       // "<userId>/cv.pdf" in the private `cvs` bucket, never a URL
   cvText           String?       @db.Text
   createdAt        DateTime      @default(now())
   updatedAt        DateTime      @updatedAt

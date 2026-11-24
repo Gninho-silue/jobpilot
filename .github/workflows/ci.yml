@@ -93,3 +93,22 @@ jobs:
           cache: 'npm'
       - run: npm ci
       - run: npm audit --audit-level=high
+
+  supabase-security:
+    name: Supabase Security (public buckets, RLS)
+    runs-on: ubuntu-latest
+    # Reads the production project's bucket list and Postgres catalog (no table data).
+    if: github.event_name == 'push'
+    env:
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+      SUPABASE_DB_CA_CERT: ${{ secrets.SUPABASE_DB_CA_CERT }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+      - run: npm ci --ignore-scripts
+      - run: node scripts/check-supabase-security.mjs
