@@ -74,6 +74,19 @@ describe('cover letter: CI never becomes deployment', () => {
   })
 })
 
+describe('cover letter: no hollow phrases', () => {
+  it.each([
+    ['EN', 'No hollow phrases', 'strong work ethic'],
+    ['FR', 'Aucune formule creuse', 'forte éthique de travail'],
+  ] as const)('%s: the rule reaches the model', async (language, rule, example) => {
+    mockCompletion('x')
+    await generateCoverLetter(CV, OFFER, 'Globex', 'Engineer', language)
+    const system = groqCall().messages[0]?.content ?? ''
+    expect(system).toContain(rule)
+    expect(system).toContain(example)
+  })
+})
+
 describe('a figure keeps its scope', () => {
   it.each([
     ['adaptResume EN', () => adaptResume(CV, OFFER, 'EN'), 'A number keeps its scope'],

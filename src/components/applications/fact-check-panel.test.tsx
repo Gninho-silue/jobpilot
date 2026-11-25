@@ -127,3 +127,11 @@ describe('FactCheckPanel — point 6: short labels, and what to do for a letter'
     expect(screen.queryByText(/edit the CV/i)).toBeNull()
   })
 })
+
+describe('FactCheckPanel — point 7: hollow phrases', () => {
+  it('shows a warning that asks for a fact instead', () => {
+    setup([{ id: 'hollow-1', kind: 'hollow', line: 'I bring a strong work ethic.', lineIndex: 1, unsupported: ['strong work ethic'], fixable: false }])
+    expect(screen.getByText('Generic phrase')).toBeInTheDocument()
+    expect(screen.getByText(/replace it with a fact from your CV/i)).toBeInTheDocument()
+  })
+})

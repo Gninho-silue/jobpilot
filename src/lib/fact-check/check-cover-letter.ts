@@ -3,8 +3,9 @@ import { entryLabel, extractCvFacts, findTerms, numberOccurrences, numbersIn, pe
 /**
  * `verify`: in the CV, but under another experience; shown, never sent as a removal.
  * `reworded`: a fact of the CV turned into a bigger one (CI → continuous deployment).
+ * `hollow`: a generic phrase ("strong work ethic"); a warning, never sent as a correction.
  */
-export type LetterIssueKind = 'merged' | 'technology' | 'number' | 'claim' | 'verify' | 'reworded'
+export type LetterIssueKind = 'merged' | 'technology' | 'number' | 'claim' | 'verify' | 'reworded' | 'hollow'
 
 /** A sentence of the cover letter that the CV does not support. */
 export interface LetterIssue {
@@ -53,6 +54,14 @@ function deploymentClaim(sentence: string, cv: string): string | undefined {
   if (cvHasDeployment) return undefined
   return sentence.match(DEPLOYMENT_WORDS)?.[0] ?? sentence.match(CD_ALONE)?.[0]
 }
+
+// Phrases that say nothing a recruiter can check: a fact of the CV says more.
+const HOLLOW_PHRASES = [
+  /aligns? perfectly|perfectly aligns?|high-profile|strong work ethic|proven (?:ability|track record)/i,
+  /correspond(?:ent)? parfaitement|aligne(?:nt)? parfaitement|de premier plan|éthique de travail|capacité (?:avérée|prouvée)/i,
+]
+// "my expertise in …": only when the CV itself claims expertise.
+const EXPERTISE = /\bexpertise\b/i
 
 const MONTH_WORDS =
   /^(january|february|march|april|may|june|july|august|september|october|november|december|janvier|février|mars|avril|mai|juin|juillet|août|septembre|octobre|novembre|décembre|summer|spring|autumn|winter|present)$/i
@@ -126,6 +135,11 @@ export function checkCoverLetter(originalCv: string, letter: string): LetterIssu
       context = undefined
       currentParagraph = paragraphIndex
     }
+    // Every hollow phrase of the sentence, even one that is also a claim.
+    const hollow = HOLLOW_PHRASES.flatMap(pattern => Array.from(sentence.matchAll(new RegExp(pattern.source, 'gi')), m => m[0]))
+    if (EXPERTISE.test(sentence) && !/\bexpert/i.test(originalCv)) hollow.push(sentence.match(EXPERTISE)![0])
+    if (hollow.length) add({ kind: 'hollow', line: sentence, lineIndex: index, unsupported: hollow })
+
     // A clientele the CV does not mention ("for enterprise clients") is a claim too.
     const clientele = sentence.match(CLIENTELE_CLAIM)?.[0]
     const unbackedClientele = clientele && !originalText.includes(clientele.toLowerCase().replace(/^\S+\s+/, ''))

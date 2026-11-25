@@ -141,4 +141,18 @@ describe.skipIf(!existsSync(DIR_25B) || !existsSync(DIR_26))('real letters of 20
       expect.objectContaining({ unsupported: ['déploiement continu'], expected: 'continuous integration (CI)' }),
     ])
   })
+
+  it('point 7: every hollow phrase of the two letters is a warning', async () => {
+    const { checkCoverLetter } = await import('@/lib/fact-check/check-cover-letter')
+    const cvText = (await extractPdfText(readFileSync(DIR_26 + 'original-cv.pdf'))).text
+    for (const name of ['cover-letter-management-solutions.pdf', 'cover-letter-capgemini-fr.pdf']) {
+      const letter = await letterBody(name)
+      const hollow = checkCoverLetter(cvText, letter).filter(i => i.kind === 'hollow')
+      const expected = letter.match(/aligns? perfectly|perfectly aligns?|high-profile|strong work ethic|proven ability|\bexpertise\b/gi) ?? []
+      expect(hollow.length, name).toBeGreaterThanOrEqual(new Set(expected).size > 0 ? 1 : 0)
+      expect(hollow.flatMap(i => i.unsupported).map(s => s.toLowerCase()).sort(), name).toEqual(
+        expect.arrayContaining([...new Set(expected.map(s => s.toLowerCase()))])
+      )
+    }
+  })
 })

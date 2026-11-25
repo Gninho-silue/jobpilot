@@ -9,7 +9,7 @@ const SECTION = /^[A-ZÀ-ÖØ-Þ\s&\-/]+$/
  * (the JobPilot and Banking stacks), so it is only shown to the user.
  */
 export function actionableIssues<T extends { kind: string }>(issues: T[]): T[] {
-  return issues.filter(issue => issue.kind !== 'verify')
+  return issues.filter(issue => issue.kind !== 'verify' && issue.kind !== 'hollow')
 }
 
 /** One instruction per issue, for the single regeneration of an adapted CV. */
@@ -60,6 +60,7 @@ export function describeLetterIssues(issues: LetterIssue[]): string[] {
           ? `The CV says ${issue.expected}, not "${items}": "${issue.line}"`
           : `The CV does not say "${items}": "${issue.line}"`
       case 'verify':
+      case 'hollow':
         return ''
     }
   })

@@ -24,6 +24,7 @@ const KIND_LABEL: Record<ReviewedIssue['kind'], string> = {
   merged: 'Facts from another experience',
   claim: 'Statement about you not in your CV',
   reworded: 'Not what your CV says',
+  hollow: 'Generic phrase',
 }
 
 function kindLabel(issue: ReviewedIssue): string {
@@ -95,7 +96,9 @@ export function FactCheckPanel({ issues, document = 'cv', busy, onFix, onApprove
               </button>
             ) : (
               <p className="text-xs text-[hsl(var(--text-muted))]">
-                {issue.kind === 'verify'
+                {issue.kind === 'hollow'
+                  ? 'Says nothing a recruiter can check: replace it with a fact from your CV.'
+                  : issue.kind === 'verify'
                   ? 'Your CV mentions this elsewhere: check that it belongs here.'
                   : document === 'letter'
                     ? 'This one cannot be removed automatically: edit the letter.'

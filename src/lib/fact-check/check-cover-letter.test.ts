@@ -40,7 +40,8 @@ describe('checkCoverLetter — real case of 2026-11-25 (anonymised)', () => {
   })
 
   it('flags nothing else (the final-year sentence and the project sentence are faithful)', () => {
-    expect(issues.map(i => i.kind).sort()).toEqual(['claim', 'merged'])
+    // "hollow": generic phrases ("aligns perfectly"…), warnings only.
+    expect(issues.filter(i => i.kind !== 'hollow').map(i => i.kind).sort()).toEqual(['claim', 'merged'])
   })
 })
 
@@ -111,7 +112,11 @@ describe('checkCoverLetter — claims about the candidate’s clients', () => {
     'The role aligns perfectly with my background in building robust, test-driven backend systems and delivering end-to-end solutions for enterprise clients.'
 
   it('"enterprise clients" absent from the CV is a claim', () => {
-    expect(checkCoverLetter(CV, SENTENCE)).toEqual([expect.objectContaining({ kind: 'claim', line: SENTENCE })])
+    // Plus the "aligns perfectly" warning.
+    expect(checkCoverLetter(CV, SENTENCE)).toEqual([
+      expect.objectContaining({ kind: 'hollow', unsupported: ['aligns perfectly'] }),
+      expect.objectContaining({ kind: 'claim', line: SENTENCE }),
+    ])
   })
 
   it.each([
@@ -123,6 +128,7 @@ describe('checkCoverLetter — claims about the candidate’s clients', () => {
   })
 
   it('not flagged when the CV itself mentions those clients', () => {
-    expect(checkCoverLetter(`${CV}\n- Delivered dashboards for enterprise clients`, SENTENCE)).toEqual([])
+    // Only "aligns perfectly" is left: a warning about the wording, not a claim.
+    expect(checkCoverLetter(`${CV}\n- Delivered dashboards for enterprise clients`, SENTENCE).map(i => i.kind)).toEqual(['hollow'])
   })
 })

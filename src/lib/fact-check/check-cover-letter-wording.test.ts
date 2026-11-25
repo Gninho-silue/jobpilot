@@ -44,3 +44,38 @@ describe('point 5: CI never becomes continuous deployment', () => {
     ])
   })
 })
+
+describe('point 7: hollow phrases are warnings', () => {
+  it.each([
+    ['EN', 'My experience aligns perfectly with your needs.', 'aligns perfectly'],
+    ['EN', 'Your role perfectly aligns with my goals.', 'perfectly aligns'],
+    ['EN', 'I am eager to work on high-profile projects.', 'high-profile'],
+    ['EN', 'I bring a strong work ethic to every team.', 'strong work ethic'],
+    ['EN', 'I have a proven ability to deliver.', 'proven ability'],
+    ['EN', 'I have a proven track record of delivery.', 'proven track record'],
+    ['EN', 'My expertise in Node.js and generative AI will help your team.', 'expertise'],
+    ['FR', 'Mon profil correspond parfaitement à vos besoins.', 'correspond parfaitement'],
+    ['FR', "Mon parcours s'aligne parfaitement avec vos attentes.", 'aligne parfaitement'],
+    ['FR', 'Je souhaite contribuer à des projets de premier plan.', 'de premier plan'],
+    ['FR', "J'ai une forte éthique de travail.", 'éthique de travail'],
+    ['FR', "J'ai une capacité avérée à livrer.", 'capacité avérée'],
+    ['FR', 'Mon expertise en Node.js et en IA générative sera utile.', 'expertise'],
+  ])('%s: "%s"', (_language, letter, phrase) => {
+    expect(checkCoverLetter(CV, letter)).toEqual([expect.objectContaining({ kind: 'hollow', unsupported: [phrase] })])
+  })
+
+  it('"expertise" is fine when the CV claims it', () => {
+    const cv = CV.replace('Backend Developer', 'Backend Developer with expertise in Node.js')
+    expect(checkCoverLetter(cv, 'My expertise in Node.js fits your team.')).toEqual([])
+  })
+
+  it('a fact-based sentence has no warning', () => {
+    expect(checkCoverLetter(CV, "J'ai démontré ma capacité à livrer des services REST avec Node.js chez Acme Corp.")).toEqual([])
+  })
+
+  it('a warning is shown, never sent to the regeneration', () => {
+    const issues = checkCoverLetter(CV, 'I bring a strong work ethic to every team.')
+    expect(issues).toHaveLength(1)
+    expect(describeLetterIssues(issues)).toEqual([])
+  })
+})
