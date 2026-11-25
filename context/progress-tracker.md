@@ -190,6 +190,12 @@ Vercel Deploy & Production Verification
   - [x] Private CV storage: the DB stores `User.cvPath` (`<userId>/cv.pdf`), never a URL; `GET /api/cv/file` checks the path is the user's own and redirects to a 10-minute signed URL (`?download=1` for a download); no `getPublicUrl` / `/object/public/` anywhere (test-enforced). AI routes never download the PDF: they use the text extracted at upload (`User.cvText`)
   - [x] CI job "Supabase Security" (`scripts/check-supabase-security.mjs`): fails if a Storage bucket is public or a `public` table has RLS disabled; skipped with a warning until the `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` (bucket check) and `SUPABASE_AUDIT_DB_URL` (RLS check, read-only role `jobpilot_ci_audit` from `scripts/sql/create-ci-audit-role.sql`, never the DB owner; optional `SUPABASE_DB_CA_CERT`) repository secrets are set. Runs only on push to `main`
   - [x] Prompt injection: system message = instructions + `UNTRUSTED_DATA_RULE`; user text only in `wrapUntrusted()` tags (angle brackets neutralised, length capped by `PROMPT_LIMITS`); Zod max lengths on company, role, offer, notes, salary, interview question and answer
+- [ ] Adapted CV without invention (JOBPILOT_PLAN.md, step 3), in progress
+  - [x] Anonymised real-world fixtures (`test/fixtures/anonymized-2026-11-25/`); real PDFs local only (`test/fixtures/real-*/`, git-ignored, tests in `test/real/` skipped when absent)
+  - [x] PDF rendering: `lib/text/typography.ts` (`normalizeTypography`: U+2011/U+2010 hyphens, U+202F/U+2009 spaces, detached LaTeX accents, combining marks; `toPdfSafe`: only WinAnsi characters Helvetica can draw). Applied at extraction, prompt input (`wrapUntrusted`), saved AI output and PDF rendering. Prompt counter-examples ("NEVER 100/%") removed: the model copied them
+  - [x] Letter header uses the contact line (email/phone), not the CV's 2nd line; `stripNonPrintable` removed
+  - [x] Links: `extractPdfText` returns the PDF's link URLs and appends a `Links:` line to the text; the adapted CV renders URL-like contact parts and project links as clickable addresses; a `>LINK:` that is not a URL is not rendered
+  - [x] `isSectionHeader` tests the line as written (it upper-cased first, so short lines such as certifications became headings)
 
 ## Known Issues (found while writing tests)
 

@@ -11,7 +11,8 @@ OUTPUT FORMAT — follow EXACTLY, no markdown whatsoever:
 
 LINE 1:  Full Name
 LINE 2:  Job Title / Specialization  (e.g. "Full-Stack Engineer | Java · Spring Boot · React · DevOps")
-LINE 3:  Contact line — each item separated by  $|$  (e.g. "+212 776 323 683 $|$ email@example.com $|$ Casablanca, Maroc")
+LINE 3:  Contact line — each item separated by  $|$  (e.g. "+33 6 00 00 00 00 $|$ email@example.com $|$ https://www.linkedin.com/in/name $|$ Paris, France")
+         Profile links: use the full URLs listed on the CV's "Links:" line (LinkedIn, GitHub, portfolio), never a bare label such as "LinkedIn" or "GitHub".
 
 Then sections using these exact headers (ALL CAPS, no punctuation):
   PROFILE
@@ -31,7 +32,7 @@ Inside PROJECTS, each entry:
   >TITLE: Project Name
   >TECH: Technologies used (e.g. "Python · FastAPI · LangGraph · React · Docker")
   >DATE: Year (e.g. "2026")
-  >LINK: URL (optional, e.g. "https://github.com/user/project")
+  >LINK: full URL of this project taken from the CV (optional, e.g. "https://github.com/user/project"); omit the line if the CV has no URL for it, never a bare label
   Then bullet points starting with a dash "- "
 
 Inside EDUCATION, each entry:
@@ -48,7 +49,7 @@ Inside CERTIFICATIONS & LANGUAGES:
 
 Rules:
 - NO asterisks (**bold**), NO #, NO backticks, NO markdown
-- NO escaped slashes: write "100%" (NEVER "100/%"), "30%" (NEVER "30/%"), "5 secondes" (NEVER "5/secondes"), "Next.js 14" (NEVER "Next.js/14"), "Tailwind CSS" (NEVER "Tailwind/CSS")
+- Use plain characters: the ASCII hyphen (-), regular spaces, and numbers, percentages and versions written as in the CV (e.g. 30%, Next.js 14, Tailwind CSS)
 - Bullet points start with "- "
 - Separate entries with a blank line
 `
@@ -77,8 +78,8 @@ CRITICAL ANTI-HALLUCINATION & TRUTHFULNESS RULES (MANDATORY):
    - Reorder the TECHNICAL SKILLS section to put skills matching the offer first.
    - Highlight and prioritize matching personal / open-source projects from the candidate's actual projects list.
    - Rephrase bullet points to emphasize transferable software engineering strengths (architecture, APIs, CI/CD, testing, problem solving, performance optimization) without fabricating fake tools.
-3. NO ESCAPED CHARACTERS / NO SLASHES:
-   - Never write slashes before percentages or punctuation (write 100%, 30%, 60%, 8 mois, not 100/%, 30/%, 60/%, 8/mois).
+3. PLAIN CHARACTERS:
+   - Use plain characters: the ASCII hyphen (-), regular spaces, and numbers, percentages and versions written as in the CV (e.g. 30%, Next.js 14, Tailwind CSS).
 4. Follow the OUTPUT FORMAT strictly — no markdown asterisks, no hash signs.
 5. Respond ONLY with the adapted CV text.
 

@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
+import { Document, Link, Page, Text, renderToBuffer } from '@react-pdf/renderer'
 import { extractPdfText } from './extract-text'
 
 const fixture = (name: string) =>
@@ -45,5 +46,49 @@ describe('extractPdfText (real PDFs, real parser)', () => {
 
   it('rejects bytes that are not a PDF', async () => {
     await expect(extractPdfText(Buffer.from('%PDF-1.7 truncated garbage'))).rejects.toThrow()
+  })
+})
+
+describe('extractPdfText — typography of the extracted text', () => {
+  it('recomposes accents detached by LaTeX PDFs', async () => {
+    // Text as a LaTeX-made PDF stores it: spacing accent next to the letter.
+    const latexLike = await renderToBuffer(
+      <Document>
+        <Page>
+          <Text>{'Zo´e Martin-Ferr´e, ´Ecole, Formation Compl`ete'}</Text>
+        </Page>
+      </Document>
+    )
+    const { text } = await extractPdfText(Buffer.from(latexLike))
+    expect(text).toBe('Zoé Martin-Ferré, École, Formation Complète')
+  })
+})
+
+describe('extractPdfText — link URLs', () => {
+  it('appends the URLs of link annotations (the text only shows their labels), without mailto and duplicates', async () => {
+    const pdf = await renderToBuffer(
+      <Document>
+        <Page>
+          <Text>
+            <Link src="mailto:candidate_test@example.com">candidate_test@example.com</Link>
+            {' | '}
+            <Link src="https://www.linkedin.com/in/zoe-test">LinkedIn</Link>
+            {' | '}
+            <Link src="https://github.com/zoe-test">GitHub</Link>
+            {' | '}
+            <Link src="https://github.com/zoe-test">GitHub again</Link>
+          </Text>
+        </Page>
+      </Document>
+    )
+    const { text, links } = await extractPdfText(Buffer.from(pdf))
+
+    expect(links).toEqual(['https://www.linkedin.com/in/zoe-test', 'https://github.com/zoe-test'])
+    expect(text.split('\n').at(-1)).toBe('Links: https://www.linkedin.com/in/zoe-test | https://github.com/zoe-test')
+  })
+
+  it('adds no Links line when the PDF has no link', async () => {
+    const pdf = await renderToBuffer(<Document><Page><Text>No links here</Text></Page></Document>)
+    expect(await extractPdfText(Buffer.from(pdf))).toEqual({ text: 'No links here', pages: 1, links: [] })
   })
 })

@@ -1,17 +1,14 @@
 import { Document, Font, Page, StyleSheet, Text, View, renderToBuffer } from '@react-pdf/renderer'
+import { toPdfSafe } from '@/lib/text/typography'
 
 Font.registerHyphenationCallback(w => [w])
-
-function stripNonPrintable(s: string): string {
-  return s.replace(/[^\x20-\x7EÀ-ɏ]/g, '')
-}
 
 function stripMarkdown(s: string): string {
   return s
     .replace(/\*\*(.+?)\*\*/g, '$1')   // **bold** -> bold
     .replace(/\*(.+?)\*/g, '$1')        // *italic* -> italic
-    .replace(/__(.+?)__/g, '$1')        // __bold__ -> bold
-    .replace(/_(.+?)_/g, '$1')          // _italic_ -> italic
+    .replace(/(^|\s)__(\S.*?\S)__(?=\s|[.,;:!?)]|$)/g, '$1$2')  // __bold__ (not data__x)
+    .replace(/(^|\s)_(\S.*?\S)_(?=\s|[.,;:!?)]|$)/g, '$1$2')    // _italic_ (not data_eng)
     .replace(/`(.+?)`/g, '$1')          // `code` -> code
     .replace(/^#{1,4}\s*/gm, '')        // ### Heading -> Heading
     .replace(/^\s*---+\s*$/gm, '')      // --- divider -> removed
@@ -19,11 +16,15 @@ function stripMarkdown(s: string): string {
     .trim()
 }
 
+// The contact line holds an email address or a phone number. In the CV it comes
+// after the name and the job title, so it is not simply the second line.
+const CONTACT_LINE = /@|\+?\d[\d\s().-]{6,}\d/
+
 function extractCandidateHeader(cvText: string): { name: string; contact: string } {
   const lines = cvText.split('\n').map(l => l.trim()).filter(Boolean)
-  const name = stripMarkdown(stripNonPrintable(lines[0] ?? ''))
-  const rawContact = stripMarkdown(stripNonPrintable(lines[1] ?? ''))
-  
+  const name = stripMarkdown(lines[0] ?? '')
+  const rawContact = stripMarkdown(lines.slice(1, 5).find(line => CONTACT_LINE.test(line)) ?? '')
+
   const contactParts = rawContact
     .split(/\$\|\$|\s*[|]\s*|\s{3,}|\s*·\s*/)
     .map(p => p.trim())
@@ -171,14 +172,15 @@ export async function generateCoverLetterPdf(
   company: string,
   role: string
 ): Promise<Buffer> {
-  const { name, contact } = extractCandidateHeader(cvText)
+  // Only characters the built-in Helvetica can draw (see lib/text/typography.ts).
+  const { name, contact } = extractCandidateHeader(toPdfSafe(cvText))
   return renderToBuffer(
     <CoverLetterDoc
       candidateName={name}
       candidateContact={contact}
-      role={role}
-      company={company}
-      body={coverLetter}
+      role={toPdfSafe(role)}
+      company={toPdfSafe(company)}
+      body={toPdfSafe(coverLetter)}
     />
   )
 }

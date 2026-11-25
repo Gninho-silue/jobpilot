@@ -19,7 +19,7 @@ Règles ANTI-HALLUCINATION & VÉRACITÉ (OBLIGATOIRES) :
   * Pour illustrer les compétences demandées dans l'offre (ex: React, Node.js, Next.js, API REST, Docker), cite les VRAIS projets personnels ou les compétences transversales où le candidat les a réellement utilisées (ex: DevScope, JobPilot, AgentFlow, etc.).
 - Attention aux noms d'entreprises : "PFE" ou "PFA" désigne le type de stage (Projet de Fin d'Études / d'Année), le nom de l'entreprise est la vraie société (ex: "TechPal Services"), ne dis JAMAIS "chez PFEMars".
 - Format propre sans markdown : AUCUN astérisque (**gras** ou *italique*), écris du texte brut fluide.
-- Français naturel sans slashes d'échappement : écris "100%", "Next.js 14", "Tailwind CSS", "Synertic :", et non "100/%", "Next.js/14", "Synertic/:".
+- Caractères simples : trait d'union ASCII (-), espaces normales, nombres, pourcentages et versions écrits comme dans le CV (ex. 30 %, Next.js 14, Tailwind CSS).
 - Commencer directement par le texte de la lettre, sans "Objet:" ni en-tête.
 
 Réponds uniquement avec le texte de la lettre, sans commentaire.
@@ -42,7 +42,7 @@ ANTI-HALLUCINATION & TRUTHFULNESS RULES (MANDATORY):
 - NEVER alter or fabricate technologies for past work experiences. Keep the exact true tools for each past job.
 - To demonstrate skills matching the offer, reference the candidate's actual projects (e.g. personal projects, open source) or real skills where they were actually used.
 - Be precise with company names (e.g. "TechPal Services", not internship acronyms like "PFEMars").
-- Output pure clean plain text with NO markdown asterisks (**bold**), NO backticks, and NO escaped slashes (e.g. write "100%", not "100/%").
+- Output pure clean plain text with NO markdown asterisks (**bold**), NO backticks. Use plain characters: the ASCII hyphen (-), regular spaces, and numbers, percentages and versions written as in the CV (e.g. 30%, Next.js 14, Tailwind CSS).
 - Start directly with the letter body, no "Subject:" line or header.
 
 Respond ONLY with the cover letter text, no explanations.

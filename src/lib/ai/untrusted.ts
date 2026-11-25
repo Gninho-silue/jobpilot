@@ -1,3 +1,5 @@
+import { normalizeTypography } from '@/lib/text/typography'
+
 /**
  * Helpers that keep user-supplied text (CV, job offer, company, interview
  * answers…) out of the instructions sent to the LLM.
@@ -30,7 +32,9 @@ function neutraliseTags(text: string): string {
 
 /** Puts user text inside `<tag>…</tag>`, capped at `maxChars`. */
 export function wrapUntrusted(tag: string, text: string, maxChars: number): string {
-  const capped = text.length > maxChars ? `${text.slice(0, maxChars)}\n[truncated]` : text
+  // CVs stored before extraction was fixed still hold detached accents ("Silu´e").
+  const clean = normalizeTypography(text)
+  const capped = clean.length > maxChars ? `${clean.slice(0, maxChars)}\n[truncated]` : clean
   return `<${tag}>\n${neutraliseTags(capped)}\n</${tag}>`
 }
 

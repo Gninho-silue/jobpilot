@@ -117,3 +117,21 @@ describe('input length limits (Zod)', () => {
     expect(interviewFeedbackSchema.safeParse({ ...valid, answer: long(5_001) }).success).toBe(false)
   })
 })
+
+describe('typography of what reaches the model', () => {
+  it('user text is normalised inside its tag (accents recomposed, typographic hyphens and spaces)', () => {
+    expect(wrapUntrusted('cv', 'Zo´e Martin-Ferr´e, e‑commerce, 95 %', 100)).toBe(
+      '<cv>\nZoé Martin-Ferré, e-commerce, 95%\n</cv>'
+    )
+  })
+
+  it.each([
+    ['adaptResume', () => (mockCompletion('x'), adaptResume(CV, OFFER, 'EN'))],
+    ['generateCoverLetter FR', () => (mockCompletion('x'), generateCoverLetter(CV, OFFER, 'Globex', 'Ingénieur', 'FR'))],
+    ['generateCoverLetter EN', () => (mockCompletion('x'), generateCoverLetter(CV, OFFER, 'Globex', 'Engineer', 'EN'))],
+  ])('%s: the prompt never shows the model a slash before a percent sign or a number (it imitated the counter-example)', async (_name, run) => {
+    await run()
+    const { system } = messages()
+    expect(system).not.toMatch(/\/%|[A-Za-z.]\/\d|\d\/%/)
+  })
+})

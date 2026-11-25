@@ -1,4 +1,5 @@
 import { Document, Font, Page, StyleSheet, Text, View, renderToBuffer, Link } from '@react-pdf/renderer'
+import { toPdfSafe } from '@/lib/text/typography'
 
 // Disable hyphenation
 Font.registerHyphenationCallback(w => [w])
@@ -219,13 +220,14 @@ const SECTION_HEADERS = new Set([
 ])
 
 function isSectionHeader(line: string): boolean {
-  const t = line.trim().toUpperCase().replace(/[:']/g, '')
-  if (SECTION_HEADERS.has(t)) return true
+  const asWritten = line.trim().replace(/[:']/g, '')
+  if (SECTION_HEADERS.has(asWritten.toUpperCase())) return true
   // Markdown ### heading
   if (/^#{1,3}\s+/.test(line.trim())) return true
-  // All-caps line ≤ 50 chars
-  return /^[A-ZÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖØÙÚÛÜÝÞ\s&\-/]+$/.test(t) &&
-    t.length >= 3 && t.length <= 55
+  // A line written in capitals (≤ 55 chars). Test the line as written: upper-casing
+  // it first made every short line a heading (certifications were capitalised).
+  return /^[A-ZÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖØÙÚÛÜÝÞ\s&\-/]+$/.test(asWritten) &&
+    asWritten.length >= 3 && asWritten.length <= 55
 }
 
 function cleanSectionTitle(line: string): string {
@@ -443,6 +445,21 @@ export function parseCvStructured(raw: string): ParsedCv {
 
 // ── React-PDF components ──────────────────────────────────────────────────────
 
+// A web address, with or without protocol (not an email address).
+const URL_LIKE = /^(https?:\/\/)?([a-z0-9_-]+\.)+[a-z]{2,}(\/\S*)?$/i
+
+function isUrlLike(value: string): boolean {
+  return URL_LIKE.test(value.trim()) && !value.includes('@')
+}
+
+/** Clickable address labelled without protocol or "www." (e.g. "github.com/zoe"). */
+function UrlLink({ url, style }: { url: string; style: (typeof S)[keyof typeof S] }) {
+  const trimmed = url.trim()
+  const href = /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`
+  const label = trimmed.replace(/^https?:\/\//i, '').replace(/^www\./i, '').replace(/\/$/, '')
+  return <Link src={href} style={style}>{label}</Link>
+}
+
 function BulletPoint({ text }: { text: string }) {
   return (
     <View style={S.bulletRow}>
@@ -463,9 +480,7 @@ function EntryBlock({ entry }: { entry: CvEntry }) {
         <View style={S.entrySubRow}>
           {entry.company && <Text style={S.entryCompany}>{entry.company}</Text>}
           {entry.tech && <Text style={S.entryTech}>{entry.tech}</Text>}
-          {entry.link ? (
-            <Link src={entry.link} style={S.entryLink}>GitHub ↗</Link>
-          ) : null}
+          {entry.link && isUrlLike(entry.link) ? <UrlLink url={entry.link} style={S.entryLink} /> : null}
         </View>
       )}
       {entry.bullets.length > 0 && (
@@ -511,7 +526,7 @@ function ContactRow({ parts }: { parts: string[] }) {
       {parts.map((part, idx) => (
         <View key={idx} style={{ flexDirection: 'row', alignItems: 'center' }}>
           {idx > 0 && <Text style={S.contactSep}> · </Text>}
-          <Text style={S.contactPart}>{part}</Text>
+          {isUrlLike(part) ? <UrlLink url={part} style={S.contactPart} /> : <Text style={S.contactPart}>{part}</Text>}
         </View>
       ))}
     </View>
@@ -545,7 +560,8 @@ function CvDocument({ name, subtitle, contactParts, sections }: ParsedCv) {
 // ── Public API ────────────────────────────────────────────────────────────────
 
 export async function generateCvPdf(adaptedCvText: string): Promise<Buffer> {
-  const parsed = parseCvStructured(adaptedCvText)
+  // Only characters the built-in Helvetica can draw (see lib/text/typography.ts).
+  const parsed = parseCvStructured(toPdfSafe(adaptedCvText))
   return renderToBuffer(
     <CvDocument
       name={parsed.name}

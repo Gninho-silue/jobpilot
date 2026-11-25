@@ -1,6 +1,7 @@
 import { auth } from '@clerk/nextjs/server'
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { normalizeTypography } from '@/lib/text/typography'
 import { checkAndIncrementUsage } from '@/lib/usage'
 import { streamAdaptResume } from '@/lib/ai/adapt-resume'
 import { checkLlmRateLimit, tooManyRequests } from '@/lib/rate-limit'
@@ -66,7 +67,7 @@ export async function POST(
           if (accumulatedText) {
             await prisma.application.update({
               where: { id },
-              data: { adaptedCvText: accumulatedText },
+              data: { adaptedCvText: normalizeTypography(accumulatedText) },
             })
           }
 

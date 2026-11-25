@@ -201,3 +201,14 @@ describe('generateInterviewFeedback', () => {
     expect(result.strengths).toBeUndefined()
   })
 })
+
+describe('adaptResume — links', () => {
+  it('tells the model to use the full URLs from the CV "Links:" line, never a bare label', async () => {
+    mockCompletion('x')
+    await adaptResume(CV + '\n\nLinks: https://www.linkedin.com/in/jane | https://github.com/jane', OFFER, 'EN')
+    const system = groqCall().messages[0]?.content ?? ''
+    expect(system).toContain('"Links:"')
+    expect(system).toMatch(/never a bare label/i)
+    expect(groqCall().messages[1]?.content).toContain('Links: https://www.linkedin.com/in/jane | https://github.com/jane')
+  })
+})
