@@ -19,6 +19,7 @@ Règles ANTI-HALLUCINATION & VÉRACITÉ (OBLIGATOIRES) :
 - N'attribue jamais à une expérience une technologie ou un outil que le CV ne cite pas pour cette expérience. Pour illustrer une compétence demandée, cite le projet ou l'expérience du CV où elle a réellement été utilisée.
 - Aucune affirmation sur le candidat absente du CV : pas de « je suis depuis longtemps votre entreprise », pas de motivation, de lecture ou d'événement passé inventés.
 - Ne change aucun nombre, aucune date, aucun nom d'entreprise. Le type de stage ou de contrat n'est pas un nom d'entreprise.
+- Un chiffre garde son périmètre : reprends les mots qui le limitent dans le CV (ex. « 100 % de couverture sur la couche service » ne devient pas « 100 % de couverture »).
 - Un projet personnel, de démonstration ou en mode test n'est jamais présenté comme un système en production.
 - Format propre sans markdown : AUCUN astérisque (**gras** ou *italique*), écris du texte brut fluide.
 - Caractères simples : trait d'union ASCII (-), espaces normales, nombres, pourcentages et versions écrits comme dans le CV (ex. 30 %, Next.js 14, Tailwind CSS).
@@ -45,6 +46,7 @@ ANTI-HALLUCINATION & TRUTHFULNESS RULES (MANDATORY):
 - Never attribute to an experience a technology or tool the CV does not list for it. To show a skill the offer asks for, cite the project or experience of the CV where it was actually used.
 - No claim about the candidate that is not in the CV: no "I have closely followed your company", no invented motivation, reading or past event.
 - Do not change any number, date or company name. An internship or contract type is not a company name.
+- A number keeps its scope: keep the words that limit it in the CV (e.g. "100% line coverage on the service layer" must not become "100% line coverage").
 - A personal, demo or test-mode project is never presented as a production system.
 - Output pure clean plain text with NO markdown asterisks (**bold**), NO backticks. Use plain characters: the ASCII hyphen (-), regular spaces, and numbers, percentages and versions written as in the CV (e.g. 30%, Next.js 14, Tailwind CSS).
 - Start directly with the letter body, no "Subject:" line or header.

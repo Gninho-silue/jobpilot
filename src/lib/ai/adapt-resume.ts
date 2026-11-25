@@ -82,6 +82,7 @@ CRITICAL ANTI-HALLUCINATION & TRUTHFULNESS RULES (MANDATORY):
 1. ZERO-HALLUCINATION. Everything you write must come from the CV:
    - Each experience and project keeps ONLY the tools, technologies and achievements the CV lists FOR THAT experience or project. Never move a skill from the skills list, another job or a project into an experience, even if the offer asks for it.
    - Never add a company, school, job title, date, degree, certification or number (count, percentage, duration) that is not in the CV. Never change one (e.g. "9" stays "9", "60%" stays "60%").
+   - A number keeps its scope: keep the words that limit it in the CV (e.g. "100% line coverage on the service layer" must not become "100% line coverage").
    - Keep the candidate's own job title (line 2), even if the offer is for a different role.
    - Keep the status of what the candidate built: a personal, demo or test-mode project (e.g. a payment integration in test mode) is never presented as a production system with real users or real payments.
    - Keep company names exactly as in the CV, separate from the internship or contract type and from the dates.

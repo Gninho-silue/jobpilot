@@ -62,3 +62,17 @@ describe('truthfulness rules reach the model', () => {
     expect(system).toContain(claims)
   })
 })
+
+describe('a figure keeps its scope', () => {
+  it.each([
+    ['adaptResume EN', () => adaptResume(CV, OFFER, 'EN'), 'A number keeps its scope'],
+    ['generateCoverLetter EN', () => generateCoverLetter(CV, OFFER, 'Globex', 'Engineer', 'EN'), 'A number keeps its scope'],
+    ['generateCoverLetter FR', () => generateCoverLetter(CV, OFFER, 'Globex', 'Ingénieur', 'FR'), 'Un chiffre garde son périmètre'],
+  ])('%s: the rule and the real example reach the model', async (_name, run, rule) => {
+    mockCompletion('x')
+    await run()
+    const system = groqCall().messages[0]?.content ?? ''
+    expect(system).toContain(rule)
+    expect(system).toMatch(/on the service layer|sur la couche service/)
+  })
+})
