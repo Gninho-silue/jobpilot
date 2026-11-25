@@ -29,12 +29,16 @@ model User {
   email            String        @unique
   plan             Plan          @default(FREE)
   stripeCustomerId String?       @unique
+  /// Demo visitor (id "demo_<random>", signed cookie, purged after 24 h); never a Clerk user.
+  isDemo           Boolean       @default(false)
   cvPath           String? // "<userId>/cv.pdf" in the private `cvs` bucket, never a URL
   cvText           String?       @db.Text
   createdAt        DateTime      @default(now())
   updatedAt        DateTime      @updatedAt
   applications     Application[]
   usage            UsageCounter?
+
+  @@index([isDemo, createdAt])
 }
 
 model Application {

@@ -14,3 +14,7 @@ process.env.SUPABASE_SERVICE_ROLE_KEY = 'dummy'
 // Unit tests must never open a database connection. Integration tests
 // replace this with the Testcontainers URL in test/setup/db.ts.
 process.env.DATABASE_URL = 'postgresql://unit-tests-have-no-db@127.0.0.1:1/none'
+
+// Demo workspace: dummy signing secret (the demo is disabled without one).
+process.env.DEMO_COOKIE_SECRET = 'test-demo-cookie-secret-0123456789abcdef'
+process.env.CRON_SECRET = 'test-cron-secret'
