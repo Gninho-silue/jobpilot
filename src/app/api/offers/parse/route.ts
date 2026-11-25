@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server'
 import { parseOfferSchema } from '@/lib/validation'
 import { parseJobOffer } from '@/lib/ai/parse-offer'
 import { checkLlmRateLimit, tooManyRequests } from '@/lib/rate-limit'
+import { checkDemoQuota } from '@/lib/demo/quota'
 import { TruncatedAnswerError } from '@/lib/ai/call'
 
 export async function POST(request: Request) {
@@ -31,6 +32,9 @@ export async function POST(request: Request) {
   if (!rateLimit.allowed) {
     return tooManyRequests(rateLimit)
   }
+  // Demo visitors: a strict daily AI budget (lib/demo/quota.ts), whatever the plan.
+  const demoLimit = await checkDemoQuota(actor!, request, 'heavy')
+  if (demoLimit) return demoLimit
 
   try {
     const result = await parseJobOffer(parsed.data.offerText, parsed.data.language)

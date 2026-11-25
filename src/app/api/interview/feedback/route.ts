@@ -4,6 +4,7 @@ import { interviewFeedbackSchema } from '@/lib/validation'
 import { prisma } from '@/lib/prisma'
 import { generateInterviewFeedback } from '@/lib/ai/interview-feedback'
 import { checkLlmRateLimit, tooManyRequests } from '@/lib/rate-limit'
+import { checkDemoQuota } from '@/lib/demo/quota'
 import { TRUNCATED_MESSAGE, TruncatedAnswerError } from '@/lib/ai/call'
 
 export async function POST(request: Request) {
@@ -17,13 +18,17 @@ export async function POST(request: Request) {
   if (!rateLimit.allowed) {
     return tooManyRequests(rateLimit)
   }
+  // Demo visitors: a strict daily AI budget (lib/demo/quota.ts), whatever the plan.
+  const demoLimit = await checkDemoQuota(actor!, request, 'feedback')
+  if (demoLimit) return demoLimit
 
   const user = await prisma.user.findUnique({
     where: { id: userId },
     select: { plan: true },
   })
 
-  if (user?.plan !== 'PRO') {
+  // A demo visitor may practise the interview (its feedback quota caps the cost).
+  if (user?.plan !== 'PRO' && actor?.kind !== 'demo') {
     return NextResponse.json({ error: 'Pro plan required' }, { status: 403 })
   }
 

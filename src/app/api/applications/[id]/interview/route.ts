@@ -4,10 +4,11 @@ import { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
 import { generateInterviewQuestions } from '@/lib/ai/generate-interview-questions'
 import { checkLlmRateLimit, tooManyRequests } from '@/lib/rate-limit'
+import { checkDemoQuota } from '@/lib/demo/quota'
 import { TRUNCATED_MESSAGE, TruncatedAnswerError } from '@/lib/ai/call'
 
 export async function POST(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const actor = await getActor()
@@ -25,6 +26,9 @@ export async function POST(
   if (!rateLimit.allowed) {
     return tooManyRequests(rateLimit)
   }
+  // Demo visitors: a strict daily AI budget (lib/demo/quota.ts), whatever the plan.
+  const demoLimit = await checkDemoQuota(actor!, request, 'heavy')
+  if (demoLimit) return demoLimit
 
   const application = await prisma.application.findUnique({ where: { id } })
   if (!application || application.userId !== userId) {

@@ -8,9 +8,10 @@ import { checkCoverLetter } from '@/lib/fact-check/check-cover-letter'
 import { actionableIssues, describeLetterIssues } from '@/lib/fact-check/corrections'
 import { STREAM_ERROR, STREAM_REPLACE } from '@/lib/stream-protocol'
 import { checkLlmRateLimit, tooManyRequests } from '@/lib/rate-limit'
+import { checkDemoQuota } from '@/lib/demo/quota'
 
 export async function POST(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const actor = await getActor()
@@ -28,6 +29,9 @@ export async function POST(
   if (!rateLimit.allowed) {
     return tooManyRequests(rateLimit)
   }
+  // Demo visitors: a strict daily AI budget (lib/demo/quota.ts), whatever the plan.
+  const demoLimit = await checkDemoQuota(actor!, request, 'heavy')
+  if (demoLimit) return demoLimit
 
   const application = await prisma.application.findUnique({ where: { id } })
   if (!application || application.userId !== userId) {
