@@ -1,4 +1,5 @@
-import { groq, GROQ_MODEL } from '@/lib/groq'
+import { GROQ_MODEL } from '@/lib/groq'
+import { completeChat, streamChat } from './call'
 import { PROMPT_LIMITS, UNTRUSTED_DATA_RULE, inlineField, wrapUntrusted } from './untrusted'
 import { finishedByLength, generationOptions, type GeneratedText } from './generation'
 
@@ -98,7 +99,7 @@ export async function generateCoverLetter(
   language: 'FR' | 'EN',
   options: CoverLetterOptions = {}
 ): Promise<GeneratedText> {
-  const response = await groq.chat.completions.create({
+  const response = await completeChat('cover-letter', {
     model: GROQ_MODEL,
     messages: getCoverLetterMessages(cvText, offerText, company, role, language, options),
     ...generationOptions(GROQ_MODEL, cvText, 'letter', options.budgetFactor),
@@ -115,7 +116,7 @@ export async function streamCoverLetter(
   role: string,
   language: 'FR' | 'EN'
 ) {
-  return groq.chat.completions.create({
+  return streamChat('cover-letter.stream', {
     model: GROQ_MODEL,
     messages: getCoverLetterMessages(cvText, offerText, company, role, language),
     ...generationOptions(GROQ_MODEL, cvText, 'letter'),

@@ -1,4 +1,5 @@
-import { groq, GROQ_MODEL } from '@/lib/groq'
+import { GROQ_MODEL } from '@/lib/groq'
+import { completeChat, streamChat } from './call'
 import { PROMPT_LIMITS, UNTRUSTED_DATA_RULE, wrapUntrusted } from './untrusted'
 import { finishedByLength, generationOptions, type GeneratedText } from './generation'
 
@@ -121,7 +122,7 @@ export async function adaptResume(
   language: 'FR' | 'EN',
   options: AdaptResumeOptions = {}
 ): Promise<GeneratedText> {
-  const response = await groq.chat.completions.create({
+  const response = await completeChat('adapt-resume', {
     model: GROQ_MODEL,
     messages: getAdaptResumeMessages(cvText, offerText, language, options),
     ...generationOptions(GROQ_MODEL, cvText, 'cv', options.budgetFactor),
@@ -136,7 +137,7 @@ export async function streamAdaptResume(
   offerText: string,
   language: 'FR' | 'EN'
 ) {
-  return groq.chat.completions.create({
+  return streamChat('adapt-resume.stream', {
     model: GROQ_MODEL,
     messages: getAdaptResumeMessages(cvText, offerText, language),
     ...generationOptions(GROQ_MODEL, cvText, 'cv'),

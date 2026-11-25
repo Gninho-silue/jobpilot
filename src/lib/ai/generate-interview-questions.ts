@@ -1,4 +1,5 @@
-import { groq, GROQ_MODEL } from '@/lib/groq'
+import { GROQ_MODEL } from '@/lib/groq'
+import { completeChat } from './call'
 import { PROMPT_LIMITS, UNTRUSTED_DATA_RULE, inlineField, wrapUntrusted } from './untrusted'
 
 export interface InterviewQuestion {
@@ -62,7 +63,7 @@ export async function generateInterviewQuestions(
     wrapUntrusted('job_offer', offerText, PROMPT_LIMITS.offer),
   ].join('\n\n')
 
-  const response = await groq.chat.completions.create({
+  const response = await completeChat('interview-questions', {
     model: GROQ_MODEL,
     messages: [
       { role: 'system', content: language === 'FR' ? SYSTEM_FR : SYSTEM_EN },
