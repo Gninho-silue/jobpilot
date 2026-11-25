@@ -4,8 +4,11 @@ import { cleanup, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { DemoBanner } from './demo-banner'
+
+vi.mock('next/navigation', () => ({ useRouter: () => ({ replace: vi.fn(), refresh: vi.fn() }) }))
 import { ExitDemoButton } from './exit-demo-button'
 import { TryDemoButton } from './try-demo-button'
+import { DemoNotice } from './demo-notice'
 
 afterEach(() => {
   cleanup()
@@ -36,5 +39,23 @@ describe('demo UI', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Exit demo' }))
     await waitFor(() => expect(navigate).toHaveBeenCalled())
     expect(fetchMock).toHaveBeenCalledWith('/api/demo', { method: 'DELETE' })
+  })
+})
+
+describe('demo notice on the home page', () => {
+  it.each([
+    ['limit', /Too many demos were started from your network/],
+    ['unavailable', /The demo is not available right now/],
+    ['error', /The demo could not start/],
+  ])('?demo=%s shows a readable message', (reason, text) => {
+    render(<DemoNotice reason={reason} />)
+    expect(screen.getByRole('alert')).toHaveTextContent(text)
+  })
+
+  it('nothing for an unknown or missing reason', () => {
+    const { container } = render(<DemoNotice reason="<script>" />)
+    expect(container).toBeEmptyDOMElement()
+    render(<DemoNotice reason={undefined} />)
+    expect(screen.queryByRole('alert')).toBeNull()
   })
 })

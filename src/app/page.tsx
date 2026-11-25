@@ -1,6 +1,7 @@
 import { getActor } from '@/lib/actor'
 import { isDemoEnabled } from '@/lib/demo/cookie'
 import { TryDemoButton } from '@/components/demo/try-demo-button'
+import { DemoNotice } from '@/components/demo/demo-notice'
 import { redirect } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
@@ -46,7 +47,8 @@ const kanbanColumns = [
   { label: 'Rejected', varBg: '--kanban-rejected-bg', varText: '--kanban-rejected-text', cards: 1 },
 ]
 
-export default async function LandingPage() {
+export default async function LandingPage({ searchParams }: { searchParams: Promise<{ demo?: string | string[] }> }) {
+  const { demo } = await searchParams
   if (await getActor()) redirect('/dashboard')
 
   return (
@@ -132,6 +134,8 @@ export default async function LandingPage() {
           Adapt your CV, generate cover letters and prepare for interviews — all in one place.
           Bilingual FR/EN.
         </p>
+
+        <DemoNotice reason={typeof demo === 'string' ? demo : undefined} />
 
         <div className="mb-20 flex flex-col items-center justify-center gap-4 sm:flex-row">
           <Link

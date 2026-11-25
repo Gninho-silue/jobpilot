@@ -4,22 +4,38 @@ import { clientIp } from '@/lib/client-ip'
 import { DEMO_COOKIE, demoCookieOptions, isDemoEnabled, signDemoCookie } from '@/lib/demo/cookie'
 import { deleteDemo, purgeExpiredDemos } from '@/lib/demo/purge'
 import { createDemoWorkspace } from '@/lib/demo/seed'
-import { checkRateLimit, tooManyRequests } from '@/lib/rate-limit'
+import { checkRateLimit } from '@/lib/rate-limit'
 
 /** Demo starts allowed per IP and per hour. */
 const DEMO_STARTS = { limit: 5, windowMs: 60 * 60 * 1000 }
 
+/** A 303 back to a page: a reload of that page never re-sends the form. */
+function redirectTo(request: Request, path: string) {
+  return NextResponse.redirect(new URL(path, request.url), 303)
+}
+
 /**
  * Starts a demo workspace. The one API route without an actor: it creates the
- * actor (rate-limited per IP), with fictional data only.
+ * actor (rate-limited per IP), with fictional data only. Always answers with a
+ * 303 (dashboard, or the home page with ?demo=<reason>), never with JSON.
  */
 export async function POST(request: Request) {
-  if (!isDemoEnabled()) {
-    return NextResponse.json({ error: 'The demo is not available right now.' }, { status: 503 })
+  if (!isDemoEnabled()) return redirectTo(request, '/?demo=unavailable')
+  try {
+    return await startDemo(request)
+  } catch (err) {
+    console.error('[demo] could not start a demo:', err)
+    return redirectTo(request, '/?demo=error')
   }
+}
 
+async function startDemo(request: Request): Promise<NextResponse> {
+  // Already signed in, or already in a demo that still exists: no new workspace.
+  if (await getActor()) return redirectTo(request, '/dashboard')
+
+  // Only accepted starts are counted (checkRateLimit records nothing on a refusal).
   const limit = await checkRateLimit(`demo-start:${clientIp(request)}`, DEMO_STARTS)
-  if (!limit.allowed) return tooManyRequests(limit)
+  if (!limit.allowed) return redirectTo(request, '/?demo=limit')
 
   try {
     await purgeExpiredDemos()
@@ -29,7 +45,7 @@ export async function POST(request: Request) {
   }
 
   const demoId = await createDemoWorkspace()
-  const response = NextResponse.redirect(new URL('/dashboard', request.url), 303)
+  const response = redirectTo(request, '/dashboard')
   response.cookies.set(DEMO_COOKIE, signDemoCookie(demoId), demoCookieOptions())
   return response
 }

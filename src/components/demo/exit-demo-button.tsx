@@ -1,9 +1,11 @@
 'use client'
 
+import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 
 /** Leaves the demo: the workspace is deleted and the cookie cleared (DELETE /api/demo). */
-export function ExitDemoButton({ onExited = () => window.location.assign('/') }: { onExited?: () => void }) {
+export function ExitDemoButton({ onExited }: { onExited?: () => void }) {
+  const router = useRouter()
   const [leaving, setLeaving] = useState(false)
 
   async function exit() {
@@ -11,7 +13,11 @@ export function ExitDemoButton({ onExited = () => window.location.assign('/') }:
     try {
       await fetch('/api/demo', { method: 'DELETE' })
     } finally {
-      onExited()
+      if (onExited) onExited()
+      else {
+        router.replace('/')
+        router.refresh()
+      }
     }
   }
 

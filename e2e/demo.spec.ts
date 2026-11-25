@@ -64,3 +64,31 @@ test('signing in with Clerk during a demo removes the demo cookie', async ({ pag
   await expect(page.getByRole('status').filter({ hasText: 'Demo workspace' })).toHaveCount(0)
   expect((await context.cookies()).find(c => c.name === 'jp_demo')).toBeUndefined()
 })
+
+// Last in the file: it uses up the per-IP limit of demo starts.
+test('limit reached: back home with a readable message, and a reload does not re-send the form', async ({ page, playwright }) => {
+  // Use up the starts from this IP with cookie-less requests (a demo cookie would skip the limit).
+  for (let i = 0; i < 6; i++) {
+    const api = await playwright.request.newContext({ baseURL: 'http://localhost:3100' })
+    const res = await api.post('/api/demo', { maxRedirects: 0 })
+    expect(res.status()).toBe(303)
+    const location = res.headers()['location'] ?? ''
+    await api.dispose()
+    if (location.includes('demo=limit')) break
+  }
+
+  await page.goto('/')
+  await page.getByRole('button', { name: 'Try the demo' }).click()
+  await page.waitForURL(url => url.pathname === '/' && url.searchParams.get('demo') === 'limit')
+  // Next.js's route announcer is an alert too: pick ours by its text.
+  const notice = page.getByRole('alert').filter({ hasText: 'Too many demos were started from your network' })
+  await expect(notice).toBeVisible()
+  await expect(page.locator('body')).not.toContainText('{"error"')
+
+  const posts: string[] = []
+  // Only our form counts (Clerk's script posts to its own servers).
+  page.on('request', request => { if (request.method() === 'POST' && request.url().includes('/api/demo')) posts.push(request.url()) })
+  await page.reload()
+  await expect(notice).toBeVisible()
+  expect(posts).toEqual([])
+})

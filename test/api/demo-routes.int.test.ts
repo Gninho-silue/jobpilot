@@ -1,7 +1,8 @@
 import { NextRequest } from 'next/server'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { prisma } from '@/lib/prisma'
 import { setRequestCookie } from '@test/mocks/next-headers'
+import { signInAs } from '@test/mocks/clerk'
 import { readJson } from '@test/helpers/http'
 import { DEMO_COOKIE, signDemoCookie } from '@/lib/demo/cookie'
 import { DEMO_MAX_AGE_MS } from '@/lib/demo/purge'
@@ -11,6 +12,13 @@ import * as applications from '@/app/api/applications/route'
 
 const start = (ip = '203.0.113.7') =>
   demo.POST(new NextRequest('http://localhost:3000/api/demo', { method: 'POST', headers: { 'x-forwarded-for': `${ip}, 10.0.0.1` } }))
+
+/** Where a 303 sends the browser (path and query). */
+function where(res: Response): string {
+  expect(res.status).toBe(303)
+  const url = new URL(res.headers.get('location')!)
+  return url.pathname + url.search
+}
 
 function cookieOf(res: Response): string {
   const header = res.headers.get('set-cookie') ?? ''
@@ -35,10 +43,64 @@ describe('POST /api/demo: start a demo', () => {
     expect(list.data).toHaveLength(5)
   })
 
-  it('at most 5 starts per IP and per hour', async () => {
-    for (let i = 0; i < 5; i++) expect((await start()).status).toBe(303)
-    expect((await start()).status).toBe(429)
-    expect((await start('198.51.100.9')).status).toBe(303)
+  it('at most 5 starts per IP and per hour; then back to the home page with a readable message, never JSON', async () => {
+    for (let i = 0; i < 5; i++) expect(where(await start())).toBe('/dashboard')
+    const refused = await start()
+    expect(refused.status).toBe(303)
+    expect(where(refused)).toBe('/?demo=limit')
+    expect(refused.headers.get('content-type') ?? '').not.toMatch(/json/)
+    expect(refused.headers.get('set-cookie')).toBeNull()
+    expect(where(await start('198.51.100.9'))).toBe('/dashboard')
+  })
+
+  it('refused attempts do not count against the limit (a reload after a refusal changes nothing)', async () => {
+    for (let i = 0; i < 5; i++) await start()
+    for (let i = 0; i < 4; i++) expect(where(await start())).toBe('/?demo=limit')
+    expect(await prisma.rateLimitHit.count({ where: { key: 'demo-start:203.0.113.7' } })).toBe(5)
+    expect(await prisma.user.count({ where: { isDemo: true } })).toBe(5)
+  })
+
+  it('a visitor who already has a valid demo goes straight to the dashboard: no new workspace, no attempt counted', async () => {
+    await prisma.user.create({ data: { id: 'demo_existing1', email: 'demo_existing1@demo.invalid', isDemo: true } })
+    setRequestCookie(DEMO_COOKIE, signDemoCookie('demo_existing1'))
+    const res = await start()
+    expect(where(res)).toBe('/dashboard')
+    expect(res.headers.get('set-cookie')).toBeNull()
+    expect(await prisma.user.count({ where: { isDemo: true } })).toBe(1)
+    expect(await prisma.rateLimitHit.count()).toBe(0)
+  })
+
+  it('a signed-in user goes to the dashboard, without a demo', async () => {
+    signInAs('user_real01')
+    expect(where(await start())).toBe('/dashboard')
+    expect(await prisma.user.count({ where: { isDemo: true } })).toBe(0)
+  })
+
+  it('a demo cookie whose workspace was purged starts a new demo', async () => {
+    setRequestCookie(DEMO_COOKIE, signDemoCookie('demo_purged001'))
+    expect(where(await start())).toBe('/dashboard')
+    expect(await prisma.user.count({ where: { isDemo: true } })).toBe(1)
+  })
+
+  it('a failure while seeding → home page with a message', async () => {
+    // Only the seeding transaction (an array of queries) fails.
+    const original = prisma.$transaction.bind(prisma) as (arg: unknown) => Promise<unknown>
+    const spy = vi.spyOn(prisma, '$transaction').mockImplementation(((arg: unknown) =>
+      Array.isArray(arg) ? Promise.reject(new Error('db down')) : original(arg)) as never)
+    try {
+      expect(where(await start())).toBe('/?demo=error')
+    } finally {
+      spy.mockRestore()
+    }
+  })
+
+  it('any unexpected error (database down) → home page with a message, never a 500', async () => {
+    const spy = vi.spyOn(prisma, '$transaction').mockRejectedValue(new Error('db down'))
+    try {
+      expect(where(await start())).toBe('/?demo=error')
+    } finally {
+      spy.mockRestore()
+    }
   })
 
   it('purges expired demos when a new one starts', async () => {
@@ -47,11 +109,11 @@ describe('POST /api/demo: start a demo', () => {
     expect(await prisma.user.findUnique({ where: { id: 'demo_expired01' } })).toBeNull()
   })
 
-  it('503 when the demo is disabled (no DEMO_COOKIE_SECRET)', async () => {
+  it('demo disabled (no DEMO_COOKIE_SECRET) → home page with a message', async () => {
     const secret = process.env.DEMO_COOKIE_SECRET
     delete process.env.DEMO_COOKIE_SECRET
     try {
-      expect((await start()).status).toBe(503)
+      expect(where(await start())).toBe('/?demo=unavailable')
       expect(await prisma.user.count({ where: { isDemo: true } })).toBe(0)
     } finally {
       process.env.DEMO_COOKIE_SECRET = secret
