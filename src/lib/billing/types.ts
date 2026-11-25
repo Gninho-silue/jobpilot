@@ -14,6 +14,8 @@ export type BillingEvent =
       isNewSubscription: boolean
       userId?: string
       customerId?: string
+      /** Set when the checkout was started by a demo visitor: only that demo row may change. */
+      demoId?: string
     }
   | {
       id: string
@@ -29,6 +31,8 @@ export type BillingEvent =
 
 export interface CheckoutInput {
   userId: string
+  /** A demo visitor's id: the customer and the session are marked as demo. */
+  demoId?: string
   email?: string
   /** Provider customer id saved from a previous checkout, if any. */
   customerId: string | null
@@ -39,10 +43,14 @@ export interface CheckoutInput {
 export interface BillingProvider {
   /** Short stable name, used to namespace processed event ids. */
   readonly name: string
+  /** True only with test keys: demo visitors may pay only in test mode. */
+  isTestMode(): boolean
   createCheckout(input: CheckoutInput): Promise<{ url: string; customerId: string }>
   createPortal(input: { customerId: string; returnUrl: string }): Promise<{ url: string }>
   /** Verifies the signature and translates the payload. Throws InvalidWebhookSignatureError. */
   parseWebhook(rawBody: string, headers: Headers): Promise<BillingEvent>
+  /** Deletes a customer (demo purge, test mode only). */
+  deleteCustomer(customerId: string): Promise<void>
 }
 
 export class InvalidWebhookSignatureError extends Error {

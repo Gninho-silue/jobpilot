@@ -17,6 +17,7 @@ function toBillingEvent(event: Stripe.Event): BillingEvent {
         isNewSubscription: true,
         userId: session.metadata?.clerkUserId ?? undefined,
         customerId: customerIdOf(session.customer),
+        ...(session.metadata?.demo === 'true' && session.metadata.demoId ? { demoId: session.metadata.demoId } : {}),
       }
     }
     case 'customer.subscription.deleted':
@@ -36,10 +37,15 @@ function toBillingEvent(event: Stripe.Event): BillingEvent {
 export const stripeBillingProvider: BillingProvider = {
   name: 'stripe',
 
-  async createCheckout({ userId, email, customerId, successUrl, cancelUrl }) {
+  isTestMode() {
+    return (process.env.STRIPE_SECRET_KEY ?? '').startsWith('sk_test_')
+  },
+
+  async createCheckout({ userId, demoId, email, customerId, successUrl, cancelUrl }) {
+    const metadata = { clerkUserId: userId, ...(demoId ? { demo: 'true', demoId } : {}) }
     let customer = customerId
     if (!customer) {
-      const created = await stripe.customers.create({ email, metadata: { clerkUserId: userId } })
+      const created = await stripe.customers.create({ email, metadata })
       customer = created.id
     }
 
@@ -50,7 +56,7 @@ export const stripeBillingProvider: BillingProvider = {
       line_items: [{ price: process.env.STRIPE_PRO_PRICE_ID!, quantity: 1 }],
       success_url: successUrl,
       cancel_url: cancelUrl,
-      metadata: { clerkUserId: userId },
+      metadata,
     })
     if (!session.url) throw new Error('Stripe returned a checkout session without a URL')
 
@@ -60,6 +66,10 @@ export const stripeBillingProvider: BillingProvider = {
   async createPortal({ customerId, returnUrl }) {
     const session = await stripe.billingPortal.sessions.create({ customer: customerId, return_url: returnUrl })
     return { url: session.url }
+  },
+
+  async deleteCustomer(customerId) {
+    await stripe.customers.del(customerId)
   },
 
   async parseWebhook(rawBody, headers) {

@@ -92,3 +92,36 @@ describe('applyBillingEvent', () => {
     })
   })
 })
+
+describe('applyBillingEvent — demo accounts', () => {
+  async function demo(id: string, customer?: string) {
+    await prisma.user.create({ data: { id, email: `${id}@demo.invalid`, isDemo: true, stripeCustomerId: customer } })
+  }
+  const plan = async (id: string) => (await prisma.user.findUniqueOrThrow({ where: { id } })).plan
+
+  it('a demo checkout upgrades that demo', async () => {
+    await demo('demo_payer0001')
+    await applyBillingEvent('stripe', { id: 'evt_d1', type: 'subscription.activated', isNewSubscription: true, userId: 'demo_payer0001', demoId: 'demo_payer0001' })
+    expect(await plan('demo_payer0001')).toBe('PRO')
+  })
+
+  it('a demo event never changes a real account, even if it names one', async () => {
+    await createUser('user_real01')
+    await demo('demo_payer0002')
+    await applyBillingEvent('stripe', { id: 'evt_d2', type: 'subscription.activated', isNewSubscription: true, userId: 'user_real01', demoId: 'demo_payer0002' })
+    expect(await plan('user_real01')).toBe('FREE')
+    expect(await plan('demo_payer0002')).toBe('PRO')
+  })
+
+  it('a demo event naming a real account as the demo changes nothing', async () => {
+    await createUser('user_real02')
+    await applyBillingEvent('stripe', { id: 'evt_d3', type: 'subscription.activated', isNewSubscription: true, userId: 'user_real02', demoId: 'user_real02' })
+    expect(await plan('user_real02')).toBe('FREE')
+  })
+
+  it('an event without demo metadata never changes a demo named by user id', async () => {
+    await demo('demo_payer0003')
+    await applyBillingEvent('stripe', { id: 'evt_d4', type: 'subscription.activated', isNewSubscription: true, userId: 'demo_payer0003' })
+    expect(await plan('demo_payer0003')).toBe('FREE')
+  })
+})

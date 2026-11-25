@@ -58,3 +58,44 @@ describe('demo purge after 24 h', () => {
     expect(await prisma.application.count({ where: { userId: id } })).toBe(5)
   })
 })
+
+describe('demo purge — Stripe test customers', () => {
+  it('deletes the Stripe test customer of an expired demo, and of a demo that exits', async () => {
+    const { stripe } = await import('@test/mocks/stripe')
+    const { deleteDemo } = await import('./purge')
+    stripe.customers.del.mockResolvedValue({ deleted: true })
+    const old = await createDemoWorkspace()
+    await prisma.user.update({ where: { id: old }, data: { stripeCustomerId: 'cus_olddemo', createdAt: new Date(Date.now() - DEMO_MAX_AGE_MS - HOUR) } })
+    const leaving = await createDemoWorkspace()
+    await prisma.user.update({ where: { id: leaving }, data: { stripeCustomerId: 'cus_leaving' } })
+    await createUser('user_real02', { stripeCustomerId: 'cus_real02' })
+    await age('user_real02', 30 * 24 * HOUR)
+
+    await purgeExpiredDemos()
+    await deleteDemo(leaving)
+
+    expect(stripe.customers.del.mock.calls.map(c => c[0]).sort()).toEqual(['cus_leaving', 'cus_olddemo'])
+  })
+
+  it('never deletes a Stripe customer with a live key, but still purges the demo', async () => {
+    const { stripe } = await import('@test/mocks/stripe')
+    const key = process.env.STRIPE_SECRET_KEY
+    process.env.STRIPE_SECRET_KEY = 'sk_live_dummy'
+    try {
+      const old = await createDemoWorkspace()
+      await prisma.user.update({ where: { id: old }, data: { stripeCustomerId: 'cus_live', createdAt: new Date(Date.now() - DEMO_MAX_AGE_MS - HOUR) } })
+      expect((await purgeExpiredDemos()).deleted).toBe(1)
+      expect(stripe.customers.del).not.toHaveBeenCalled()
+    } finally {
+      process.env.STRIPE_SECRET_KEY = key
+    }
+  })
+
+  it('a Stripe failure does not stop the purge', async () => {
+    const { stripe } = await import('@test/mocks/stripe')
+    stripe.customers.del.mockRejectedValue(new Error('stripe down'))
+    const old = await createDemoWorkspace()
+    await prisma.user.update({ where: { id: old }, data: { stripeCustomerId: 'cus_fail', createdAt: new Date(Date.now() - DEMO_MAX_AGE_MS - HOUR) } })
+    expect((await purgeExpiredDemos()).deleted).toBe(1)
+  })
+})

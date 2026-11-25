@@ -16,8 +16,12 @@ export async function applyBillingEvent(provider: string, event: BillingEvent): 
   if (event.type === 'ignored') return 'ignored'
 
   const plan = event.type === 'subscription.activated' ? 'PRO' : 'FREE'
-  const where: Prisma.UserWhereInput = event.userId
-    ? { id: event.userId }
+  // A demo event changes only that demo row; an event naming a user never changes a demo.
+  const demoId = event.type === 'subscription.activated' ? event.demoId : undefined
+  const where: Prisma.UserWhereInput = demoId
+    ? { id: demoId, isDemo: true }
+    : event.userId
+    ? { id: event.userId, isDemo: false }
     : event.customerId
       ? { stripeCustomerId: event.customerId }
       : { id: { in: [] } }

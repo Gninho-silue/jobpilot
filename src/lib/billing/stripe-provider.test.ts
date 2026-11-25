@@ -116,3 +116,50 @@ describe('stripeBillingProvider.createPortal', () => {
     expect(stripe.billingPortal.sessions.create).toHaveBeenCalledWith({ customer: 'cus_1', return_url: 'http://app.test/dashboard' })
   })
 })
+
+describe('stripeBillingProvider — demo workspace', () => {
+  it('test mode only with an sk_test_ key', () => {
+    const key = process.env.STRIPE_SECRET_KEY
+    try {
+      process.env.STRIPE_SECRET_KEY = 'sk_test_abc'
+      expect(provider.isTestMode()).toBe(true)
+      process.env.STRIPE_SECRET_KEY = 'sk_live_abc'
+      expect(provider.isTestMode()).toBe(false)
+      delete process.env.STRIPE_SECRET_KEY
+      expect(provider.isTestMode()).toBe(false)
+    } finally {
+      process.env.STRIPE_SECRET_KEY = key
+    }
+  })
+
+  it('a demo checkout marks the customer and the session as demo', async () => {
+    stripe.customers.create.mockResolvedValueOnce({ id: 'cus_demo' })
+    stripe.checkout.sessions.create.mockResolvedValueOnce({ url: 'https://checkout.test/s' })
+    await provider.createCheckout({ userId: 'demo_visitor01', demoId: 'demo_visitor01', customerId: null, successUrl: 's', cancelUrl: 'c' })
+    const meta = { clerkUserId: 'demo_visitor01', demo: 'true', demoId: 'demo_visitor01' }
+    expect(stripe.customers.create).toHaveBeenCalledWith(expect.objectContaining({ metadata: meta }))
+    expect(stripe.checkout.sessions.create).toHaveBeenCalledWith(expect.objectContaining({ metadata: meta }))
+  })
+
+  it('a real checkout carries no demo metadata', async () => {
+    stripe.customers.create.mockResolvedValueOnce({ id: 'cus_real' })
+    stripe.checkout.sessions.create.mockResolvedValueOnce({ url: 'https://checkout.test/s' })
+    await provider.createCheckout({ userId: 'user_1', customerId: null, successUrl: 's', cancelUrl: 'c' })
+    expect(stripe.customers.create).toHaveBeenCalledWith(expect.objectContaining({ metadata: { clerkUserId: 'user_1' } }))
+  })
+
+  it('a completed demo checkout names the demo in the event', async () => {
+    const [body, headers] = signed('checkout.session.completed', {
+      object: 'checkout.session',
+      customer: 'cus_demo',
+      metadata: { clerkUserId: 'demo_visitor01', demo: 'true', demoId: 'demo_visitor01' },
+    })
+    await expect(provider.parseWebhook(body, headers)).resolves.toEqual(expect.objectContaining({ demoId: 'demo_visitor01', userId: 'demo_visitor01' }))
+  })
+
+  it('deletes a customer', async () => {
+    stripe.customers.del.mockResolvedValueOnce({ id: 'cus_demo', deleted: true })
+    await provider.deleteCustomer('cus_demo')
+    expect(stripe.customers.del).toHaveBeenCalledWith('cus_demo')
+  })
+})

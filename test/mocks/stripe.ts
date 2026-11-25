@@ -15,13 +15,14 @@ function unexpected(name: string) {
 
 export const stripe = {
   webhooks: real.webhooks,
-  customers: { create: unexpected('customers.create') },
+  customers: { create: unexpected('customers.create'), del: unexpected('customers.del') },
   checkout: { sessions: { create: unexpected('checkout.sessions.create') } },
   billingPortal: { sessions: { create: unexpected('billingPortal.sessions.create') } },
 }
 
 export function resetStripe(): void {
   stripe.customers.create.mockReset()
+  stripe.customers.del.mockReset()
   stripe.checkout.sessions.create.mockReset()
   stripe.billingPortal.sessions.create.mockReset()
 }
