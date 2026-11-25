@@ -30,8 +30,31 @@ function logAiCall(label: string, params: Params, finishReason: string | null | 
   )
 }
 
+/** A call that got no answer: HTTP status and error type only (the message may quote the request). */
+function logAiCallFailed(label: string, params: Params, err: unknown) {
+  const error = err as { status?: number; name?: string } | null
+  console.warn(
+    JSON.stringify({
+      event: 'ai_call_failed',
+      label,
+      model: params.model,
+      status: typeof error?.status === 'number' ? error.status : null,
+      error: error?.name ?? 'Error',
+    })
+  )
+}
+
+async function create<T>(label: string, params: Params, call: () => Promise<T>): Promise<T> {
+  try {
+    return await call()
+  } catch (err) {
+    logAiCallFailed(label, params, err)
+    throw err
+  }
+}
+
 export async function completeChat(label: string, params: ChatCompletionCreateParamsNonStreaming): Promise<ChatCompletion> {
-  const response = await groq.chat.completions.create(params)
+  const response = await create(label, params, () => groq.chat.completions.create(params))
   logAiCall(label, params, response.choices[0]?.finish_reason, response.usage)
   return response
 }
@@ -41,7 +64,7 @@ export async function streamChat(
   label: string,
   params: ChatCompletionCreateParamsStreaming
 ): Promise<AsyncIterable<ChatCompletionChunk>> {
-  const stream = await groq.chat.completions.create(params)
+  const stream = await create(label, params, () => groq.chat.completions.create(params))
   return (async function* () {
     let finishReason: string | null | undefined
     let usage: CompletionUsage | null | undefined

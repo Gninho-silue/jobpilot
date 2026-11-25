@@ -63,3 +63,19 @@ describe('one log line per AI call: finish_reason and token usage, never the con
     expect(JSON.stringify(info.mock.calls)).not.toContain('SECRET_CV_MARKER')
   })
 })
+
+describe('a failed call is logged too (status and error type only)', () => {
+  it('logs ai_call_failed, then rethrows', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    const { create } = await import('@test/mocks/groq')
+    create.mockRejectedValueOnce(Object.assign(new Error('400 json_validate_failed: SECRET_OFFER_MARKER'), { status: 400, name: 'BadRequestError' }))
+
+    await expect(parseJobOffer(OFFER, 'EN')).rejects.toThrow()
+
+    expect(warn.mock.calls.map(call => JSON.parse(String(call[0])))).toEqual([
+      { event: 'ai_call_failed', label: 'parse-offer', model: 'test-model', status: 400, error: 'BadRequestError' },
+    ])
+    expect(JSON.stringify(warn.mock.calls)).not.toContain('SECRET_OFFER_MARKER')
+    warn.mockRestore()
+  })
+})

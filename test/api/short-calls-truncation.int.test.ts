@@ -26,15 +26,15 @@ describe('POST /api/offers/parse', () => {
     expect(groqCall(1).max_completion_tokens).toBe(groqCall(0).max_completion_tokens! * 2)
   })
 
-  it('cut off twice: empty fields (the form is never filled from a half-read answer)', async () => {
+  it('cut off twice: 502 with a message (the form is never filled from a half-read answer)', async () => {
     signInAs(uid('u'))
     mockCompletion('{"company":"Glo', 'length')
     mockCompletion('{"company":"Globex","ro', 'length')
 
     const res = await offersParse.POST(jsonRequest('/api/offers/parse', { offerText: 'Globex hires an engineer' }))
 
-    expect(res.status).toBe(200)
-    expect(await readJson(res)).toEqual({ data: { company: null, role: null, salary: null } })
+    expect(res.status).toBe(502)
+    expect(await readJson(res)).toEqual({ error: 'The offer analysis was cut off. Fill in the fields by hand or try again.' })
     expect(groqCreate).toHaveBeenCalledTimes(2)
   })
 })

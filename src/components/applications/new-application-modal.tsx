@@ -45,6 +45,8 @@ export function NewApplicationModal({
   const [salary, setSalary] = useState('')
   const [loading, setLoading] = useState(false)
   const [parsing, setParsing] = useState(false)
+  // Why the auto-fill did not fill anything (never silent).
+  const [parseMessage, setParseMessage] = useState('')
   const [autoFilled, setAutoFilled] = useState<AutoFilled>({ company: false, role: false, salary: false })
   const [error, setError] = useState('')
 
@@ -60,6 +62,7 @@ export function NewApplicationModal({
 
     debounceRef.current = setTimeout(async () => {
       setParsing(true)
+      setParseMessage('')
       try {
         const res = await fetch('/api/offers/parse', {
           method: 'POST',
@@ -69,9 +72,17 @@ export function NewApplicationModal({
             language: detectLanguage(offerText),
           }),
         })
-        if (res.ok) {
+        if (!res.ok) {
+          const failure = await res.json().catch(() => ({})) as { error?: string }
+          setParseMessage(failure.error ?? 'The offer analysis failed. Fill in the fields by hand or try again.')
+          return
+        }
+        {
           const json = await res.json() as { data?: { company: string | null; role: string | null; salary: string | null } }
           const parsed = json.data
+          if (!parsed || (!parsed.company && !parsed.role && !parsed.salary)) {
+            setParseMessage('No company, role or salary found in this offer: fill them in by hand.')
+          }
           if (parsed) {
             if (parsed.company) {
               setCompany(prev => {
@@ -94,7 +105,7 @@ export function NewApplicationModal({
           }
         }
       } catch {
-        // Silent fail — auto-parse is best-effort
+        setParseMessage('Could not analyse the offer (network error). Fill in the fields by hand.')
       } finally {
         setParsing(false)
       }
@@ -115,6 +126,7 @@ export function NewApplicationModal({
       setSalary('')
       setError('')
       setParsing(false)
+      setParseMessage('')
       setAutoFilled({ company: false, role: false, salary: false })
     }
   }, [open])
@@ -189,6 +201,11 @@ export function NewApplicationModal({
                 </span>
               )}
             </div>
+            {parseMessage && !parsing && (
+              <p role="status" className="mt-1.5 text-xs text-[hsl(var(--state-warning))]">
+                {parseMessage}
+              </p>
+            )}
           </div>
 
           <div className="grid grid-cols-2 gap-3">

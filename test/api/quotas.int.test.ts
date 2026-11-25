@@ -176,12 +176,12 @@ describe('POST /api/offers/parse', () => {
     expect(await readJson(res)).toEqual({ data: { company: 'Globex', role: 'Engineer', salary: null } })
   })
 
-  it('returns nulls (200) when Groq fails', async () => {
+  it('502 with a message when Groq fails (never a silent success with empty fields)', async () => {
     signInAs(uid('free'))
     groqCreate.mockRejectedValueOnce(new Error('down'))
     const res = await offersParse.POST(jsonRequest('/api/offers/parse', { offerText: 'Globex hires' }))
-    expect(res.status).toBe(200)
-    expect(await readJson(res)).toEqual({ data: { company: null, role: null, salary: null } })
+    expect(res.status).toBe(502)
+    expect(await readJson(res)).toEqual({ error: 'The offer analysis failed. Fill in the fields by hand or try again.' })
   })
   // Rate limiting of this route (audit item 2) is covered in test/api/rate-limit.int.test.ts.
 })

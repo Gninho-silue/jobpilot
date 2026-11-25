@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server'
 import { parseOfferSchema } from '@/lib/validation'
 import { parseJobOffer } from '@/lib/ai/parse-offer'
 import { checkLlmRateLimit, tooManyRequests } from '@/lib/rate-limit'
+import { TruncatedAnswerError } from '@/lib/ai/call'
 
 export async function POST(request: Request) {
   const { userId } = await auth()
@@ -33,8 +34,12 @@ export async function POST(request: Request) {
   try {
     const result = await parseJobOffer(parsed.data.offerText, parsed.data.language)
     return NextResponse.json({ data: result })
-  } catch {
-    // Return nulls on Groq failure — never crash the UI
-    return NextResponse.json({ data: { company: null, role: null, salary: null } })
+  } catch (err) {
+    // Never a silent success with empty fields: the form shows this message.
+    const error =
+      err instanceof TruncatedAnswerError
+        ? 'The offer analysis was cut off. Fill in the fields by hand or try again.'
+        : 'The offer analysis failed. Fill in the fields by hand or try again.'
+    return NextResponse.json({ error }, { status: 502 })
   }
 }
