@@ -63,6 +63,17 @@ describe('truthfulness rules reach the model', () => {
   })
 })
 
+describe('cover letter: CI never becomes deployment', () => {
+  it.each([
+    ['EN', 'Continuous integration (CI) never becomes continuous deployment'],
+    ['FR', "L'intégration continue (CI) ne devient jamais du déploiement continu"],
+  ] as const)('%s: the rule reaches the model', async (language, rule) => {
+    mockCompletion('x')
+    await generateCoverLetter(CV, OFFER, 'Globex', 'Engineer', language)
+    expect(groqCall().messages[0]?.content ?? '').toContain(rule)
+  })
+})
+
 describe('a figure keeps its scope', () => {
   it.each([
     ['adaptResume EN', () => adaptResume(CV, OFFER, 'EN'), 'A number keeps its scope'],

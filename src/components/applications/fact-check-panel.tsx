@@ -21,6 +21,13 @@ const KIND_LABEL: Record<ReviewedIssue['kind'], string> = {
   verify: 'In your CV, but not under this entry',
   merged: 'Facts from another experience',
   claim: 'Statement about you not in your CV',
+  reworded: 'Not what your CV says',
+}
+
+function kindLabel(issue: ReviewedIssue): string {
+  if (issue.kind === 'number' && issue.expected) return `Number different from your CV (${issue.expected})`
+  if (issue.kind === 'reworded' && issue.expected) return `Your CV says ${issue.expected}`
+  return KIND_LABEL[issue.kind]
 }
 
 const SECONDARY_BUTTON =
@@ -52,7 +59,7 @@ export function FactCheckPanel({ issues, busy, onFix, onApproveTitle }: FactChec
           <li key={issue.id} className="min-w-0 rounded-lg border border-[hsl(var(--border-default))] p-3 space-y-2">
             <div className="flex min-w-0 flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
               <p className="min-w-0 text-xs text-[hsl(var(--text-muted))] [overflow-wrap:anywhere]">
-                {issue.kind === 'number' && issue.expected ? `Number different from your CV (${issue.expected})` : KIND_LABEL[issue.kind]}
+                {kindLabel(issue)}
                 {issue.entry && issue.kind !== 'title' ? (
                   <>
                     {' · '}

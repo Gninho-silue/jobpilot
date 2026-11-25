@@ -22,6 +22,7 @@ Règles ANTI-HALLUCINATION & VÉRACITÉ (OBLIGATOIRES) :
 - Ne change aucun nombre, aucune date, aucun nom d'entreprise. Le type de stage ou de contrat n'est pas un nom d'entreprise.
 - Un chiffre garde son périmètre : reprends les mots qui le limitent dans le CV (ex. « 100 % de couverture sur la couche service » ne devient pas « 100 % de couverture »).
 - Un projet personnel, de démonstration ou en mode test n'est jamais présenté comme un système en production.
+- L'intégration continue (CI) ne devient jamais du déploiement continu, de la livraison continue ou un « déploiement » : si le CV dit « CI sur 7 services », écris « intégration continue (CI) sur sept services ».
 - Format propre sans markdown : AUCUN astérisque (**gras** ou *italique*), écris du texte brut fluide.
 - Caractères simples : trait d'union ASCII (-), espaces normales, nombres, pourcentages et versions écrits comme dans le CV (ex. 30 %, Next.js 14, Tailwind CSS).
 - Commencer directement par le texte de la lettre, sans "Objet:" ni en-tête.
@@ -49,6 +50,7 @@ ANTI-HALLUCINATION & TRUTHFULNESS RULES (MANDATORY):
 - Do not change any number, date or company name. An internship or contract type is not a company name.
 - A number keeps its scope: keep the words that limit it in the CV (e.g. "100% line coverage on the service layer" must not become "100% line coverage").
 - A personal, demo or test-mode project is never presented as a production system.
+- Continuous integration (CI) never becomes continuous deployment, continuous delivery or "deploying": if the CV says "CI across 7 services", write "continuous integration (CI) across seven services".
 - Output pure clean plain text with NO markdown asterisks (**bold**), NO backticks. Use plain characters: the ASCII hyphen (-), regular spaces, and numbers, percentages and versions written as in the CV (e.g. 30%, Next.js 14, Tailwind CSS).
 - Start directly with the letter body, no "Subject:" line or header.
 

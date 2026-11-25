@@ -55,6 +55,10 @@ export function describeLetterIssues(issues: LetterIssue[]): string[] {
         return issue.expected
           ? `The CV says ${issue.expected}, not ${items}, for "${issue.entry}": "${issue.line}"`
           : `Use only numbers from the CV, not ${items}: "${issue.line}"`
+      case 'reworded':
+        return issue.expected
+          ? `The CV says ${issue.expected}, not "${items}": "${issue.line}"`
+          : `The CV does not say "${items}": "${issue.line}"`
       case 'verify':
         return ''
     }

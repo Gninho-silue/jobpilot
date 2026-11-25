@@ -1,7 +1,10 @@
 import { extractCvFacts, findTerms, numberOccurrences, numbersIn, periodsIn, type CvBlock } from './cv-facts'
 
-/** `verify`: in the CV, but under another experience; shown, never sent as a removal. */
-export type LetterIssueKind = 'merged' | 'technology' | 'number' | 'claim' | 'verify'
+/**
+ * `verify`: in the CV, but under another experience; shown, never sent as a removal.
+ * `reworded`: a fact of the CV turned into a bigger one (CI → continuous deployment).
+ */
+export type LetterIssueKind = 'merged' | 'technology' | 'number' | 'claim' | 'verify' | 'reworded'
 
 /** A sentence of the cover letter that the CV does not support. */
 export interface LetterIssue {
@@ -34,6 +37,20 @@ const PERSONAL_CLAIMS = [
 // flagged when the CV does not contain the expression (without its preposition).
 const CLIENTELE_CLAIM =
   /\b(?:for|with|to|serving)\s+(?:(?:enterprise|fortune[- ]\d+|large|major|international|global|key|blue[- ]chip|top[- ]tier)\s+)+(?:clients|customers|accounts|companies)\b|(?:auprès de|pour|avec)\s+(?:des\s+|de\s+)?(?:grands comptes|clients (?:grands comptes|internationaux|prestigieux))\b/i
+
+// Continuous integration is not deployment: "CI across 7 services" must not
+// become "continuous deployment of 7 services".
+const DEPLOYMENT_WORDS = /continuous (?:deployment|delivery)|déploiement continu|livraison continue/iu
+// "CD" alone (upper case); "CI/CD" is a technology of the vocabulary, checked as such.
+const CD_ALONE = /(?<![\p{L}\p{N}/])CD(?![\p{L}\p{N}/])/u
+const CI_IN_CV = /(?<![\p{L}\p{N}])CI(?![\p{L}\p{N}])|continuous integration|intégration continue/iu
+
+/** "continuous deployment", "déploiement continu" or "CD" in the sentence, when the CV has none of them. */
+function deploymentClaim(sentence: string, cv: string): string | undefined {
+  const cvHasDeployment = DEPLOYMENT_WORDS.test(cv) || /(?<![\p{L}\p{N}])CD(?![\p{L}\p{N}])/u.test(cv)
+  if (cvHasDeployment) return undefined
+  return sentence.match(DEPLOYMENT_WORDS)?.[0] ?? sentence.match(CD_ALONE)?.[0]
+}
 
 const MONTH_WORDS =
   /^(january|february|march|april|may|june|july|august|september|october|november|december|janvier|février|mars|avril|mai|juin|juillet|août|septembre|octobre|novembre|décembre|summer|spring|autumn|winter|present)$/i
@@ -113,6 +130,17 @@ export function checkCoverLetter(originalCv: string, letter: string): LetterIssu
       // The whole sentence is flagged once (no separate number or technology issue).
       add({ kind: 'claim', line: sentence, lineIndex: index, unsupported: clientele && unbackedClientele ? [clientele] : [] })
       return
+    }
+
+    const deployment = deploymentClaim(sentence, originalCv)
+    if (deployment) {
+      add({
+        kind: 'reworded',
+        line: sentence,
+        lineIndex: index,
+        unsupported: [deployment],
+        ...(CI_IN_CV.test(originalCv) ? { expected: 'continuous integration (CI)' } : {}),
+      })
     }
 
     // A sentence naming an experience sets the context for the following ones.

@@ -85,4 +85,12 @@ describe('FactCheckPanel — cover letter issues', () => {
     ])
     expect(screen.getByText(/Number different from your CV \(7\)/)).toBeInTheDocument()
   })
+
+  it('a reworded fact says what the CV says', () => {
+    setup([
+      { id: 'reworded-1', kind: 'reworded', line: 'I set up continuous deployment.', lineIndex: 1, unsupported: ['continuous deployment'], expected: 'continuous integration (CI)', fixable: false },
+    ])
+    expect(screen.getByText(/Your CV says continuous integration \(CI\)/)).toBeInTheDocument()
+    expect(screen.getByText('continuous deployment')).toBeInTheDocument()
+  })
 })
