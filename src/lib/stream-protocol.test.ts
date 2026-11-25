@@ -15,3 +15,13 @@ describe('visibleStreamText', () => {
     expect(visibleStreamText('draft\u001Erep')).toBe('draft')
   })
 })
+
+describe('streamError', () => {
+  it('returns the message after an error marker, and hides the draft', async () => {
+    const { STREAM_ERROR, streamError } = await import('./stream-protocol')
+    const received = `draft text${STREAM_ERROR}The AI answer was cut off. Please try again.`
+    expect(streamError(received)).toBe('The AI answer was cut off. Please try again.')
+    expect(streamError('draft only')).toBeNull()
+    expect(visibleStreamText(received)).toBe('')
+  })
+})

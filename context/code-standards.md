@@ -48,7 +48,7 @@
 - Streaming responses for cover letters and CV adaptation (better UX)
 - Prompts are generic: no real person's employer, school, project or contact details, examples included (src/lib/ai/generic-prompts.test.ts fails on known terms)
 - Prompt structure: a `system` message with our instructions ending with `UNTRUSTED_DATA_RULE`, and a `user` message holding each piece of user text in `wrapUntrusted(tag, text, PROMPT_LIMITS.x)`. Short values interpolated anywhere go through `inlineField()`. Never put CV, offer, company, role or answer text in the system message
-- Max tokens: 2048 for cover letters, 3000 for CV adaptation, 1500 for interview questions
+- Token budget of long generations from `generationOptions` (`lib/ai/generation.ts`): grows with the CV (min 4000 for a CV, 3000 for a letter), `reasoning_effort: low` for reasoning models. Always read `finish_reason`: a "length" answer is truncated and never saved as valid (`finishGeneration`: one retry with twice the budget, else credit refunded and an error sent after `STREAM_ERROR`)
 
 ## Database (Prisma)
 

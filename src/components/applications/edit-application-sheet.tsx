@@ -21,7 +21,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { UpgradeButton } from '@/components/upgrade-button'
 import { trackEvent } from '@/lib/analytics'
 import Link from 'next/link'
-import { visibleStreamText } from '@/lib/stream-protocol'
+import { streamError, visibleStreamText } from '@/lib/stream-protocol'
 import type { ReviewedIssue } from '@/lib/fact-check/fix-issue'
 import { FactCheckPanel } from '@/components/applications/fact-check-panel'
 
@@ -203,6 +203,13 @@ function ResumeTab({ applicationId, hasCv, initialAdaptedCvText, onAdapted }: Re
         setAdaptedCvText(visibleStreamText(accumulated))
       }
 
+      const failure = streamError(accumulated)
+      if (failure) {
+        // Nothing was saved (e.g. the answer was cut off): show why, keep the previous state.
+        setAdaptedCvText(initialAdaptedCvText)
+        setError(failure)
+        return
+      }
       onAdapted(visibleStreamText(accumulated))
       trackEvent.cvAdapted()
     } catch {
@@ -539,6 +546,13 @@ function CoverLetterTab({ applicationId, hasCv, initialCoverLetter, onGenerated 
         setCoverLetter(visibleStreamText(accumulated))
       }
 
+      const failure = streamError(accumulated)
+      if (failure) {
+        // Nothing was saved (e.g. the answer was cut off): show why, keep the previous state.
+        setCoverLetter(initialCoverLetter)
+        setError(failure)
+        return
+      }
       onGenerated(visibleStreamText(accumulated))
       trackEvent.coverLetterGenerated()
     } catch {

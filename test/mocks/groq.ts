@@ -12,7 +12,11 @@ export interface FakeCompletionParams {
   temperature?: number
   stream?: boolean
   response_format?: { type: string }
+  max_completion_tokens?: number
+  reasoning_effort?: string
 }
+
+type FinishReason = 'stop' | 'length'
 
 export const create = vi.fn(async (_params: FakeCompletionParams): Promise<unknown> => {
   throw new Error('Unexpected Groq call: prepare it with mockCompletion() or mockStream()')
@@ -20,15 +24,23 @@ export const create = vi.fn(async (_params: FakeCompletionParams): Promise<unkno
 
 export const groq = { chat: { completions: { create } } }
 
-export function mockCompletion(content: string | null): void {
-  create.mockResolvedValueOnce({ choices: [{ message: { content } }] })
+export function mockCompletion(content: string | null, finishReason: FinishReason = 'stop'): void {
+  create.mockResolvedValueOnce({
+    choices: [{ message: { content }, finish_reason: finishReason }],
+    usage: { prompt_tokens: 100, completion_tokens: 50, completion_tokens_details: { reasoning_tokens: 20 } },
+  })
 }
 
-export function mockStream(chunks: string[]): void {
+/** A streamed answer; the last chunk carries finish_reason ("length" = cut by the token budget). */
+export function mockStream(chunks: string[], finishReason: FinishReason = 'stop'): void {
   create.mockImplementationOnce(async () =>
     (async function* () {
       for (const content of chunks) {
-        yield { choices: [{ delta: { content } }] }
+        yield { choices: [{ delta: { content }, finish_reason: null }] }
+      }
+      yield {
+        choices: [{ delta: {}, finish_reason: finishReason }],
+        x_groq: { usage: { prompt_tokens: 100, completion_tokens: 50, completion_tokens_details: { reasoning_tokens: 20 } } },
       }
     })()
   )

@@ -1,5 +1,6 @@
 import { groq, GROQ_MODEL } from '@/lib/groq'
 import { PROMPT_LIMITS, UNTRUSTED_DATA_RULE, wrapUntrusted } from './untrusted'
+import { finishedByLength, generationOptions, type GeneratedText } from './generation'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Structured plain-text format the AI must follow.
@@ -57,6 +58,8 @@ Rules:
 export interface AdaptResumeOptions {
   /** Corrections from the fact-checker, for the single regeneration (lib/fact-check). */
   corrections?: string[]
+  /** Multiplies the token budget (retry after a truncated answer). */
+  budgetFactor?: number
 }
 
 function getAdaptResumeMessages(
@@ -116,15 +119,15 @@ export async function adaptResume(
   offerText: string,
   language: 'FR' | 'EN',
   options: AdaptResumeOptions = {}
-): Promise<string> {
+): Promise<GeneratedText> {
   const response = await groq.chat.completions.create({
     model: GROQ_MODEL,
     messages: getAdaptResumeMessages(cvText, offerText, language, options),
-    max_tokens: 3000,
+    ...generationOptions(GROQ_MODEL, cvText, 'cv', options.budgetFactor),
     temperature: 0.2,
   })
 
-  return response.choices[0]?.message?.content ?? ''
+  return { text: response.choices[0]?.message?.content ?? '', truncated: finishedByLength(response) }
 }
 
 export async function streamAdaptResume(
@@ -135,7 +138,7 @@ export async function streamAdaptResume(
   return groq.chat.completions.create({
     model: GROQ_MODEL,
     messages: getAdaptResumeMessages(cvText, offerText, language),
-    max_tokens: 3000,
+    ...generationOptions(GROQ_MODEL, cvText, 'cv'),
     temperature: 0.2,
     stream: true,
   })

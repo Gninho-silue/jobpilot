@@ -1,5 +1,6 @@
 import { groq, GROQ_MODEL } from '@/lib/groq'
 import { PROMPT_LIMITS, UNTRUSTED_DATA_RULE, inlineField, wrapUntrusted } from './untrusted'
+import { finishedByLength, generationOptions, type GeneratedText } from './generation'
 
 const SYSTEM_FR = `Tu es un expert en recrutement et rédaction de lettres de motivation.
 
@@ -55,6 +56,8 @@ ${UNTRUSTED_DATA_RULE}`
 export interface CoverLetterOptions {
   /** Corrections from the fact-checker, for the single regeneration (lib/fact-check). */
   corrections?: string[]
+  /** Multiplies the token budget (retry after a truncated answer). */
+  budgetFactor?: number
 }
 
 const CORRECTIONS_RULE = {
@@ -92,15 +95,15 @@ export async function generateCoverLetter(
   role: string,
   language: 'FR' | 'EN',
   options: CoverLetterOptions = {}
-): Promise<string> {
+): Promise<GeneratedText> {
   const response = await groq.chat.completions.create({
     model: GROQ_MODEL,
     messages: getCoverLetterMessages(cvText, offerText, company, role, language, options),
-    max_tokens: 2048,
+    ...generationOptions(GROQ_MODEL, cvText, 'letter', options.budgetFactor),
     temperature: 0.2,
   })
 
-  return response.choices[0]?.message?.content ?? ''
+  return { text: response.choices[0]?.message?.content ?? '', truncated: finishedByLength(response) }
 }
 
 export async function streamCoverLetter(
@@ -113,7 +116,7 @@ export async function streamCoverLetter(
   return groq.chat.completions.create({
     model: GROQ_MODEL,
     messages: getCoverLetterMessages(cvText, offerText, company, role, language),
-    max_tokens: 2048,
+    ...generationOptions(GROQ_MODEL, cvText, 'letter'),
     temperature: 0.2,
     stream: true,
   })

@@ -1,12 +1,12 @@
 import { auth } from '@clerk/nextjs/server'
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { normalizeTypography } from '@/lib/text/typography'
-import { checkAndIncrementUsage } from '@/lib/usage'
+import { checkAndIncrementUsage, refundUsage } from '@/lib/usage'
+import { CUT_OFF_MESSAGE, finishGeneration } from '@/lib/ai/finish-generation'
 import { adaptResume, streamAdaptResume } from '@/lib/ai/adapt-resume'
 import { checkAdaptedCv } from '@/lib/fact-check/check-adapted-cv'
 import { describeIssues } from '@/lib/fact-check/corrections'
-import { STREAM_REPLACE } from '@/lib/stream-protocol'
+import { STREAM_ERROR, STREAM_REPLACE } from '@/lib/stream-protocol'
 import { checkLlmRateLimit, tooManyRequests } from '@/lib/rate-limit'
 
 export async function POST(
@@ -58,39 +58,40 @@ export async function POST(
     const customStream = new ReadableStream({
       async start(controller) {
         try {
+          let finishReason: string | null | undefined
           for await (const chunk of stream) {
             const content = chunk.choices[0]?.delta?.content || ''
+            finishReason = chunk.choices[0]?.finish_reason ?? finishReason
             if (content) {
               accumulatedText += content
               controller.enqueue(encoder.encode(content))
             }
           }
 
-          // Fact-check the draft against the original CV; one regeneration at most,
-          // with the corrections. The corrected version replaces the draft on screen.
-          let finalText = normalizeTypography(accumulatedText)
-          const issues = finalText ? checkAdaptedCv(user.cvText!, finalText) : []
-          if (issues.length) {
-            try {
-              const corrected = normalizeTypography(
-                await adaptResume(user.cvText!, application.offerText, application.language, {
-                  corrections: describeIssues(issues),
-                })
-              )
-              if (corrected.trim()) {
-                finalText = corrected
-                controller.enqueue(encoder.encode(STREAM_REPLACE + corrected))
-              }
-            } catch (regenErr) {
-              console.error('[adapt-resume] regeneration failed, keeping the draft:', regenErr)
-            }
-          }
+          // Cut-off draft → one retry with a bigger budget; complete draft with
+          // fact-check issues → one regeneration with the corrections.
+          const finalText = await finishGeneration({
+            draft: accumulatedText,
+            draftTruncated: finishReason === 'length',
+            check: text => checkAdaptedCv(user.cvText!, text),
+            regenerate: ({ budgetFactor, issues }) =>
+              adaptResume(user.cvText!, application.offerText, application.language, {
+                budgetFactor,
+                corrections: issues ? describeIssues(issues) : undefined,
+              }),
+            onReplace: text => controller.enqueue(encoder.encode(STREAM_REPLACE + text)),
+            logLabel: 'adapt-resume',
+          })
 
           if (finalText) {
             await prisma.application.update({
               where: { id },
               data: { adaptedCvText: finalText },
             })
+          } else {
+            // Nothing usable was produced: never save a truncated CV, give the credit back.
+            await refundUsage(userId, 'cvAdaptations')
+            controller.enqueue(encoder.encode(STREAM_ERROR + CUT_OFF_MESSAGE))
           }
 
           controller.close()

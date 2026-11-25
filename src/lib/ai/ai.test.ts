@@ -74,16 +74,17 @@ describe('adaptResume — prompt', () => {
     expect(prompt).toContain('OUTPUT FORMAT')
   })
 
-  it('uses 3000 max tokens and temperature 0.2', async () => {
+  it('uses temperature 0.2 and a token budget of at least 4000', async () => {
     mockCompletion('adapted')
     await adaptResume(CV, OFFER, 'EN')
-    expect(groqCall()).toMatchObject({ max_tokens: 3000, temperature: 0.2 })
+    expect(groqCall()).toMatchObject({ temperature: 0.2 })
+    expect(groqCall().max_completion_tokens).toBeGreaterThanOrEqual(4000)
     expect(groqPrompt()).toContain('Write the ENTIRE adapted CV in English.')
   })
 
   it('returns an empty string when the model returns nothing', async () => {
     mockCompletion(null)
-    await expect(adaptResume(CV, OFFER, 'EN')).resolves.toBe('')
+    await expect(adaptResume(CV, OFFER, 'EN')).resolves.toEqual({ text: '', truncated: false })
   })
 
   it('streaming variant sends the same prompt with stream: true', async () => {
@@ -111,12 +112,13 @@ describe('cover letter — prompt', () => {
     expect(prompt).toContain('<role>\nIngénieur\n</role>')
     expect(prompt).toContain('en français')
     expect(prompt).toContain(CV)
-    expect(groqCall()).toMatchObject({ max_tokens: 2048, temperature: 0.2 })
+    expect(groqCall()).toMatchObject({ temperature: 0.2 })
+    expect(groqCall().max_completion_tokens).toBeGreaterThanOrEqual(3000)
   })
 
   it('English prompt asks for English and keeps the truthfulness rules', async () => {
     mockCompletion('Dear hiring manager…')
-    await expect(generateCoverLetter(CV, OFFER, 'Globex', 'Engineer', 'EN')).resolves.toBe('Dear hiring manager…')
+    await expect(generateCoverLetter(CV, OFFER, 'Globex', 'Engineer', 'EN')).resolves.toEqual({ text: 'Dear hiring manager…', truncated: false })
     expect(groqPrompt()).toContain('in English')
     expect(groqPrompt()).toContain('ANTI-HALLUCINATION')
   })
@@ -239,5 +241,29 @@ describe('cover letter — regeneration with corrections', () => {
       expect(system).toContain('<corrections>')
       expect(user).toContain('<corrections>\n- Remove this sentence: "x"\n</corrections>')
     }
+  })
+})
+
+describe('truncated answers (finish_reason "length")', () => {
+  it('adaptResume reports a cut-off answer as truncated, never as a complete CV', async () => {
+    mockCompletion('Jane Doe\nEDUCATION\n>DE', 'length')
+    await expect(adaptResume(CV, OFFER, 'EN')).resolves.toEqual({ text: 'Jane Doe\nEDUCATION\n>DE', truncated: true })
+  })
+
+  it('generateCoverLetter too', async () => {
+    mockCompletion('Dear hiring manager, I', 'length')
+    await expect(generateCoverLetter(CV, OFFER, 'Globex', 'Engineer', 'EN')).resolves.toMatchObject({ truncated: true })
+  })
+
+  it('the budget grows with the CV and can be doubled for a retry', async () => {
+    mockCompletion('x')
+    await adaptResume(CV, OFFER, 'EN')
+    mockCompletion('x')
+    await adaptResume(CV.repeat(80), OFFER, 'EN')
+    mockCompletion('x')
+    await adaptResume(CV.repeat(80), OFFER, 'EN', { budgetFactor: 2 })
+    const [small, big, doubled] = [0, 1, 2].map(n => groqCall(n).max_completion_tokens!)
+    expect(big).toBeGreaterThan(small)
+    expect(doubled).toBe(big * 2)
   })
 })

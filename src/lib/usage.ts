@@ -60,3 +60,11 @@ export async function checkAndIncrementUsage(
   const usage = await prisma.usageCounter.findUnique({ where: { userId } })
   return { allowed: false, current: usage?.[field] ?? limit, limit }
 }
+
+/** Gives back a credit consumed by a generation that produced nothing usable. */
+export async function refundUsage(userId: string, field: UsageField): Promise<void> {
+  const column = COLUMN[field]
+  await prisma.$executeRaw`
+    UPDATE "UsageCounter" SET ${column} = ${column} - 1, "updatedAt" = NOW()
+    WHERE "userId" = ${userId} AND ${column} > 0`
+}

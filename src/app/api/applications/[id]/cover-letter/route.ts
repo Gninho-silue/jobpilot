@@ -1,12 +1,12 @@
 import { auth } from '@clerk/nextjs/server'
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { normalizeTypography } from '@/lib/text/typography'
-import { checkAndIncrementUsage } from '@/lib/usage'
+import { checkAndIncrementUsage, refundUsage } from '@/lib/usage'
+import { CUT_OFF_MESSAGE, finishGeneration } from '@/lib/ai/finish-generation'
 import { generateCoverLetter, streamCoverLetter } from '@/lib/ai/generate-cover-letter'
 import { checkCoverLetter } from '@/lib/fact-check/check-cover-letter'
 import { describeLetterIssues } from '@/lib/fact-check/corrections'
-import { STREAM_REPLACE } from '@/lib/stream-protocol'
+import { STREAM_ERROR, STREAM_REPLACE } from '@/lib/stream-protocol'
 import { checkLlmRateLimit, tooManyRequests } from '@/lib/rate-limit'
 
 export async function POST(
@@ -64,44 +64,44 @@ export async function POST(
     const customStream = new ReadableStream({
       async start(controller) {
         try {
+          let finishReason: string | null | undefined
           for await (const chunk of stream) {
             const content = chunk.choices[0]?.delta?.content || ''
+            finishReason = chunk.choices[0]?.finish_reason ?? finishReason
             if (content) {
               accumulatedText += content
               controller.enqueue(encoder.encode(content))
             }
           }
 
-          // Fact-check the letter against the original CV; one regeneration at most,
-          // with the corrections. The corrected version replaces the draft on screen.
-          let finalText = normalizeTypography(accumulatedText)
-          const issues = finalText ? checkCoverLetter(user.cvText!, finalText) : []
-          if (issues.length) {
-            try {
-              const corrected = normalizeTypography(
-                await generateCoverLetter(
-                  user.cvText!,
-                  application.offerText,
-                  application.company,
-                  application.role,
-                  application.language,
-                  { corrections: describeLetterIssues(issues) }
-                )
-              )
-              if (corrected.trim()) {
-                finalText = corrected
-                controller.enqueue(encoder.encode(STREAM_REPLACE + corrected))
-              }
-            } catch (regenErr) {
-              console.error('[cover-letter] regeneration failed, keeping the draft:', regenErr)
-            }
-          }
+          // Cut-off draft → one retry with a bigger budget; complete draft with
+          // fact-check issues → one regeneration with the corrections.
+          const finalText = await finishGeneration({
+            draft: accumulatedText,
+            draftTruncated: finishReason === 'length',
+            check: text => checkCoverLetter(user.cvText!, text),
+            regenerate: ({ budgetFactor, issues }) =>
+              generateCoverLetter(
+                user.cvText!,
+                application.offerText,
+                application.company,
+                application.role,
+                application.language,
+                { budgetFactor, corrections: issues ? describeLetterIssues(issues) : undefined }
+              ),
+            onReplace: text => controller.enqueue(encoder.encode(STREAM_REPLACE + text)),
+            logLabel: 'cover-letter',
+          })
 
           if (finalText) {
             await prisma.application.update({
               where: { id },
               data: { coverLetter: finalText },
             })
+          } else {
+            // Nothing usable was produced: never save a truncated letter, give the credit back.
+            await refundUsage(userId, 'coverLetters')
+            controller.enqueue(encoder.encode(STREAM_ERROR + CUT_OFF_MESSAGE))
           }
 
           controller.close()
