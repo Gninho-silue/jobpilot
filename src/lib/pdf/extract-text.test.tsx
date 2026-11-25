@@ -92,3 +92,63 @@ describe('extractPdfText — link URLs', () => {
     expect(await extractPdfText(Buffer.from(pdf))).toEqual({ text: 'No links here', pages: 1, links: [] })
   })
 })
+
+describe('extractPdfText — repeated headers and footers', () => {
+  // Like an exported 3-page CV: "Name / Page X of Y" at the bottom of every page,
+  // with an entry that runs across a page break.
+  async function threePages(withHeader = false) {
+    const footer = (
+      <Text fixed render={({ pageNumber, totalPages }) => `Zoé Martin-Ferré\nPage ${pageNumber} of ${totalPages}`} />
+    )
+    const header = withHeader ? <Text fixed>Zoé Martin-Ferré — CV</Text> : null
+    const pdf = await renderToBuffer(
+      <Document>
+        <Page>
+          {header}
+          <Text>Zoé Martin-Ferré</Text>
+          <Text>First page body.</Text>
+          {footer}
+        </Page>
+        <Page>
+          {header}
+          <Text>HireLoop | Next.js, Stripe (test mode) | Live demo | 2026</Text>
+          <Text>AI job-search SaaS.</Text>
+          {footer}
+        </Page>
+        <Page>
+          {header}
+          <Text>Rate limiting and signed URLs; 364 tests.</Text>
+          {footer}
+        </Page>
+      </Document>
+    )
+    return (await extractPdfText(Buffer.from(pdf))).text
+  }
+
+  it('removes the name and "Page X of Y" repeated at the bottom of every page, keeps the name at the top', async () => {
+    const text = await threePages()
+    expect(text).not.toMatch(/Page \d of 3/)
+    expect(text.split('\n').filter(line => line === 'Zoé Martin-Ferré')).toHaveLength(1)
+    expect(text.startsWith('Zoé Martin-Ferré\nFirst page body.')).toBe(true)
+    // The entry is no longer cut by a footer.
+    expect(text).toContain('AI job-search SaaS.\n\nRate limiting and signed URLs; 364 tests.')
+  })
+
+  it('removes a header repeated at the top of pages 2 and 3, keeps it on page 1', async () => {
+    const text = await threePages(true)
+    expect(text.split('\n').filter(line => line === 'Zoé Martin-Ferré — CV')).toHaveLength(1)
+  })
+
+  it('a one-page document keeps all its lines except a "Page 1 of 1" footer', async () => {
+    const pdf = await renderToBuffer(
+      <Document>
+        <Page>
+          <Text>Jane Doe</Text>
+          <Text>Body</Text>
+          <Text>Page 1 of 1</Text>
+        </Page>
+      </Document>
+    )
+    expect((await extractPdfText(Buffer.from(pdf))).text).toBe('Jane Doe\nBody')
+  })
+})

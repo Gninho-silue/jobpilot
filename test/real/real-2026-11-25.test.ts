@@ -44,3 +44,14 @@ describe.skipIf(!existsSync(DIR))('real PDFs of 2026-11-25: facts (local only)',
     expect(facts.terms.has('Redis')).toBe(true)
   })
 })
+
+const DIR_26 = fileURLToPath(new URL('../fixtures/real-2026-11-26/', import.meta.url))
+
+describe.skipIf(!existsSync(DIR_26))('real PDFs of 2026-11-26: 3-page CV (local only)', () => {
+  it('footers ("Name" + "Page X of 3") are removed; the name stays once, at the top', async () => {
+    const { text } = await extractPdfText(readFileSync(DIR_26 + 'original-cv.pdf'))
+    const lines = text.split('\n')
+    expect(text).not.toMatch(/Page \d of 3/)
+    expect(lines.filter(line => line === lines[0])).toHaveLength(1)
+  })
+})
