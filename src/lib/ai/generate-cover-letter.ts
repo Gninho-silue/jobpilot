@@ -10,8 +10,8 @@ Tu reçois le profil du candidat (extrait de son CV) dans <cv>, l'offre d'emploi
 Rédige une lettre de motivation professionnelle et personnalisée en français pour ce poste dans cette entreprise.
 
 Règles de rédaction et d'authenticité (TRÈS STRICTES) :
-- Longueur: 3 paragraphes, maximum 280 mots
-- Paragraphe 1: intérêt pour le poste et l'entreprise, fondé uniquement sur ce que dit l'offre
+- Longueur: 3 paragraphes, maximum 280 mots. Chaque phrase fait 30 mots au maximum.
+- Paragraphe 1: intérêt pour le poste et l'entreprise, fondé uniquement sur ce que dit l'offre. Il ne paraphrase jamais l'offre (pas de reprise de ses missions ou de son profil recherché) : il cite un ou deux besoins précis de l'offre et dit en une phrase pourquoi le candidat y répond.
 - Paragraphe 2: 2-3 réalisations CONCRÈTES et VRAIES issues du CV qui correspondent aux besoins de l'offre
 - Paragraphe 3: conclusion avec appel à l'action pour un entretien
 
@@ -39,8 +39,8 @@ You receive the candidate's profile (extracted from their CV) in <cv>, the job o
 Write a professional, highly tailored cover letter in English for this role at this company.
 
 Writing & Structure Rules:
-- Length: 3 paragraphs, maximum 280 words
-- Paragraph 1: interest in the role and the company, based only on what the job offer says
+- Length: 3 paragraphs, maximum 280 words. Every sentence has 30 words or fewer.
+- Paragraph 1: interest in the role and the company, based only on what the job offer says. It never paraphrases the job offer (no restating of its duties or required profile): it names one or two specific needs of the offer and says in one sentence why the candidate meets them.
 - Paragraph 2: 2-3 CONCRETE, TRUTHFUL achievements from the CV matching the role
 - Paragraph 3: closing with a call to action for an interview
 

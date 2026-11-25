@@ -74,6 +74,19 @@ describe('cover letter: CI never becomes deployment', () => {
   })
 })
 
+describe('cover letter: short sentences, an opening that does not paraphrase the offer', () => {
+  it.each([
+    ['EN', 'Every sentence has 30 words or fewer', 'never paraphrases the job offer'],
+    ['FR', 'Chaque phrase fait 30 mots au maximum', "ne paraphrase jamais l'offre"],
+  ] as const)('%s: both rules reach the model', async (language, length, opening) => {
+    mockCompletion('x')
+    await generateCoverLetter(CV, OFFER, 'Globex', 'Engineer', language)
+    const system = groqCall().messages[0]?.content ?? ''
+    expect(system).toContain(length)
+    expect(system).toContain(opening)
+  })
+})
+
 describe('cover letter: no hollow phrases', () => {
   it.each([
     ['EN', 'No hollow phrases', 'strong work ethic'],
