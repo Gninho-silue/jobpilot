@@ -103,6 +103,12 @@ function isSectionHeading(line: string): boolean {
 }
 
 const BULLET = /^[•\-*·▸►]\s/
+const NON_ENTRY_SECTIONS: SectionCategory[] = ['profile', 'skills', 'certifications', 'languages', 'interests']
+// The end of a heading wrapped onto a second line: lowercase, digit or month first.
+const MONTH_FIRST = new RegExp(`^(${MONTHS})\\b`, 'i')
+const isHeadingFragment = (line: string) => /^[\p{Ll}\d]/u.test(line) || MONTH_FIRST.test(line)
+// A line that announces its continuation on the next one.
+const CONTINUES = /[|,–-]\s*$/
 // An email address, or a phone number (starts with + or 0: "2019 - 2022" is a date range).
 const CONTACT = /@|(?<![\p{N}])(\+|0)\d[\d\s().-]{6,}\d/u
 
@@ -127,20 +133,49 @@ export function extractCvFacts(cvText: string): CvFacts {
     current = null
   }
 
+  // Lines of the current section that are not in an entry yet: the first half of
+  // a heading wrapped onto the dated line (e.g. "Banking Platform | Java 21 … |"
+  // then "2025 – 2026") sits there.
+  let loose: string[] = []
+  let entriesAllowed = true
+
   for (const line of body.slice(1)) {
     if (isSectionHeading(line)) {
       close()
-      sections.push({ heading: line.replace(/[:#*]/g, '').trim(), categories: sectionCategories(line) })
+      loose = []
+      const categories = sectionCategories(line)
+      // Profile, skills, certifications: no entries ("(June 2026)" in a sentence is not one).
+      entriesAllowed = !(categories.length && categories.every(category => NON_ENTRY_SECTIONS.includes(category)))
+      sections.push({ heading: line.replace(/[:#*]/g, '').trim(), categories })
       continue
     }
-    if (DATED_LINE.test(line) && !BULLET.test(line)) {
+    if (entriesAllowed && DATED_LINE.test(line) && !BULLET.test(line)) {
+      // Take back the heading lines that wrap onto this dated line: up to two
+      // lines above it that do not end a sentence. They leave the previous entry.
+      // Only when this line is the end of a heading ("demo | 2026", "2026",
+      // "March – July 2026") or the line above announces a continuation ("… |"):
+      // a complete heading line ("Intern June – September 2025") pulls nothing.
+      const source = current ? current.text : loose
+      const pulled: string[] = []
+      const fragment = isHeadingFragment(line)
+      while (pulled.length < 2 && source.length > (current ? 1 : 0)) {
+        const previous = source[source.length - 1]!
+        if (BULLET.test(previous) || /[.!?;]$/.test(previous) || DATED_LINE.test(previous)) break
+        if (!fragment && !CONTINUES.test(previous)) break
+        pulled.unshift(source.pop()!)
+        if (current && current.header.length > 1 && current.header[current.header.length - 1] === pulled[0]) current.header.pop()
+      }
       close()
-      current = { header: [line], text: [line] }
+      loose = []
+      current = { header: [...pulled, line], text: [...pulled, line] }
       continue
     }
-    if (!current) continue
-    // The line after a dated line is usually the company or school, part of the header.
-    if (current.text.length === 1 && !BULLET.test(line)) current.header.push(line)
+    if (!current) {
+      loose.push(line)
+      continue
+    }
+    // The line after the heading is usually the company or school, part of the header.
+    if (current.text.length === current.header.length && !BULLET.test(line)) current.header.push(line)
     current.text.push(line)
   }
   close()

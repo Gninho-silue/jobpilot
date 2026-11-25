@@ -5,7 +5,7 @@ import { checkAndIncrementUsage, refundUsage } from '@/lib/usage'
 import { CUT_OFF_MESSAGE, finishGeneration } from '@/lib/ai/finish-generation'
 import { adaptResume, streamAdaptResume } from '@/lib/ai/adapt-resume'
 import { checkAdaptedCv } from '@/lib/fact-check/check-adapted-cv'
-import { describeIssues } from '@/lib/fact-check/corrections'
+import { actionableIssues, describeIssues } from '@/lib/fact-check/corrections'
 import { STREAM_ERROR, STREAM_REPLACE } from '@/lib/stream-protocol'
 import { checkLlmRateLimit, tooManyRequests } from '@/lib/rate-limit'
 
@@ -73,7 +73,7 @@ export async function POST(
           const finalText = await finishGeneration({
             draft: accumulatedText,
             draftTruncated: finishReason === 'length',
-            check: text => checkAdaptedCv(user.cvText!, text),
+            check: text => actionableIssues(checkAdaptedCv(user.cvText!, text)),
             regenerate: ({ budgetFactor, issues }) =>
               adaptResume(user.cvText!, application.offerText, application.language, {
                 budgetFactor,

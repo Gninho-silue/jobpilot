@@ -1,6 +1,7 @@
 import { extractCvFacts, findTerms, numbersIn, type CvBlock } from './cv-facts'
 
-export type LetterIssueKind = 'merged' | 'technology' | 'number' | 'claim'
+/** `verify`: in the CV, but under another experience; shown, never sent as a removal. */
+export type LetterIssueKind = 'merged' | 'technology' | 'number' | 'claim' | 'verify'
 
 /** A sentence of the cover letter that the CV does not support. */
 export interface LetterIssue {
@@ -92,7 +93,10 @@ export function checkCoverLetter(originalCv: string, letter: string): LetterIssu
         return
       }
       const extraTerms = [...terms].filter(t => !context!.terms.has(t))
-      if (extraTerms.length) add({ kind: 'technology', entry, line: sentence, lineIndex: index, unsupported: sorted(extraTerms) })
+      const invented = extraTerms.filter(t => !facts.terms.has(t))
+      const elsewhere = extraTerms.filter(t => facts.terms.has(t))
+      if (invented.length) add({ kind: 'technology', entry, line: sentence, lineIndex: index, unsupported: sorted(invented) })
+      if (elsewhere.length) add({ kind: 'verify', entry, line: sentence, lineIndex: index, unsupported: sorted(elsewhere) })
     } else {
       const extraTerms = [...terms].filter(t => !facts.terms.has(t))
       if (extraTerms.length) add({ kind: 'technology', line: sentence, lineIndex: index, unsupported: sorted(extraTerms) })

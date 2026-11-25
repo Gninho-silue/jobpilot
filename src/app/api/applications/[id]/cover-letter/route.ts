@@ -5,7 +5,7 @@ import { checkAndIncrementUsage, refundUsage } from '@/lib/usage'
 import { CUT_OFF_MESSAGE, finishGeneration } from '@/lib/ai/finish-generation'
 import { generateCoverLetter, streamCoverLetter } from '@/lib/ai/generate-cover-letter'
 import { checkCoverLetter } from '@/lib/fact-check/check-cover-letter'
-import { describeLetterIssues } from '@/lib/fact-check/corrections'
+import { actionableIssues, describeLetterIssues } from '@/lib/fact-check/corrections'
 import { STREAM_ERROR, STREAM_REPLACE } from '@/lib/stream-protocol'
 import { checkLlmRateLimit, tooManyRequests } from '@/lib/rate-limit'
 
@@ -79,7 +79,7 @@ export async function POST(
           const finalText = await finishGeneration({
             draft: accumulatedText,
             draftTruncated: finishReason === 'length',
-            check: text => checkCoverLetter(user.cvText!, text),
+            check: text => actionableIssues(checkCoverLetter(user.cvText!, text)),
             regenerate: ({ budgetFactor, issues }) =>
               generateCoverLetter(
                 user.cvText!,

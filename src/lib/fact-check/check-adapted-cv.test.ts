@@ -23,10 +23,11 @@ describe('checkAdaptedCv — real case of 2026-11-25 (anonymised)', () => {
     )
   })
 
-  it('flags CI/CD, Docker and GitHub Actions added to the final-year project', () => {
+  // These skills are in the CV's skills section: flagged "to verify", never sent as removals.
+  it('flags CI/CD, Docker and GitHub Actions added to the final-year project (to verify)', () => {
     expect(issues).toContainEqual(
       expect.objectContaining({
-        kind: 'technology',
+        kind: 'verify',
         entry: 'Full-Stack Developer – Final Year Project (PFE)',
         line: '- Applied CI/CD pipelines with Docker and GitHub Actions to ensure reliable deployments and rapid iteration.',
         unsupported: ['CI/CD', 'Docker', 'GitHub Actions'],
@@ -34,10 +35,10 @@ describe('checkAdaptedCv — real case of 2026-11-25 (anonymised)', () => {
     )
   })
 
-  it('flags PostgreSQL and Redis added to the internship', () => {
+  it('flags PostgreSQL and Redis added to the internship (to verify)', () => {
     expect(issues).toContainEqual(
       expect.objectContaining({
-        kind: 'technology',
+        kind: 'verify',
         entry: 'Full-Stack Developer Intern',
         line: '- Integrated backend services with PostgreSQL and Redis, reinforcing data consistency and performance under concurrent access.',
         unsupported: ['PostgreSQL', 'Redis'],
@@ -95,10 +96,10 @@ describe('checkAdaptedCv — plan cases', () => {
     expect(issues).toEqual([expect.objectContaining({ kind: 'technology', entry: 'TECHNICAL SKILLS', unsupported: ['Kubernetes'] })])
   })
 
-  it('a skill from elsewhere in the CV is fine in the skills section but not in an experience', () => {
+  it('a skill from elsewhere in the CV is fine in the skills section, and only "to verify" in an experience', () => {
     expect(checkAdaptedCv(CV, adapted('Built 4 REST services.', { skills: 'Docker' }))).toEqual([])
     const issues = checkAdaptedCv(CV, adapted('Containerised 4 REST services with Docker.'))
-    expect(issues).toEqual([expect.objectContaining({ kind: 'technology', unsupported: ['Docker'] })])
+    expect(issues).toEqual([expect.objectContaining({ kind: 'verify', unsupported: ['Docker'] })])
   })
 
   it('invented company', () => {
@@ -145,5 +146,63 @@ describe('checkAdaptedCv — sections removed from the CV', () => {
 
   it('the faithful real-case adaptation keeps all its sections', () => {
     expect(checkAdaptedCv(ORIGINAL, ADAPTED).filter(i => i.kind === 'section')).toEqual([])
+  })
+})
+
+describe('checkAdaptedCv — never ask to remove what the CV contains', () => {
+  const ORIGINAL_3P = `Zoé Martin-Ferré
+Backend Engineer | Java 21 · Spring Boot
+candidate_test@example.com
+Profile
+Engineering graduate (June 2026).
+Projects
+Banking Platform | Java 21, Spring Boot 4, Spring Cloud, Kafka, MySQL | GitHub | 2025 –
+2026
+205 tests (JUnit, Testcontainers), 100% line coverage on the service layer.
+HireLoop | Next.js, TypeScript, Prisma, PostgreSQL, Clerk, Groq, Stripe (test mode) | Live
+demo | 2026
+Postgres-backed rate limiting, idempotent Stripe webhooks; 364 tests.
+Technical Skills
+Backend: Java 21, Spring Boot, Docker, Kubernetes`
+
+  const adapted = (extra = '') => `Zoé Martin-Ferré
+Backend Engineer | Java 21 · Spring Boot
+candidate_test@example.com
+
+PROFILE
+Engineering graduate (June 2026).
+
+PROJECTS
+>TITLE: Banking Platform
+>TECH: Java 21 · Spring Boot 4 · Spring Cloud · Kafka · MySQL
+>DATE: 2025 – 2026
+- 205 tests, 100% line coverage on the service layer.
+
+>TITLE: HireLoop
+>TECH: Next.js · TypeScript · Prisma · PostgreSQL · Clerk · Groq · Stripe (test mode)
+>DATE: 2026
+- Postgres-backed rate limiting, idempotent Stripe webhooks; 364 tests.${extra}
+
+TECHNICAL SKILLS
+Backend: Java 21 · Spring Boot · Docker · Kubernetes
+`
+
+  it('the real case: no issue at all for the HireLoop and Banking stacks, nor for "364 tests"', () => {
+    expect(checkAdaptedCv(ORIGINAL_3P, adapted())).toEqual([])
+  })
+
+  it('a term that is in the CV, but not under this entry, is only "to verify" and never a removal', () => {
+    const issues = checkAdaptedCv(ORIGINAL_3P, adapted('\n- Deployed with Docker and Kubernetes.'))
+    expect(issues).toEqual([expect.objectContaining({ kind: 'verify', entry: 'HireLoop', unsupported: ['Docker', 'Kubernetes'] })])
+  })
+
+  it('a term absent from the whole CV is still an invention to remove', () => {
+    const issues = checkAdaptedCv(ORIGINAL_3P, adapted('\n- Deployed with Terraform.'))
+    expect(issues).toEqual([expect.objectContaining({ kind: 'technology', unsupported: ['Terraform'] })])
+  })
+
+  it('an entry that matches no block of the CV is checked against the whole CV, not against the first block of that year', () => {
+    const unknown = adapted().replace('>TITLE: HireLoop', '>TITLE: Side Project')
+    expect(checkAdaptedCv(ORIGINAL_3P, unknown)).toEqual([])
   })
 })

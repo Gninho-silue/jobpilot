@@ -95,3 +95,12 @@ describe('checkCoverLetter — small cases', () => {
     expect(checkCoverLetter(CV, 'Your offer mentions a REST platform, which matches my experience.')).toEqual([])
   })
 })
+
+describe('checkCoverLetter — never ask to remove what the CV contains', () => {
+  it('a technology of the CV mentioned under another experience is only "to verify", and not sent to the model', async () => {
+    const { describeLetterIssues } = await import('./corrections')
+    const issues = checkCoverLetter(CV, 'At Acme Corp, I built four REST services with Node.js and TypeScript.')
+    expect(issues).toEqual([expect.objectContaining({ kind: 'verify', unsupported: ['TypeScript'] })])
+    expect(describeLetterIssues(issues)).toEqual([])
+  })
+})

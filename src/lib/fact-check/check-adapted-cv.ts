@@ -1,6 +1,10 @@
 import { extractCvFacts, findTerms, numbersIn, sectionCategories, type CvBlock, type CvFacts } from './cv-facts'
 
-export type IssueKind = 'title' | 'technology' | 'number' | 'company' | 'date' | 'section'
+/**
+ * `verify`: in the CV, but not under this entry. Shown to the user, never sent
+ * to the model as something to remove.
+ */
+export type IssueKind = 'title' | 'technology' | 'number' | 'company' | 'date' | 'section' | 'verify'
 
 /** Something in the adapted CV that the original CV does not support. */
 export interface FactIssue {
@@ -49,8 +53,9 @@ function findBlock(facts: CvFacts, entry: Entry): CvBlock | undefined {
   return (
     facts.blocks.find(b => has(b, title) && has(b, date)) ??
     (dateIsSpecific ? facts.blocks.find(b => has(b, date)) : undefined) ??
-    facts.blocks.find(b => has(b, title)) ??
-    facts.blocks.find(b => has(b, date))
+    facts.blocks.find(b => has(b, title))
+    // No "first block with that year": it compared JobPilot with the Profile
+    // ("364 tests" flagged). An unmatched entry is checked against the whole CV.
   )
 }
 
@@ -121,16 +126,23 @@ export function checkAdaptedCv(originalCv: string, adaptedCv: string, options: C
       const wrongYears = [...e.date.value.matchAll(/(19|20)\d{2}/g)].map(m => m[0]).filter(y => !years.has(y))
       if (wrongYears.length) add({ kind: 'date', entry: e.title, lineIndex: e.date.lineIndex, unsupported: wrongYears })
     }
-    if (e.tech) {
-      const extra = missing(findTerms(e.tech.value), terms)
-      if (extra.length) add({ kind: 'technology', entry: e.title, lineIndex: e.tech.lineIndex, unsupported: extra })
+    // Not in this entry of the CV: an invention if absent from the whole CV;
+    // only "to verify" if the CV has it elsewhere (never sent as a removal).
+    const checkLine = (text: string, lineIndex: number) => {
+      const extraTerms = missing(findTerms(text), terms)
+      const extraNumbers = missing(numbersIn(text), numbers)
+      const inventedTerms = extraTerms.filter(term => !facts.terms.has(term))
+      const inventedNumbers = extraNumbers.filter(n => !facts.numbers.has(n))
+      const elsewhere = [
+        ...extraTerms.filter(term => facts.terms.has(term)),
+        ...extraNumbers.filter(n => facts.numbers.has(n)),
+      ]
+      if (inventedTerms.length) add({ kind: 'technology', entry: e.title, lineIndex, unsupported: inventedTerms })
+      if (inventedNumbers.length) add({ kind: 'number', entry: e.title, lineIndex, unsupported: inventedNumbers })
+      if (elsewhere.length) add({ kind: 'verify', entry: e.title, lineIndex, unsupported: elsewhere })
     }
-    for (const bullet of e.bullets) {
-      const extraTerms = missing(findTerms(bullet.text), terms)
-      if (extraTerms.length) add({ kind: 'technology', entry: e.title, lineIndex: bullet.lineIndex, unsupported: extraTerms })
-      const extraNumbers = missing(numbersIn(bullet.text), numbers)
-      if (extraNumbers.length) add({ kind: 'number', entry: e.title, lineIndex: bullet.lineIndex, unsupported: extraNumbers })
-    }
+    if (e.tech) checkLine(e.tech.value, e.tech.lineIndex)
+    for (const bullet of e.bullets) checkLine(bullet.text, bullet.lineIndex)
   }
 
   // ── Profile, skills, certifications: must exist somewhere in the CV ─────────

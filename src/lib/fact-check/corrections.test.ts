@@ -52,3 +52,13 @@ describe('describeIssues — missing section', () => {
     ).toEqual(['Keep the "Certifications & Languages" section of the CV, with all its entries.'])
   })
 })
+
+describe('actionableIssues — what the regeneration may be asked to change', () => {
+  it('drops "verify" issues: a term that exists in the CV is never sent as a removal', async () => {
+    const { actionableIssues } = await import('./corrections')
+    const verify = { id: 'verify-3', kind: 'verify' as const, entry: 'HireLoop', line: '- x', lineIndex: 3, unsupported: ['Next.js', 'Stripe', 'Prisma'] }
+    const invented = { id: 'technology-4', kind: 'technology' as const, entry: 'HireLoop', line: '- y', lineIndex: 4, unsupported: ['Terraform'] }
+    expect(actionableIssues([verify, invented])).toEqual([invented])
+    expect(describeIssues(actionableIssues([verify])).join(' ')).not.toMatch(/Next\.js|Stripe|Prisma/)
+  })
+})

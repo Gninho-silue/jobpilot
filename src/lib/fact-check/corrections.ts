@@ -3,9 +3,18 @@ import type { LetterIssue } from './check-cover-letter'
 
 const SECTION = /^[A-ZÀ-ÖØ-Þ\s&\-/]+$/
 
+/**
+ * Issues the regeneration may act on. A "verify" issue is about something the CV
+ * contains (elsewhere): asking the model to remove it made it drop real facts
+ * (the JobPilot and Banking stacks), so it is only shown to the user.
+ */
+export function actionableIssues<T extends { kind: string }>(issues: T[]): T[] {
+  return issues.filter(issue => issue.kind !== 'verify')
+}
+
 /** One instruction per issue, for the single regeneration of an adapted CV. */
 export function describeIssues(issues: FactIssue[]): string[] {
-  return issues.map(issue => {
+  return actionableIssues(issues).map(issue => {
     const where = `In "${issue.entry ?? ''}"`
     const items = issue.unsupported.join(', ')
     switch (issue.kind) {
@@ -23,13 +32,15 @@ export function describeIssues(issues: FactIssue[]): string[] {
         return `${where}: use the dates of the CV, not ${items}.`
       case 'section':
         return `Keep the "${items}" section of the CV, with all its entries.`
+      case 'verify':
+        return ''
     }
   })
 }
 
 /** One instruction per sentence, for the single regeneration of a cover letter. */
 export function describeLetterIssues(issues: LetterIssue[]): string[] {
-  return issues.map(issue => {
+  return actionableIssues(issues).map(issue => {
     const items = issue.unsupported.join(', ')
     switch (issue.kind) {
       case 'claim':
@@ -42,6 +53,8 @@ export function describeLetterIssues(issues: LetterIssue[]): string[] {
           : `Remove ${items}, not in the CV: "${issue.line}"`
       case 'number':
         return `Use only numbers from the CV, not ${items}: "${issue.line}"`
+      case 'verify':
+        return ''
     }
   })
 }

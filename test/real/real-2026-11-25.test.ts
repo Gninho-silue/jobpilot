@@ -55,3 +55,38 @@ describe.skipIf(!existsSync(DIR_26))('real PDFs of 2026-11-26: 3-page CV (local 
     expect(lines.filter(line => line === lines[0])).toHaveLength(1)
   })
 })
+
+describe.skipIf(!existsSync(DIR_26))('real PDFs of 2026-11-26: never remove what the CV contains (local only)', () => {
+  // The two entries the production regeneration damaged: JobPilot lost its stack
+  // and "Postgres-backed … Stripe webhooks"; Banking lost "Java 21 · Spring Boot 4".
+  const ADAPTED = (cvTitle: string) => `Name
+${cvTitle}
+contact@example.test
+
+PROJECTS
+>TITLE: Banking Microservices
+>TECH: Java 21 · Spring Boot 4 · Spring Cloud · Kafka · MySQL · Keycloak · Testcontainers
+>DATE: 2025 – 2026
+- 205 tests (JUnit, Mockito, Testcontainers with MySQL and Kafka), 100% line coverage on the service layer, CI across 7 services.
+
+>TITLE: JobPilot
+>TECH: Next.js · TypeScript · Prisma · PostgreSQL · Clerk · Groq · Stripe (test mode)
+>DATE: 2026
+- Postgres-backed rate limiting, atomic quotas, idempotent Stripe webhooks, signed URLs for private CV storage; 364 tests.`
+
+  it('no removal is ever requested for Next.js, Stripe, Prisma, Java or Spring Boot, and "364" is not flagged', async () => {
+    const { checkAdaptedCv } = await import('@/lib/fact-check/check-adapted-cv')
+    const { describeIssues } = await import('@/lib/fact-check/corrections')
+    const cvText = (await extractPdfText(readFileSync(DIR_26 + 'original-cv.pdf'))).text
+    const title = cvText.split('\n')[1]!
+
+    const issues = checkAdaptedCv(cvText, ADAPTED(title)).filter(i => i.kind !== 'section')
+    const corrections = describeIssues(issues).join('\n')
+
+    for (const term of ['Next.js', 'Stripe', 'Prisma', 'Java', 'Spring Boot', 'PostgreSQL']) {
+      expect(corrections).not.toContain(term)
+    }
+    expect(issues.flatMap(i => i.unsupported)).not.toContain('364')
+    expect(issues.filter(i => i.kind === 'technology' || i.kind === 'number')).toEqual([])
+  })
+})

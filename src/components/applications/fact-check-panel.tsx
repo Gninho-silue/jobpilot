@@ -18,6 +18,7 @@ const KIND_LABEL: Record<ReviewedIssue['kind'], string> = {
   company: 'Company not in your CV',
   date: 'Dates not in your CV',
   section: 'Section of your CV missing',
+  verify: 'In your CV, but not under this entry',
   merged: 'Facts from another experience',
   claim: 'Statement about you not in your CV',
 }
@@ -85,7 +86,9 @@ export function FactCheckPanel({ issues, busy, onFix, onApproveTitle }: FactChec
               </button>
             ) : (
               <p className="text-xs text-[hsl(var(--text-muted))]">
-                This one cannot be removed automatically: regenerate or edit the CV.
+                {issue.kind === 'verify'
+                  ? 'Your CV mentions this elsewhere: check that it belongs here.'
+                  : 'This one cannot be removed automatically: regenerate or edit the CV.'}
               </p>
             )}
           </li>

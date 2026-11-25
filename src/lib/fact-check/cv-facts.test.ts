@@ -104,3 +104,51 @@ Data Engineer, Globex 2019 - 2022
     expect(facts.numbers).toEqual(new Set(['4']))
   })
 })
+
+describe('extractCvFacts — entry titles wrapped over two lines (3-page CV of 2026-11-26)', () => {
+  // As extracted: the date sits on the second line of each entry heading.
+  const facts = extractCvFacts(`Zoé Martin-Ferré
+Backend Engineer | Java 21 · Spring Boot
+candidate_test@example.com
+Profile
+Backend engineer, engineering graduate of École Exemple (June 2026). I build tested
+systems: idempotent transfers covered by 205 tests.
+Professional Experience
+Full-Stack Developer Intern, Final Year Project (PFE), Northwind & Co, Lyon |
+January – May 2026
+Built 7 custom Odoo 17 Python modules for a B2B platform.
+Projects
+Banking Platform | Java 21, Spring Boot 4, Spring Cloud, Kafka, MySQL | GitHub | 2025 –
+2026
+205 tests (JUnit, Testcontainers), 100% line coverage on the service layer.
+HireLoop | Next.js, TypeScript, Prisma, PostgreSQL, Clerk, Groq, Stripe (test mode) | Live
+demo | 2026
+AI job-search SaaS: CV tailoring and a kanban tracker.
+Postgres-backed rate limiting, idempotent Stripe webhooks; 364 tests.
+Technical Skills
+Backend: Java 21, Spring Boot, Docker`)
+
+  const block = (start: string) => facts.blocks.find(b => b.header.startsWith(start))
+
+  it('the heading line above the dated line belongs to the new entry, not to the previous one', () => {
+    const hireloop = block('HireLoop')!
+    expect(hireloop.header).toContain('demo | 2026')
+    expect(hireloop.terms).toEqual(new Set(['Next.js', 'TypeScript', 'Prisma', 'PostgreSQL', 'Clerk', 'Groq', 'Stripe']))
+    expect(hireloop.numbers).toEqual(new Set(['364']))
+  })
+
+  it('an entry right after a section heading keeps its heading line (Banking: Java, Spring Boot)', () => {
+    const banking = block('Banking Platform')!
+    expect([...banking.terms]).toEqual(expect.arrayContaining(['Java', 'Spring Boot', 'Kafka', 'MySQL']))
+    expect(banking.terms.has('Next.js')).toBe(false)
+    expect(banking.numbers).toEqual(new Set(['205', '100%']))
+  })
+
+  it('a dated sentence in the Profile is not an entry', () => {
+    expect(facts.blocks.map(b => b.header.split(' |')[0])).toEqual([
+      'Full-Stack Developer Intern, Final Year Project (PFE), Northwind & Co, Lyon',
+      'Banking Platform',
+      'HireLoop',
+    ])
+  })
+})
