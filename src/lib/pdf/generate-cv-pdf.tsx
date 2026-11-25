@@ -414,6 +414,15 @@ export function parseCvStructured(raw: string): ParsedCv {
       continue
     }
 
+    // Any other format marker is never printed: unknown (keeps its value),
+    // empty, or cut by a truncated answer (">DE" ended a production CV).
+    const marker = trimmed.replace(/^[-•*·▸►]\s+/, '').match(/^>\s*([A-Za-z]+)\s*(?::\s*(.*))?$/)
+    if (marker) {
+      const value = marker[2] ? stripMarkdown(marker[2]) : ''
+      if (value) (currentEntry ? currentEntry.bullets : currentSection.paragraphs).push(value)
+      continue
+    }
+
     // Bullet line
     if (/^[-•*·▸►>]\s+/.test(trimmed)) {
       const bulletText = stripMarkdown(trimmed.replace(/^[-•*·▸►>]\s+/, ''))

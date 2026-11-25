@@ -130,3 +130,26 @@ PROJECTS
     expect(text).not.toMatch(/GitHub|↗|—/)
   })
 })
+
+describe('format markers are never printed', () => {
+  it('a truncated marker (">DE"), an empty one and an unknown one never reach the PDF; an unknown field keeps its value', async () => {
+    const pdf = await generateCvPdf(`Zoé Martin-Ferré
+AI Software Engineer
+candidate_test@example.com
+EDUCATION
+>SCHOOL: École d'Ingénieurs Exemple
+>DEGREE: Engineering Degree in Computer Science
+>DATE: 2023 – 2026
+>LOCATION: Lyon
+>SCHOOL: Lycée Exemple
+>DATE:
+- >DEGREE
+>DE`)
+    const { text } = await extractPdfText(pdf)
+
+    expect(text).not.toMatch(/>\s*[A-Z]{2,}/)
+    expect(text).toContain('Engineering Degree in Computer Science')
+    expect(text).toContain('Lyon')
+    expect(text).toContain('Lycée Exemple')
+  })
+})
