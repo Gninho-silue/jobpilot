@@ -34,3 +34,9 @@ export function resetClerk(): void {
   auth.mockClear()
   currentUser.mockClear()
 }
+
+// Enough of the proxy helpers to import src/proxy.ts in tests (its matcher).
+export const createRouteMatcher = (patterns: string[]) => (request: { nextUrl: { pathname: string } }) =>
+  patterns.some(pattern => new RegExp(`^${pattern}$`).test(request.nextUrl.pathname))
+
+export const clerkMiddleware = <T>(handler: T) => handler
