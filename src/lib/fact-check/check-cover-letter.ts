@@ -28,6 +28,11 @@ const PERSONAL_CLAIMS = [
   /\bje connais bien votre\b/i,
 ]
 
+// "for enterprise clients", "with major international customers", "auprès de grands comptes":
+// flagged when the CV does not contain the expression (without its preposition).
+const CLIENTELE_CLAIM =
+  /\b(?:for|with|to|serving)\s+(?:(?:enterprise|fortune[- ]\d+|large|major|international|global|key|blue[- ]chip|top[- ]tier)\s+)+(?:clients|customers|accounts|companies)\b|(?:auprès de|pour|avec)\s+(?:des\s+|de\s+)?(?:grands comptes|clients (?:grands comptes|internationaux|prestigieux))\b/i
+
 const MONTH_WORDS =
   /^(january|february|march|april|may|june|july|august|september|october|november|december|janvier|février|mars|avril|mai|juin|juillet|août|septembre|octobre|novembre|décembre|summer|spring|autumn|winter|present)$/i
 
@@ -60,6 +65,7 @@ const oneLine = (text: string) => text.replace(/\s+/g, ' ').trim()
 
 export function checkCoverLetter(originalCv: string, letter: string): LetterIssue[] {
   const facts = extractCvFacts(originalCv)
+  const originalText = originalCv.toLowerCase().replace(/\s+/g, ' ')
   const markers = distinctiveWords(facts.blocks)
   const sentences = letter
     .replace(/\s+/g, ' ')
@@ -72,8 +78,13 @@ export function checkCoverLetter(originalCv: string, letter: string): LetterIssu
   let context: CvBlock | undefined
 
   sentences.forEach((sentence, index) => {
-    if (PERSONAL_CLAIMS.some(pattern => pattern.test(sentence))) {
-      add({ kind: 'claim', line: sentence, lineIndex: index, unsupported: [] })
+    // A clientele the CV does not mention ("for enterprise clients") is a claim too.
+    const clientele = sentence.match(CLIENTELE_CLAIM)?.[0]
+    const unbackedClientele = clientele && !originalText.includes(clientele.toLowerCase().replace(/^\S+\s+/, ''))
+    if (PERSONAL_CLAIMS.some(pattern => pattern.test(sentence)) || unbackedClientele) {
+      // The whole sentence is flagged once (no separate number or technology issue).
+      add({ kind: 'claim', line: sentence, lineIndex: index, unsupported: clientele && unbackedClientele ? [clientele] : [] })
+      return
     }
 
     // A sentence naming an experience sets the context for the following ones.

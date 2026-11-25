@@ -90,3 +90,16 @@ PROJECTS
     expect(issues.filter(i => i.kind === 'technology' || i.kind === 'number')).toEqual([])
   })
 })
+
+describe.skipIf(!existsSync(DIR_26))('real PDFs of 2026-11-26: cover letter (local only)', () => {
+  it('"enterprise clients" is flagged as a claim the CV does not support', async () => {
+    const { checkCoverLetter } = await import('@/lib/fact-check/check-cover-letter')
+    const cvText = (await extractPdfText(readFileSync(DIR_26 + 'original-cv.pdf'))).text
+    const letter = (await extractPdfText(readFileSync(DIR_26 + 'cover-letter.pdf'))).text
+    // The letter body: from the greeting line to the closing (header lines dropped).
+    const body = letter.slice(letter.indexOf('I am excited')).split('\n').slice(0, -1).join(' ')
+
+    const claims = checkCoverLetter(cvText, body).filter(i => i.kind === 'claim')
+    expect(claims.map(c => c.unsupported)).toContainEqual(['for enterprise clients'])
+  })
+})
