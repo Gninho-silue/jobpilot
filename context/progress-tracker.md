@@ -196,6 +196,8 @@ Vercel Deploy & Production Verification
   - [x] Letter header uses the contact line (email/phone), not the CV's 2nd line; `stripNonPrintable` removed
   - [x] Links: `extractPdfText` returns the PDF's link URLs and appends a `Links:` line to the text; the adapted CV renders URL-like contact parts and project links as clickable addresses; a `>LINK:` that is not a URL is not rendered
   - [x] `isSectionHeader` tests the line as written (it upper-cased first, so short lines such as certifications became headings)
+  - [x] Generic prompts (test fails on TechPal, DevScope, JobPilot, AgentFlow, PFE, PFA, Synertic) with stricter truthfulness rules (own title, per-experience tools, no merged experiences, no invented claims)
+  - [x] Fact extraction (`lib/fact-check/cv-facts.ts`): technologies from a curated vocabulary with accepted rewordings (`vocabulary.ts`), counts / percentages / "N+" (number words as digits, versions and years excluded), years, title, and per-entry blocks cut at dated lines
 
 ## Known Issues (found while writing tests)
 

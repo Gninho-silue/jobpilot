@@ -28,3 +28,19 @@ describe.skipIf(!existsSync(DIR))('real PDFs of 2026-11-25: links (local only)',
     expect(text).toMatch(/\nLinks: https:\/\//)
   })
 })
+
+describe.skipIf(!existsSync(DIR))('real PDFs of 2026-11-25: facts (local only)', () => {
+  it('original CV: title, experience blocks with their own stack (no Docker in the PFE, no Redis in the internship)', async () => {
+    const { extractCvFacts } = await import('@/lib/fact-check/cv-facts')
+    const facts = extractCvFacts((await extractPdfText(real('original-cv.pdf'))).text)
+
+    expect(facts.title).toBe('AI Software Engineer')
+    expect(facts.blocks.length).toBeGreaterThanOrEqual(6)
+    const pfe = facts.blocks.find(b => /Final Year Project/.test(b.header))!
+    const internship = facts.blocks.find(b => /Intern\b/.test(b.header))!
+    expect(pfe.terms.has('Odoo')).toBe(true)
+    expect(pfe.terms.has('Docker') || pfe.terms.has('GitHub Actions') || pfe.terms.has('CI/CD')).toBe(false)
+    expect(internship.terms.has('Redis') || internship.terms.has('PostgreSQL')).toBe(false)
+    expect(facts.terms.has('Redis')).toBe(true)
+  })
+})
