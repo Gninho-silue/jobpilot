@@ -36,6 +36,11 @@ const CLIENTELE_CLAIM =
 const MONTH_WORDS =
   /^(january|february|march|april|may|june|july|august|september|october|november|december|janvier|février|mars|avril|mai|juin|juillet|août|septembre|octobre|novembre|décembre|summer|spring|autumn|winter|present)$/i
 
+// Header words that name no experience in particular: any project is a "project",
+// and a target company can be "… Engineering" (the closing line named one).
+const GENERIC_HEADER_WORDS =
+  /^(projects?|projets?|engineering|engineer|ingénieur|ingénierie|developer|développeur|development|degree|diplôme|sciences?|computer|informatique|services?|classes|preparatory|full-stack|frontend|backend)$/i
+
 const words = (text: string) => text.toLowerCase().match(/[\p{L}][\p{L}'-]*/gu) ?? []
 
 /**
@@ -48,7 +53,7 @@ function distinctiveWords(blocks: CvBlock[]): Map<CvBlock, Set<string>> {
   for (const block of blocks) {
     const candidates = new Set(
       (block.header.match(/[\p{Lu}][\p{L}'-]{3,}/gu) ?? [])
-        .filter(word => !MONTH_WORDS.test(word) && findTerms(word).size === 0)
+        .filter(word => !MONTH_WORDS.test(word) && !GENERIC_HEADER_WORDS.test(word) && findTerms(word).size === 0)
         .map(word => word.toLowerCase())
     )
     perBlock.set(block, candidates)
@@ -67,17 +72,28 @@ export function checkCoverLetter(originalCv: string, letter: string): LetterIssu
   const facts = extractCvFacts(originalCv)
   const originalText = originalCv.toLowerCase().replace(/\s+/g, ' ')
   const markers = distinctiveWords(facts.blocks)
+  // Sentences with their paragraph: an experience's context never carries over
+  // to the next paragraph (the closing paragraph is about the candidate overall).
   const sentences = letter
-    .replace(/\s+/g, ' ')
-    .split(/(?<=[.!?])\s+(?=[\p{Lu}“"«(])/u)
-    .map(sentence => sentence.trim())
-    .filter(Boolean)
+    .split(/\n\s*\n/)
+    .flatMap((paragraph, paragraphIndex) =>
+      paragraph
+        .replace(/\s+/g, ' ')
+        .split(/(?<=[.!?])\s+(?=[\p{Lu}“"«(])/u)
+        .map(sentence => ({ sentence: sentence.trim(), paragraphIndex }))
+    )
+    .filter(({ sentence }) => sentence)
 
   const issues: LetterIssue[] = []
   const add = (issue: Omit<LetterIssue, 'id'>) => issues.push({ ...issue, id: `${issue.kind}-${issue.lineIndex}` })
   let context: CvBlock | undefined
+  let currentParagraph = 0
 
-  sentences.forEach((sentence, index) => {
+  sentences.forEach(({ sentence, paragraphIndex }, index) => {
+    if (paragraphIndex !== currentParagraph) {
+      context = undefined
+      currentParagraph = paragraphIndex
+    }
     // A clientele the CV does not mention ("for enterprise clients") is a claim too.
     const clientele = sentence.match(CLIENTELE_CLAIM)?.[0]
     const unbackedClientele = clientele && !originalText.includes(clientele.toLowerCase().replace(/^\S+\s+/, ''))
@@ -89,7 +105,17 @@ export function checkCoverLetter(originalCv: string, letter: string): LetterIssu
 
     // A sentence naming an experience sets the context for the following ones.
     const sentenceWords = new Set(words(sentence))
-    const named = facts.blocks.find(block => [...markers.get(block)!].some(word => sentenceWords.has(word)))
+    // The experience the sentence names most precisely ("Banking Platform project":
+    // two words of Banking Platform, not the first block that matches one word).
+    let named: CvBlock | undefined
+    let bestScore = 0
+    for (const block of facts.blocks) {
+      const score = [...markers.get(block)!].filter(word => sentenceWords.has(word)).length
+      if (score > bestScore) {
+        named = block
+        bestScore = score
+      }
+    }
     if (named) context = named
 
     const terms = findTerms(sentence)

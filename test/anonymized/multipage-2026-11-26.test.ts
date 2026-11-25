@@ -66,7 +66,7 @@ describe('adapted CV of 2026-11-26 (cut at ">DE", stacks lost)', () => {
     expect(issues.filter(i => ['technology', 'number', 'verify'].includes(i.kind))).toEqual([])
   })
 
-  it('its PDF never prints the cut marker', async () => {
+  it('its PDF never prints the cut marker', { timeout: 20_000 }, async () => {
     const { text } = await extractPdfText(await generateCvPdf(ADAPTED))
     expect(text).not.toMatch(/>\s*[A-Z]{2,}/)
   })

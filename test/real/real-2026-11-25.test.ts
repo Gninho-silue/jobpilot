@@ -103,3 +103,25 @@ describe.skipIf(!existsSync(DIR_26))('real PDFs of 2026-11-26: cover letter (loc
     expect(claims.map(c => c.unsupported)).toContainEqual(['for enterprise clients'])
   })
 })
+
+const DIR_25B = fileURLToPath(new URL('../fixtures/real-2026-11-25b/', import.meta.url))
+
+/** Letter body from its PDF: from the first sentence to the line before the signature. */
+async function letterBody(name: string): Promise<string> {
+  const lines = (await extractPdfText(readFileSync(DIR_25B + name))).text.split('\n')
+  const start = lines.findIndex(line => /^(I am|Capgemini|Je |Madame|Dear)/.test(line))
+  return lines.slice(start, -1).join(' ')
+}
+
+describe.skipIf(!existsSync(DIR_25B) || !existsSync(DIR_26))('real letters of 2026-11-25 (local only)', () => {
+  it('point 3: the Banking sentence is not attached to the final-year project; the closing line is not attached to the degree', async () => {
+    const { checkCoverLetter } = await import('@/lib/fact-check/check-cover-letter')
+    const cvText = (await extractPdfText(readFileSync(DIR_26 + 'original-cv.pdf'))).text
+
+    const english = checkCoverLetter(cvText, await letterBody('cover-letter-management-solutions.pdf'))
+    expect(english.filter(i => i.kind === 'merged' && /Banking/.test(i.line))).toEqual([])
+
+    const french = checkCoverLetter(cvText, await letterBody('cover-letter-capgemini-fr.pdf'))
+    expect(french.filter(i => i.entry?.includes('Engineering Degree'))).toEqual([])
+  })
+})
