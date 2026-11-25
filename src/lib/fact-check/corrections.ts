@@ -21,6 +21,8 @@ export function describeIssues(issues: FactIssue[]): string[] {
         return `${where}: use the company name of the CV, not "${items}".`
       case 'date':
         return `${where}: use the dates of the CV, not ${items}.`
+      case 'section':
+        return `Keep the "${items}" section of the CV, with all its entries.`
     }
   })
 }

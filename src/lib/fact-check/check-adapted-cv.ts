@@ -1,6 +1,6 @@
-import { extractCvFacts, findTerms, numbersIn, type CvBlock, type CvFacts } from './cv-facts'
+import { extractCvFacts, findTerms, numbersIn, sectionCategories, type CvBlock, type CvFacts } from './cv-facts'
 
-export type IssueKind = 'title' | 'technology' | 'number' | 'company' | 'date'
+export type IssueKind = 'title' | 'technology' | 'number' | 'company' | 'date' | 'section'
 
 /** Something in the adapted CV that the original CV does not support. */
 export interface FactIssue {
@@ -77,6 +77,7 @@ export function checkAdaptedCv(originalCv: string, adaptedCv: string, options: C
   const entries: Entry[] = []
   const sectionLines: Array<{ section: string; text: string; lineIndex: number }> = []
   let section = ''
+  const adaptedCategories = new Set<string>()
   let entry: Entry | null = null
 
   for (let index = (nonEmpty[2]?.index ?? 0) + 1; index < lines.length; index++) {
@@ -84,6 +85,7 @@ export function checkAdaptedCv(originalCv: string, adaptedCv: string, options: C
     if (!line) continue
     if (HEADING.test(line)) {
       section = line
+      for (const category of sectionCategories(line)) adaptedCategories.add(category)
       entry = null
       continue
     }
@@ -138,6 +140,13 @@ export function checkAdaptedCv(originalCv: string, adaptedCv: string, options: C
     const extraNumbers = missing(numbersIn(text), facts.numbers)
     if (extraNumbers.length) add({ kind: 'number', entry: heading, lineIndex, unsupported: extraNumbers })
   }
+
+  // ── Sections of the original CV that the adapted CV lost ───────────────────
+  facts.sections.forEach(({ heading, categories }, index) => {
+    if (categories.length && categories.some(category => !adaptedCategories.has(category))) {
+      issues.push({ id: `section-${lines.length + index}`, kind: 'section', line: '', lineIndex: lines.length + index, unsupported: [heading] })
+    }
+  })
 
   return issues.sort((a, b) => a.lineIndex - b.lineIndex)
 }

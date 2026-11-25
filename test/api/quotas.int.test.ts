@@ -98,11 +98,15 @@ describe('POST /api/applications/[id]/adapt-resume — free plan: 3 per month', 
     signInAs(user)
 
     for (let i = 1; i <= 3; i++) {
-      mockStream(['Adapted ', `CV #${i}`])
+      // A faithful adaptation of SAMPLE_CV (same title and section), so the fact-check passes.
+      mockStream([
+        'Jane Doe\nFull-Stack Engineer\njane@example.test\n\nPROFESSIONAL EXPERIENCE\n',
+        `>TITLE: Backend Developer\n- Built REST APIs (version ${'ABC'[i - 1]})`,
+      ])
       const res = await adapt(app.id)
       expect(res.status).toBe(200)
     }
-    expect((await prisma.application.findUniqueOrThrow({ where: { id: app.id } })).adaptedCvText).toBe('Adapted CV #3')
+    expect((await prisma.application.findUniqueOrThrow({ where: { id: app.id } })).adaptedCvText).toContain('Built REST APIs (version C)')
 
     const res = await adapt(app.id)
     expect(res.status).toBe(403)

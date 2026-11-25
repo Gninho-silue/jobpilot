@@ -129,3 +129,21 @@ describe('checkAdaptedCv — plan cases', () => {
     expect(checkAdaptedCv(CV, text)[0]!.id).toBe(issue!.id)
   })
 })
+
+describe('checkAdaptedCv — sections removed from the CV', () => {
+  const withoutLastSection = ADAPTED.slice(0, ADAPTED.indexOf('CERTIFICATIONS & LANGUAGES'))
+
+  it('flags every section of the original CV that the adapted CV lost (the production CV ended at "ESTEM Casablanca")', () => {
+    const issues = checkAdaptedCv(ORIGINAL, withoutLastSection).filter(i => i.kind === 'section')
+    expect(issues.map(i => i.unsupported)).toEqual([['Certifications & Languages']])
+  })
+
+  it('a section kept under another wording (French heading, "AI Projects" → "PROJECTS") is not flagged', () => {
+    const french = ADAPTED.replace('CERTIFICATIONS & LANGUAGES', 'CERTIFICATIONS ET LANGUES').replace('PROJECTS', 'PROJETS')
+    expect(checkAdaptedCv(ORIGINAL, french).filter(i => i.kind === 'section')).toEqual([])
+  })
+
+  it('the faithful real-case adaptation keeps all its sections', () => {
+    expect(checkAdaptedCv(ORIGINAL, ADAPTED).filter(i => i.kind === 'section')).toEqual([])
+  })
+})

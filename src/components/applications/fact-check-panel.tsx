@@ -17,6 +17,7 @@ const KIND_LABEL: Record<ReviewedIssue['kind'], string> = {
   number: 'Number not in your CV',
   company: 'Company not in your CV',
   date: 'Dates not in your CV',
+  section: 'Section of your CV missing',
   merged: 'Facts from another experience',
   claim: 'Statement about you not in your CV',
 }
@@ -60,7 +61,9 @@ export function FactCheckPanel({ issues, busy, onFix, onApproveTitle }: FactChec
               </p>
               <p className="text-xs font-semibold text-[hsl(var(--state-warning))]">{issue.unsupported.join(', ')}</p>
             </div>
-            <p className="text-xs text-[hsl(var(--text-secondary))] line-clamp-2">{issue.line.replace(/^[-•*]\s+/, '')}</p>
+            {issue.line ? (
+              <p className="text-xs text-[hsl(var(--text-secondary))] line-clamp-2">{issue.line.replace(/^[-•*]\s+/, '')}</p>
+            ) : null}
 
             {issue.kind === 'title' ? (
               <div className="flex flex-wrap gap-2">

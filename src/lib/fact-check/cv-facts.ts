@@ -23,6 +23,26 @@ export interface CvFacts {
   terms: Set<string>
   numbers: Set<string>
   years: Set<string>
+  /** Section headings of the CV, as written, with what they contain. */
+  sections: Array<{ heading: string; categories: SectionCategory[] }>
+}
+
+export type SectionCategory = 'profile' | 'skills' | 'experience' | 'projects' | 'education' | 'certifications' | 'languages' | 'interests'
+
+const CATEGORY_PATTERNS: Array<[SectionCategory, RegExp]> = [
+  ['profile', /profil|summary|résumé|about/i],
+  ['skills', /skill|compétence/i],
+  ['experience', /experience|expérience/i],
+  ['projects', /project|projet/i],
+  ['education', /education|formation/i],
+  ['certifications', /certif/i],
+  ['languages', /language|langue/i],
+  ['interests', /interest|intérêt/i],
+]
+
+/** What a section heading covers ("Certifications & Languages" → both). */
+export function sectionCategories(heading: string): SectionCategory[] {
+  return CATEGORY_PATTERNS.filter(([, pattern]) => pattern.test(heading)).map(([category]) => category)
 }
 
 /** Canonical names of the known technologies in a text. */
@@ -100,6 +120,7 @@ export function extractCvFacts(cvText: string): CvFacts {
   const body = lines.filter(line => !CONTACT.test(line) && !line.startsWith('Links: '))
 
   const blocks: CvBlock[] = []
+  const sections: CvFacts['sections'] = []
   let current: { header: string[]; text: string[] } | null = null
   const close = () => {
     if (current) blocks.push(makeBlock(current.header.join(' '), current.text.join('\n')))
@@ -109,6 +130,7 @@ export function extractCvFacts(cvText: string): CvFacts {
   for (const line of body.slice(1)) {
     if (isSectionHeading(line)) {
       close()
+      sections.push({ heading: line.replace(/[:#*]/g, '').trim(), categories: sectionCategories(line) })
       continue
     }
     if (DATED_LINE.test(line) && !BULLET.test(line)) {
@@ -124,5 +146,5 @@ export function extractCvFacts(cvText: string): CvFacts {
   close()
 
   const whole = body.slice(1).join('\n')
-  return { name, title, blocks, terms: findTerms(whole), numbers: numbersIn(whole), years: yearsIn(whole) }
+  return { name, title, blocks, terms: findTerms(whole), numbers: numbersIn(whole), years: yearsIn(whole), sections }
 }

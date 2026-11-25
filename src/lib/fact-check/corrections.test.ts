@@ -44,3 +44,11 @@ describe('describeLetterIssues', () => {
     ])
   })
 })
+
+describe('describeIssues — missing section', () => {
+  it('asks to keep the section', () => {
+    expect(
+      describeIssues([{ id: 'section-0', kind: 'section', line: '', lineIndex: 0, unsupported: ['Certifications & Languages'] }])
+    ).toEqual(['Keep the "Certifications & Languages" section of the CV, with all its entries.'])
+  })
+})
