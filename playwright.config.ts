@@ -33,6 +33,7 @@ export default defineConfig({
     // Never reuse a running dev server: it would use the real DATABASE_URL.
     reuseExistingServer: false,
     timeout: 180_000,
-    env: { DATABASE_URL: databaseUrl, NEXT_PUBLIC_APP_URL: 'http://localhost:3100' },
+    // A throwaway demo signing secret: the demo workspace is enabled in E2E.
+    env: { DATABASE_URL: databaseUrl, NEXT_PUBLIC_APP_URL: 'http://localhost:3100', DEMO_COOKIE_SECRET: 'e2e-demo-cookie-secret-0123456789abcdef' },
   },
 })

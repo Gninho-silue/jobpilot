@@ -1,4 +1,6 @@
 import { getActor } from '@/lib/actor'
+import { isDemoEnabled } from '@/lib/demo/cookie'
+import { TryDemoButton } from '@/components/demo/try-demo-button'
 import { redirect } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
@@ -138,6 +140,7 @@ export default async function LandingPage() {
           >
             Get started free →
           </Link>
+          {isDemoEnabled() ? <TryDemoButton /> : null}
           <a
             href="#features"
             className="rounded-lg px-8 py-3 text-sm transition-colors"

@@ -5,8 +5,9 @@ import { UserButton } from '@clerk/nextjs'
 import { Sun, Moon, Bell } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useTheme } from '@/components/providers'
+import { ExitDemoButton } from '@/components/demo/exit-demo-button'
 
-export function Navbar() {
+export function Navbar({ isDemo = false }: { isDemo?: boolean }) {
   const { theme, setTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
 
@@ -47,7 +48,7 @@ export function Navbar() {
           )}
         </Button>
 
-        <UserButton />
+        {isDemo ? <ExitDemoButton /> : <UserButton />}
       </div>
     </header>
   )
