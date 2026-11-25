@@ -1,0 +1,73 @@
+Zoé Martin-Ferré
+Full-Stack Engineer | Java · Spring Boot · React
++000 600 000 000 $|$ candidate_test@example.com $|$ Lyon, France $|$ https://www.linkedin.com/in/zoe-test $|$ https://github.com/zoe-test $|$ https://zoe-test.example.com/
+
+PROFILE
+Full-stack engineer (Java 21, Spring Boot, React), Certified Java SE 17 Developer, engineering graduate of École d'Ingénieurs Exemple (June 2026). I build systems that are tested and deployed: idempotent banking transfers covered by 180 tests, and AI apps that check their own output. Looking for a Backend or Full-Stack Java role in Lyon, hybrid or remote. Available immediately.
+
+TECHNICAL SKILLS
+Languages: Java 21 · TypeScript · JavaScript · Python · SQL
+Backend: Spring Boot · Spring Cloud · Spring Security · REST · Apache Kafka · FastAPI · Node.js · ERPNext 15
+Databases: PostgreSQL · MySQL · Redis · MongoDB
+Testing & DevOps: JUnit 5 · Mockito · Testcontainers · Vitest · Docker · GitHub Actions · Kubernetes manifests / Helm
+Frontend: React · Next.js · Tailwind CSS
+AI: LangGraph · RAG · ChromaDB · Groq · Ollama
+
+PROFESSIONAL EXPERIENCE
+>TITLE: Full-Stack Developer Intern, Final Year Project (PFE)
+>COMPANY: Northwind & Co
+>DATE: January – May 2026
+- Built 7 custom ERPNext 15 Python modules (Jinja, SCSS) for a B2B e-commerce platform, enforcing a price-confidentiality rule that eliminated 95% of manual price-masking errors.
+- Optimized PostgreSQL queries across 14 data models, cutting page load time by 35%.
+- Developed a cross-platform Flutter app synced to ERPNext over REST, with full feature parity on iOS and Android.
+
+>TITLE: Full-Stack Developer Intern (PFA)
+>COMPANY: Northwind & Co
+>DATE: June – September 2025
+- Designed and delivered an internship-management ERP on ERPNext 15, used by the HR team for the full internship lifecycle.
+- Automated a 5-state internship workflow with CRON tasks and notifications, cutting administrative processing time by 45%.
+- Designed a 3-role access model (Admin, Supervisor, Intern) with ERPNext roles and permission rules.
+- Built a real-time dashboard tracking 12 KPIs, adopted company-wide, and 6 auto-generated PDF report types (Jinja).
+
+>TITLE: Frontend Developer Intern
+>COMPANY: Contoso Security
+>DATE: July – August 2024
+- Delivered responsive React interfaces integrated with REST APIs, contributing to 3 production features in an Agile/Scrum team.
+
+PROJECTS
+>TITLE: Banking Platform
+>TECH: Spring Cloud · Kafka · MySQL · Keycloak · Testcontainers
+>DATE: 2025 – 2026
+>LINK: https://github.com/zoe-test/banking-platform
+- Extended a Spring Cloud course architecture (Config Server, Eureka, Gateway, Keycloak, Grafana LGTM) with my own features.
+- Idempotent money transfers with fixed-order row locking: no double debit and no deadlock, verified with 25 concurrent transfers.
+- Transactional outbox to Kafka (FOR UPDATE SKIP LOCKED, at-least-once delivery) and a BigDecimal loan amortization schedule.
+- 180 tests (JUnit, Mockito, Testcontainers with MySQL and Kafka), 98% line coverage on the service layer, CI across 6 services.
+
+>TITLE: HireLoop
+>DATE: 2026
+- AI job-search SaaS: CV tailoring, cover letters, interview prep and a kanban application tracker.
+- Deterministic fact-checker flags any skill, company, title or figure the AI adds to a CV that the original CV does not contain.
+- Rate limiting, atomic quotas, signed URLs for private CV storage; 312 tests.
+
+>TITLE: TaskWeave
+>TECH: Python · FastAPI · LangGraph · Ollama / Groq · React
+>DATE: 2026
+>LINK: https://github.com/zoe-test/taskweave
+- Four LangGraph agents analyze CSV, JSON or text files and write a report; deployed on Render and Vercel.
+- LLM-generated Python runs in an isolated subprocess and fixes itself from its traceback (up to 4 attempts).
+- Every number and ranking in a report is checked against the computed results before it is shown.
+
+>TITLE: Atlas
+>TECH: Python · FastAPI · LangGraph · ChromaDB · React
+>DATE: 2026
+>LINK: https://atlas.example.com/
+- Agentic RAG assistant that answers questions about my career from my own documents and cites the source of every answer.
+
+EDUCATION
+>SCHOOL: École d'Ingénieurs Exemple
+>DEGREE: Engineering Degree in Computer Science
+>DATE: 2023 – 2026
+
+>SCHOOL: Lycée Exemple
+>DE
