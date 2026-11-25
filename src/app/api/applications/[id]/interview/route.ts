@@ -4,6 +4,7 @@ import { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
 import { generateInterviewQuestions } from '@/lib/ai/generate-interview-questions'
 import { checkLlmRateLimit, tooManyRequests } from '@/lib/rate-limit'
+import { TRUNCATED_MESSAGE, TruncatedAnswerError } from '@/lib/ai/call'
 
 export async function POST(
   _request: Request,
@@ -48,6 +49,10 @@ export async function POST(
       application.language
     )
   } catch (err) {
+    if (err instanceof TruncatedAnswerError) {
+      // Cut off twice by the token budget: nothing is saved.
+      return NextResponse.json({ error: TRUNCATED_MESSAGE }, { status: 502 })
+    }
     console.error('[interview] AI generation failed:', err)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }

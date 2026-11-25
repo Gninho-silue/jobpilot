@@ -6,9 +6,10 @@
  * the same budget on hidden reasoning tokens. So: low reasoning effort for those
  * models, and a budget that grows with the CV.
  */
-export type GenerationKind = 'cv' | 'letter'
+export type GenerationKind = 'cv' | 'letter' | 'offer' | 'questions' | 'feedback'
 
-const MIN = { cv: 4000, letter: 3000 } as const
+// offer: a few JSON fields; questions: 10 questions with hints; feedback: one review.
+const MIN = { cv: 4000, letter: 3000, offer: 1000, questions: 4000, feedback: 2000 } as const
 const MAX = 16_000
 
 export interface GenerationOptions {
@@ -19,7 +20,7 @@ export interface GenerationOptions {
 export function generationOptions(model: string, cvText: string, kind: GenerationKind, factor = 1): GenerationOptions {
   // The adapted CV is about as long as the original (~0.3 token per character),
   // plus room for the low-effort reasoning and the format markers.
-  const estimate = kind === 'cv' ? Math.ceil(cvText.length * 0.7) + 2500 : MIN.letter
+  const estimate = kind === 'cv' ? Math.ceil(cvText.length * 0.7) + 2500 : MIN[kind]
   const budget = Math.min(MAX, Math.max(MIN[kind], estimate)) * factor
   return /gpt-oss/i.test(model) ? { max_completion_tokens: budget, reasoning_effort: 'low' } : { max_completion_tokens: budget }
 }

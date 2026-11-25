@@ -1,5 +1,6 @@
 import { GROQ_MODEL } from '@/lib/groq'
-import { completeChat } from './call'
+import { completeUntilDone } from './call'
+import { generationOptions } from './generation'
 import { UNTRUSTED_DATA_RULE, wrapUntrusted } from './untrusted'
 
 // Company, role and salary are near the top of a posting: 3000 characters keep
@@ -18,10 +19,11 @@ export async function parseJobOffer(
 ): Promise<ParsedOffer> {
   const langHint = language === 'FR' ? 'The job posting is in French.' : 'The job posting is in English.'
 
-  const completion = await completeChat('parse-offer', {
+  // Cut off twice → TruncatedAnswerError (the route answers with empty fields).
+  const completion = await completeUntilDone('parse-offer', factor => ({
     model: GROQ_MODEL,
     temperature: 0,
-    max_tokens: 128,
+    ...generationOptions(GROQ_MODEL, '', 'offer', factor),
     response_format: { type: 'json_object' },
     messages: [
       {
@@ -33,7 +35,7 @@ export async function parseJobOffer(
         content: wrapUntrusted('job_offer', offerText, PARSE_OFFER_MAX_CHARS),
       },
     ],
-  })
+  }))
 
   const raw = completion.choices[0]?.message?.content ?? '{}'
 

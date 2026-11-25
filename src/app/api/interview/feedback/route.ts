@@ -4,6 +4,7 @@ import { interviewFeedbackSchema } from '@/lib/validation'
 import { prisma } from '@/lib/prisma'
 import { generateInterviewFeedback } from '@/lib/ai/interview-feedback'
 import { checkLlmRateLimit, tooManyRequests } from '@/lib/rate-limit'
+import { TRUNCATED_MESSAGE, TruncatedAnswerError } from '@/lib/ai/call'
 
 export async function POST(request: Request) {
   const { userId } = await auth()
@@ -45,7 +46,11 @@ export async function POST(request: Request) {
   try {
     const feedback = await generateInterviewFeedback(question, answer, type, language)
     return NextResponse.json({ data: feedback })
-  } catch {
+  } catch (err) {
+    if (err instanceof TruncatedAnswerError) {
+      // Cut off twice by the token budget: never return a half-written review.
+      return NextResponse.json({ error: TRUNCATED_MESSAGE }, { status: 502 })
+    }
     console.error('[interview/feedback] AI generation failed')
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }

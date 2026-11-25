@@ -49,7 +49,7 @@
 - Every model call goes through `completeChat` / `streamChat` (`lib/ai/call.ts`): one JSON log line per call (label, model, finish_reason, budget, prompt / reasoning / completion tokens), never the prompt or the answer
 - Prompts are generic: no real person's employer, school, project or contact details, examples included (src/lib/ai/generic-prompts.test.ts fails on known terms)
 - Prompt structure: a `system` message with our instructions ending with `UNTRUSTED_DATA_RULE`, and a `user` message holding each piece of user text in `wrapUntrusted(tag, text, PROMPT_LIMITS.x)`. Short values interpolated anywhere go through `inlineField()`. Never put CV, offer, company, role or answer text in the system message
-- Token budget of long generations from `generationOptions` (`lib/ai/generation.ts`): grows with the CV (min 4000 for a CV, 3000 for a letter), `reasoning_effort: low` for reasoning models. Always read `finish_reason`: a "length" answer is truncated and never saved as valid (`finishGeneration`: one retry with twice the budget, else credit refunded and an error sent after `STREAM_ERROR`)
+- Token budget of long generations from `generationOptions` (`lib/ai/generation.ts`): grows with the CV (min 4000 for a CV, 3000 for a letter, 1000 for offer parsing, 4000 for interview questions, 2000 for feedback), `reasoning_effort: low` for reasoning models. Always read `finish_reason`: a "length" answer is truncated and never saved as valid (`finishGeneration` for streamed generations: one retry with twice the budget, else credit refunded and an error sent after `STREAM_ERROR`; `completeUntilDone` for short calls: one retry, else `TruncatedAnswerError` → 502, or empty fields for offer parsing)
 
 ## Database (Prisma)
 

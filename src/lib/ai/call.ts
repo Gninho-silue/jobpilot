@@ -53,3 +53,29 @@ export async function streamChat(
     logAiCall(label, params, finishReason, usage)
   })()
 }
+
+export const TRUNCATED_MESSAGE = 'The AI answer was cut off before the end. Please try again.'
+
+/** The model answer was cut by its token budget twice: it must not be used. */
+export class TruncatedAnswerError extends Error {
+  constructor(label: string) {
+    super(`${label}: answer cut off by the token budget (finish_reason "length")`)
+    this.name = 'TruncatedAnswerError'
+  }
+}
+
+/**
+ * A short, non-streamed call that must be complete (JSON to parse, questions to
+ * save): an answer cut off by the token budget is retried once with twice the
+ * budget; cut off again, it throws TruncatedAnswerError instead of returning it.
+ */
+export async function completeUntilDone(
+  label: string,
+  params: (budgetFactor: number) => ChatCompletionCreateParamsNonStreaming
+): Promise<ChatCompletion> {
+  for (const factor of [1, 2]) {
+    const response = await completeChat(label, params(factor))
+    if (response.choices[0]?.finish_reason !== 'length') return response
+  }
+  throw new TruncatedAnswerError(label)
+}

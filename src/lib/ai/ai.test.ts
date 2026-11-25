@@ -10,13 +10,13 @@ const CV = 'Jane Doe — Backend Developer at Acme Corp (2023–2025). Node.js, 
 const OFFER = 'Globex is hiring a Full-Stack Engineer. React, Node.js.'
 
 describe('parseJobOffer — prompt', () => {
-  it('asks for JSON output, deterministically, with a small token budget', async () => {
+  it('asks for JSON output, deterministically, with a budget that survives reasoning (1000)', async () => {
     mockCompletion('{"company":"Globex","role":"Engineer","salary":null}')
     await parseJobOffer(OFFER, 'EN')
     const call = groqCall()
     expect(call.model).toBe('test-model')
     expect(call.temperature).toBe(0)
-    expect(call.max_tokens).toBe(128)
+    expect(call.max_completion_tokens).toBe(1000)
     expect(call.response_format).toEqual({ type: 'json_object' })
   })
 
@@ -141,7 +141,7 @@ describe('generateInterviewQuestions', () => {
     await generateInterviewQuestions(CV, OFFER, 'Globex', 'Engineer', 'FR')
     expect(groqPrompt()).toContain("Génère exactement 10 questions d'entretien")
     expect(groqPrompt()).toContain('Globex')
-    expect(groqCall()).toMatchObject({ max_tokens: 2000, temperature: 0.3 })
+    expect(groqCall()).toMatchObject({ max_completion_tokens: 4000, temperature: 0.3 })
   })
 
   it('parses a JSON array, even inside ```json fences', async () => {
@@ -177,7 +177,7 @@ describe('generateInterviewFeedback', () => {
     expect(prompt).toContain('Tu reçois la question (comportementale)')
     expect(prompt).toContain('<question>\nWhy us?\n</question>')
     expect(prompt).toContain('<answer>\nBecause of the mission.\n</answer>')
-    expect(groqCall()).toMatchObject({ max_tokens: 1000, temperature: 0.3 })
+    expect(groqCall()).toMatchObject({ max_completion_tokens: 2000, temperature: 0.3 })
   })
 
   it('parses the JSON feedback, fences included', async () => {

@@ -31,3 +31,14 @@ describe('finishedByLength', () => {
     expect(finishedByLength({ choices: [] })).toBe(false)
   })
 })
+
+describe('generationOptions — short calls', () => {
+  it.each([
+    ['offer', 1000],
+    ['questions', 4000],
+    ['feedback', 2000],
+  ] as const)('%s: at least %i tokens, low reasoning on gpt-oss, doubled on retry', (kind, min) => {
+    expect(generationOptions('openai/gpt-oss-120b', '', kind)).toEqual({ max_completion_tokens: min, reasoning_effort: 'low' })
+    expect(generationOptions('m', '', kind, 2).max_completion_tokens).toBe(min * 2)
+  })
+})

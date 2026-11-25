@@ -1,5 +1,6 @@
 import { GROQ_MODEL } from '@/lib/groq'
-import { completeChat } from './call'
+import { completeUntilDone } from './call'
+import { generationOptions } from './generation'
 import { PROMPT_LIMITS, UNTRUSTED_DATA_RULE, inlineField, wrapUntrusted } from './untrusted'
 
 export interface InterviewQuestion {
@@ -63,15 +64,16 @@ export async function generateInterviewQuestions(
     wrapUntrusted('job_offer', offerText, PROMPT_LIMITS.offer),
   ].join('\n\n')
 
-  const response = await completeChat('interview-questions', {
+  // Cut off twice → TruncatedAnswerError (never half a list of questions).
+  const response = await completeUntilDone('interview-questions', factor => ({
     model: GROQ_MODEL,
     messages: [
       { role: 'system', content: language === 'FR' ? SYSTEM_FR : SYSTEM_EN },
       { role: 'user', content: user },
     ],
-    max_tokens: 2000,
+    ...generationOptions(GROQ_MODEL, '', 'questions', factor),
     temperature: 0.3,
-  })
+  }))
 
   try {
     const content = response.choices[0]?.message?.content ?? '[]'

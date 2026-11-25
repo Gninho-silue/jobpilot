@@ -1,5 +1,6 @@
 import { GROQ_MODEL } from '@/lib/groq'
-import { completeChat } from './call'
+import { completeUntilDone } from './call'
+import { generationOptions } from './generation'
 import { PROMPT_LIMITS, UNTRUSTED_DATA_RULE, wrapUntrusted } from './untrusted'
 
 export interface InterviewFeedback {
@@ -50,15 +51,16 @@ export async function generateInterviewFeedback(
     wrapUntrusted('answer', answer, PROMPT_LIMITS.answer),
   ].join('\n\n')
 
-  const response = await completeChat('interview-feedback', {
+  // Cut off twice → TruncatedAnswerError (never a half-written review).
+  const response = await completeUntilDone('interview-feedback', factor => ({
     model: GROQ_MODEL,
     messages: [
       { role: 'system', content: systemPrompt(type, language) },
       { role: 'user', content: user },
     ],
-    max_tokens: 1000,
+    ...generationOptions(GROQ_MODEL, '', 'feedback', factor),
     temperature: 0.3,
-  })
+  }))
 
   try {
     const content = response.choices[0]?.message?.content ?? '{}'
