@@ -21,6 +21,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { UpgradeButton } from '@/components/upgrade-button'
 import { trackEvent } from '@/lib/analytics'
 import Link from 'next/link'
+import { visibleStreamText } from '@/lib/stream-protocol'
 
 type ApplicationStatus = 'APPLIED' | 'PHONE' | 'TECHNICAL' | 'OFFER' | 'REJECTED'
 type Language = 'FR' | 'EN'
@@ -193,10 +194,11 @@ function ResumeTab({ applicationId, hasCv, initialAdaptedCvText, onAdapted }: Re
         if (done) break
         const chunk = decoder.decode(value, { stream: true })
         accumulated += chunk
-        setAdaptedCvText(accumulated)
+        // A fact-checked, corrected version may replace the draft (STREAM_REPLACE).
+        setAdaptedCvText(visibleStreamText(accumulated))
       }
 
-      onAdapted(accumulated)
+      onAdapted(visibleStreamText(accumulated))
       trackEvent.cvAdapted()
     } catch {
       setError('Network error. Please try again.')

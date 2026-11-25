@@ -212,3 +212,20 @@ describe('adaptResume — links', () => {
     expect(groqCall().messages[1]?.content).toContain('Links: https://www.linkedin.com/in/jane | https://github.com/jane')
   })
 })
+
+describe('adaptResume — regeneration with corrections', () => {
+  it('passes the corrections as a tagged block and tells the model to apply them', async () => {
+    mockCompletion('fixed')
+    await adaptResume(CV, OFFER, 'EN', { corrections: ['In "Backend Developer": remove Redis (the CV does not list it for this experience).'] })
+    const [system, user] = groqCall().messages.map(m => m.content)
+    expect(system).toContain('<corrections>')
+    expect(system).toMatch(/previous version/i)
+    expect(user).toContain('<corrections>\n- In "Backend Developer": remove Redis (the CV does not list it for this experience).\n</corrections>')
+  })
+
+  it('without corrections, no corrections block', async () => {
+    mockCompletion('x')
+    await adaptResume(CV, OFFER, 'EN')
+    expect(groqCall().messages[1]?.content).not.toContain('<corrections>')
+  })
+})

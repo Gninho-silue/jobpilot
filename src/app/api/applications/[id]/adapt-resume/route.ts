@@ -3,7 +3,10 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { normalizeTypography } from '@/lib/text/typography'
 import { checkAndIncrementUsage } from '@/lib/usage'
-import { streamAdaptResume } from '@/lib/ai/adapt-resume'
+import { adaptResume, streamAdaptResume } from '@/lib/ai/adapt-resume'
+import { checkAdaptedCv } from '@/lib/fact-check/check-adapted-cv'
+import { describeIssues } from '@/lib/fact-check/corrections'
+import { STREAM_REPLACE } from '@/lib/stream-protocol'
 import { checkLlmRateLimit, tooManyRequests } from '@/lib/rate-limit'
 
 export async function POST(
@@ -63,11 +66,30 @@ export async function POST(
             }
           }
 
-          // Save final adapted resume text to database
-          if (accumulatedText) {
+          // Fact-check the draft against the original CV; one regeneration at most,
+          // with the corrections. The corrected version replaces the draft on screen.
+          let finalText = normalizeTypography(accumulatedText)
+          const issues = finalText ? checkAdaptedCv(user.cvText!, finalText) : []
+          if (issues.length) {
+            try {
+              const corrected = normalizeTypography(
+                await adaptResume(user.cvText!, application.offerText, application.language, {
+                  corrections: describeIssues(issues),
+                })
+              )
+              if (corrected.trim()) {
+                finalText = corrected
+                controller.enqueue(encoder.encode(STREAM_REPLACE + corrected))
+              }
+            } catch (regenErr) {
+              console.error('[adapt-resume] regeneration failed, keeping the draft:', regenErr)
+            }
+          }
+
+          if (finalText) {
             await prisma.application.update({
               where: { id },
-              data: { adaptedCvText: normalizeTypography(accumulatedText) },
+              data: { adaptedCvText: finalText },
             })
           }
 

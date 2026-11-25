@@ -54,10 +54,16 @@ Rules:
 - Separate entries with a blank line
 `
 
+export interface AdaptResumeOptions {
+  /** Corrections from the fact-checker, for the single regeneration (lib/fact-check). */
+  corrections?: string[]
+}
+
 function getAdaptResumeMessages(
   cvText: string,
   offerText: string,
-  language: 'FR' | 'EN'
+  language: 'FR' | 'EN',
+  { corrections = [] }: AdaptResumeOptions = {}
 ) {
   const langInstruction = language === 'FR'
     ? 'Write the ENTIRE adapted CV in French.'
@@ -79,17 +85,25 @@ CRITICAL ANTI-HALLUCINATION & TRUTHFULNESS RULES (MANDATORY):
 2. HOW TO MATCH THE OFFER HONESTLY:
    - Reorder the TECHNICAL SKILLS section to put skills matching the offer first.
    - Highlight and prioritize matching personal / open-source projects from the candidate's actual projects list.
-   - Rephrase bullet points to emphasize transferable software engineering strengths (architecture, APIs, CI/CD, testing, problem solving, performance optimization) without fabricating fake tools.
+   - Rephrase bullet points to emphasize the transferable strengths each bullet already describes (e.g. architecture, performance, automation), without adding a practice, tool or result it does not mention.
 3. PLAIN CHARACTERS:
    - Use plain characters: the ASCII hyphen (-), regular spaces, and numbers, percentages and versions written as in the CV (e.g. 30%, Next.js 14, Tailwind CSS).
 4. Follow the OUTPUT FORMAT strictly — no markdown asterisks, no hash signs.
 5. Respond ONLY with the adapted CV text.
-
+${
+  corrections.length
+    ? `
+6. CORRECTIONS: a previous version of this adapted CV contained claims the CV does not support. The <corrections> block lists them (written by our fact-checker): apply every correction in the new version, and add nothing in their place that the CV does not support.
+`
+    : ''
+}
 ${UNTRUSTED_DATA_RULE}`
 
-  const user = `${wrapUntrusted('cv', cvText, PROMPT_LIMITS.cv)}
-
-${wrapUntrusted('job_offer', offerText, PROMPT_LIMITS.offer)}`
+  const user = [
+    wrapUntrusted('cv', cvText, PROMPT_LIMITS.cv),
+    wrapUntrusted('job_offer', offerText, PROMPT_LIMITS.offer),
+    ...(corrections.length ? [wrapUntrusted('corrections', corrections.map(c => `- ${c}`).join('\n'), PROMPT_LIMITS.cv)] : []),
+  ].join('\n\n')
 
   return [
     { role: 'system' as const, content: system },
@@ -100,11 +114,12 @@ ${wrapUntrusted('job_offer', offerText, PROMPT_LIMITS.offer)}`
 export async function adaptResume(
   cvText: string,
   offerText: string,
-  language: 'FR' | 'EN'
+  language: 'FR' | 'EN',
+  options: AdaptResumeOptions = {}
 ): Promise<string> {
   const response = await groq.chat.completions.create({
     model: GROQ_MODEL,
-    messages: getAdaptResumeMessages(cvText, offerText, language),
+    messages: getAdaptResumeMessages(cvText, offerText, language, options),
     max_tokens: 3000,
     temperature: 0.2,
   })
