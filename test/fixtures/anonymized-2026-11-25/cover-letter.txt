@@ -1,0 +1,24 @@
+Zoe Martin-Ferre
+AI Software Engineer · Python FastAPI LangGraph RAG
+November 25, 2026
+Re: Application for TECHNOLOGIES AND DIGITAL TRANSFORMATION CONSULTANT
+Contoso Consulting
+I am excited to apply for the Technologies and Digital Transformation Consultant position at Contoso
+Consulting. Your reputation for delivering high impact IT strategy, governance and digital transformation projects
+for leading organizations aligns perfectly with my passion for building scalable, AI enhanced solutions that
+drive efficiency and data driven decision making. I have closely followed Contoso Consulting’ commitment
+to continuous learning and multidisciplinary teamwork, and I am eager to contribute my technical expertise to
+your consulting engagements in Lyon.
+During my final year at Northwind & Co, I designed and delivered seven custom Odoo/17 Python modules for
+a B2B e commerce platform, implementing a price confidentiality rule that eliminated 95/% of manual masking
+errors and reduced operational risk. I also automated a five state internship workflow with Python CRON tasks
+and notifications, cutting administrative processing time by 45/% and creating a real time KPI dashboard now
+used company wide. In parallel, I built “Atlas,” an agentic Retrieval Augmented Generation assistant using
+FastAPI, LangGraph, and ChromaDB, which provides source cited answers from personal document corpora
+while enforcing prompt injection guardrails—demonstrating my ability to define architecture, integrate advanced
+AI tools, and ensure data quality and security.
+I would welcome the opportunity to discuss how my background in full stack development, AI driven automation,
+and rigorous software engineering can add value to Contoso Consulting’ consulting practice. Thank you
+for considering my application; I look forward to the possibility of an interview to explore how we can achieve
+transformative results together.
+Zoe Martin-Ferre

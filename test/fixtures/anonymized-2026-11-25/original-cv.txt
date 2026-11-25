@@ -1,0 +1,50 @@
+Zo´e Martin-Ferr´e
+AI Software Engineer | Python · FastAPI · LangGraph · RAG
++000 600 000 000 | candidate_test@example.com | LinkedIn | GitHub | Portfolio | Lyon, France
+Profile
+AI software engineer specializing in agentic systems and Python backend development. Experienced building
+production-grade RAG pipelines, multi-agent orchestration, and LLM-integrated APIs – from ingestion and
+retrieval to deployment and monitoring. Available immediately for AI Engineer or Python/Backend roles.
+Technical Skills
+Languages: Python, TypeScript, JavaScript, Java, SQL
+AI / LLM: LangGraph, LangChain, RAG, Prompt Engineering, Groq API, Ollama, HuggingFace, sentence-transformers
+Backend: FastAPI, Node.js, Express, Spring Boot 3
+Data & Retrieval: ChromaDB, Vector Search, PostgreSQL, MongoDB, Redis, SQLite
+Frontend: React 18, Next.js, TypeScript, Tailwind
+Cloud & DevOps: Docker, Kubernetes, GitHub Actions, CI/CD, Render, Vercel
+Practices: Git, Agile/Scrum, Unit Testing, SOLID, Rate Limiting, Prompt-Injection Guardrails
+Professional Experience
+Full-Stack Developer – Final Year Project (PFE) January – May 2026
+Northwind & Co Lyon, France
+• Built 7 custom Odoo 17 Python modules (QWeb, SCSS) for a B2B e-commerce platform, enforcing a
+price-confidentiality rule that eliminated 95% of manual price-masking errors
+• Optimized PostgreSQL queries across 14 data models, cutting page load time by 35%; delivered a cross-platform
+Flutter app with full feature parity across iOS and Android
+Full-Stack Developer Intern June – September 2025
+Northwind & Co Lyon, France
+• Automated a 5-state internship workflow (Draft → Evaluated) with CRON tasks and notifications in Python,
+cutting administrative processing time by 45%
+• Built a real-time dashboard tracking 12 KPIs, adopted company-wide – still in active use 6+ months later
+AI Projects
+Atlas | Python, FastAPI, LangGraph, ChromaDB, React, Docker | atlas_demo.example.com 2026
+• Agentic RAG assistant answering questions from a personal document corpus, with every claim traced to a cited
+source – never guessed
+• LangGraph agent orchestrating retrieval vs. web-search tool calls, ChromaDB vector store, SSE streaming,
+multi-turn memory
+• Hardened with rate limiting and prompt-injection guardrails; deployed end-to-end (Docker → Render, Vercel)
+TaskWeave | Python, FastAPI, LangGraph, Ollama, React, Docker 2025
+• 5-agent pipeline (Planner, FileAgent, CodeAgent, Reporter, Supervisor) executing natural-language tasks
+end-to-end, running entirely on a local LLM (Ollama) with zero API cost
+HireLoop | Next.js, TypeScript, Groq AI, Stripe, Supabase | hireloop_demo.example.com 2026
+• AI-powered job search SaaS: LLM-driven CV adaptation, cover letter generation, and interview-question
+preparation via the Groq API
+Education
+´Ecole d'Ing´enieurs Exemple
+Engineering Degree in Computer Science 2023 – 2026
+Lyc´ee Exemple
+Preparatory Classes (CPGE), MP/MPSI 2021 – 2023
+Certifications & Languages
+Applied Machine Learning Practitioner Certificate
+Cloud AI Fundamentals Certificate
+Python: Formation Compl`ete
+French: Native English: Fluent
