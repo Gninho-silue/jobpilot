@@ -10,6 +10,7 @@ import * as coverLetterPdf from '@/app/api/applications/[id]/cover-letter-pdf/ro
 import * as interview from '@/app/api/applications/[id]/interview/route'
 import * as cv from '@/app/api/cv/route'
 import * as cvFile from '@/app/api/cv/file/route'
+import * as factCheck from '@/app/api/applications/[id]/fact-check/route'
 import * as cvUpload from '@/app/api/cv/upload/route'
 import * as dashboard from '@/app/api/dashboard/route'
 import * as interviewFeedback from '@/app/api/interview/feedback/route'
@@ -35,6 +36,8 @@ const cases: Array<[string, () => Promise<Response>]> = [
   ['GET /api/applications/[id]/cover-letter-pdf', () => coverLetterPdf.GET(emptyRequest('/x'), ID)],
   ['POST /api/applications/[id]/interview', () => interview.POST(emptyRequest('/x', 'POST'), ID)],
   ['GET /api/cv', () => cv.GET()],
+  ['GET /api/applications/[id]/fact-check', () => factCheck.GET(emptyRequest('/x'), ID)],
+  ['POST /api/applications/[id]/fact-check', () => factCheck.POST(jsonRequest('/x', { action: 'fix', issueId: 'title-1' }), ID)],
   ['GET /api/cv/file', () => cvFile.GET(emptyRequest('/api/cv/file'))],
   ['POST /api/cv/upload', () => cvUpload.POST(formRequest('/api/cv/upload', new FormData()))],
   ['GET /api/dashboard', () => dashboard.GET()],

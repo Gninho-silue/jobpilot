@@ -22,6 +22,8 @@ import { UpgradeButton } from '@/components/upgrade-button'
 import { trackEvent } from '@/lib/analytics'
 import Link from 'next/link'
 import { visibleStreamText } from '@/lib/stream-protocol'
+import type { ReviewedIssue } from '@/lib/fact-check/fix-issue'
+import { FactCheckPanel } from '@/components/applications/fact-check-panel'
 
 type ApplicationStatus = 'APPLIED' | 'PHONE' | 'TECHNICAL' | 'OFFER' | 'REJECTED'
 type Language = 'FR' | 'EN'
@@ -139,11 +141,14 @@ function ResumeTab({ applicationId, hasCv, initialAdaptedCvText, onAdapted }: Re
   const [downloading, setDownloading] = useState(false)
   const [error, setError] = useState('')
   const [showUpgrade, setShowUpgrade] = useState(false)
+  const [issues, setIssues] = useState<ReviewedIssue[]>([])
+  const [fixing, setFixing] = useState(false)
 
   useEffect(() => {
     setAdaptedCvText(initialAdaptedCvText)
     setError('')
     setShowUpgrade(false)
+    setIssues([])
   }, [applicationId, initialAdaptedCvText])
 
   async function generate(skipConfirm = false) {
@@ -207,10 +212,75 @@ function ResumeTab({ applicationId, hasCv, initialAdaptedCvText, onAdapted }: Re
     }
   }
 
+  async function loadIssues() {
+    try {
+      const res = await fetch(`/api/applications/${applicationId}/fact-check`)
+      if (!res.ok) return
+      const json = await res.json() as { data?: { issues: ReviewedIssue[] } }
+      setIssues(json.data?.issues ?? [])
+    } catch {
+      // The panel is a safeguard; the export route checks again.
+    }
+  }
+
+  async function postFactCheck(body: { action: 'fix'; issueId: string } | { action: 'approve-title'; title: string }) {
+    setFixing(true)
+    setError('')
+    try {
+      const res = await fetch(`/api/applications/${applicationId}/fact-check`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      })
+      const json = await res.json() as { data?: { adaptedCvText: string; issues: ReviewedIssue[] }; error?: string }
+      if (!res.ok || !json.data) {
+        setError(json.error ?? 'Could not update the CV. Please try again.')
+        await loadIssues()
+        return
+      }
+      setAdaptedCvText(json.data.adaptedCvText)
+      setIssues(json.data.issues)
+      onAdapted(json.data.adaptedCvText)
+    } catch {
+      setError('Network error. Please try again.')
+    } finally {
+      setFixing(false)
+    }
+  }
+
+  const fixIssue = (issueId: string) => postFactCheck({ action: 'fix', issueId })
+  const approveTitle = (title: string) => postFactCheck({ action: 'approve-title', title })
+
+  // Fact-check the saved adapted CV whenever it is shown (and after generation).
+  useEffect(() => {
+    if (!initialAdaptedCvText) return
+    let cancelled = false
+    fetch(`/api/applications/${applicationId}/fact-check`)
+      .then(res => (res.ok ? (res.json() as Promise<{ data?: { issues: ReviewedIssue[] } }>) : null))
+      .then(json => {
+        if (!cancelled && json) setIssues(json.data?.issues ?? [])
+      })
+      .catch(() => {})
+    return () => {
+      cancelled = true
+    }
+  }, [applicationId, initialAdaptedCvText])
+
   async function downloadPdf() {
+    if (issues.length > 0) {
+      const count = `${issues.length} ${issues.length === 1 ? 'claim is' : 'claims are'}`
+      if (!window.confirm(`${count} not found in your original CV. Export the PDF anyway?`)) return
+    }
     setDownloading(true)
     try {
-      const res = await fetch(`/api/applications/${applicationId}/adapted-cv-pdf`)
+      const confirmParam = issues.length > 0 ? '?confirm=1' : ''
+      const res = await fetch(`/api/applications/${applicationId}/adapted-cv-pdf${confirmParam}`)
+      if (res.status === 409) {
+        const j = await res.json() as { issues?: ReviewedIssue[] }
+        setIssues(j.issues ?? [])
+        setError('Review the claims below before exporting.')
+        return
+      }
       if (!res.ok) {
         const j = await res.json() as { error?: string }
         setError(j.error ?? 'Failed to generate PDF')
@@ -328,6 +398,7 @@ function ResumeTab({ applicationId, hasCv, initialAdaptedCvText, onAdapted }: Re
             {error}
           </p>
         )}
+        <FactCheckPanel issues={issues} busy={fixing} onFix={fixIssue} onApproveTitle={approveTitle} />
         <div className="flex items-center gap-2">
           <Button
             onClick={downloadPdf}

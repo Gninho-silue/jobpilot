@@ -29,7 +29,7 @@ model User {
   email            String        @unique
   plan             Plan          @default(FREE)
   stripeCustomerId String?       @unique
-  cvPath           String?       // "<userId>/cv.pdf" in the private `cvs` bucket, never a URL
+  cvPath           String? // "<userId>/cv.pdf" in the private `cvs` bucket, never a URL
   cvText           String?       @db.Text
   createdAt        DateTime      @default(now())
   updatedAt        DateTime      @updatedAt
@@ -38,23 +38,25 @@ model User {
 }
 
 model Application {
-  id            String            @id @default(cuid())
-  userId        String
-  user          User              @relation(fields: [userId], references: [id], onDelete: Cascade)
-  company       String
-  role          String
-  status        ApplicationStatus @default(APPLIED)
-  language      Language          @default(EN)
-  offerText     String            @db.Text
-  salary        String?
-  link          String?
-  notes         String?           @db.Text
-  adaptedCvUrl  String?
-  adaptedCvText String?           @db.Text
-  coverLetter   String?           @db.Text
-  interviewQs   Json?
-  createdAt     DateTime          @default(now())
-  updatedAt     DateTime          @updatedAt
+  id              String            @id @default(cuid())
+  userId          String
+  user            User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  company         String
+  role            String
+  status          ApplicationStatus @default(APPLIED)
+  language        Language          @default(EN)
+  offerText       String            @db.Text
+  salary          String?
+  link            String?
+  notes           String?           @db.Text
+  adaptedCvUrl    String?
+  adaptedCvText   String?           @db.Text
+  // A job title for the adapted CV that the user explicitly approved (fact-check).
+  approvedCvTitle String?
+  coverLetter     String?           @db.Text
+  interviewQs     Json?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
 
   @@index([userId])
   @@index([status])

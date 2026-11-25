@@ -2,9 +2,10 @@ import { auth } from '@clerk/nextjs/server'
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { generateCvPdf } from '@/lib/pdf/generate-cv-pdf'
+import { reviewAdaptedCv } from '@/lib/fact-check/fix-issue'
 
 export async function GET(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { userId } = await auth()
@@ -19,7 +20,7 @@ export async function GET(
 
   const application = await prisma.application.findUnique({
     where: { id },
-    select: { userId: true, adaptedCvText: true, company: true, role: true },
+    select: { userId: true, adaptedCvText: true, approvedCvTitle: true, company: true, role: true },
   })
 
   if (!application || application.userId !== userId) {
@@ -27,6 +28,17 @@ export async function GET(
   }
   if (!application.adaptedCvText) {
     return NextResponse.json({ error: 'No adapted CV yet. Generate it first.' }, { status: 400 })
+  }
+
+  // Unverified claims are shown to the user before export; ?confirm=1 means they
+  // saw the list and export anyway.
+  const confirmed = new URL(request.url).searchParams.get('confirm') === '1'
+  if (!confirmed) {
+    const user = await prisma.user.findUnique({ where: { id: userId }, select: { cvText: true } })
+    const issues = reviewAdaptedCv(user?.cvText ?? null, application.adaptedCvText, application.approvedCvTitle)
+    if (issues.length) {
+      return NextResponse.json({ error: 'The adapted CV contains claims not found in your CV.', issues }, { status: 409 })
+    }
   }
 
   try {

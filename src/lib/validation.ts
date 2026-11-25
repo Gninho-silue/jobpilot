@@ -43,3 +43,9 @@ export const interviewFeedbackSchema = z.object({
 })
 
 export const CV_MAX_BYTES = 5 * 1024 * 1024
+
+/** POST /api/applications/[id]/fact-check */
+export const factCheckActionSchema = z.discriminatedUnion('action', [
+  z.object({ action: z.literal('fix'), issueId: z.string().min(1).max(40) }),
+  z.object({ action: z.literal('approve-title'), title: z.string().trim().min(1).max(INPUT_LIMITS.role) }),
+])
