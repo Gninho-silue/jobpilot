@@ -198,6 +198,7 @@ Vercel Deploy & Production Verification
   - [x] `isSectionHeader` tests the line as written (it upper-cased first, so short lines such as certifications became headings)
   - [x] Generic prompts (test fails on TechPal, DevScope, JobPilot, AgentFlow, PFE, PFA, Synertic) with stricter truthfulness rules (own title, per-experience tools, no merged experiences, no invented claims)
   - [x] Fact extraction (`lib/fact-check/cv-facts.ts`): technologies from a curated vocabulary with accepted rewordings (`vocabulary.ts`), counts / percentages / "N+" (number words as digits, versions and years excluded), years, title, and per-entry blocks cut at dated lines
+  - [x] Deterministic checker (`lib/fact-check/check-adapted-cv.ts`): title kept (or user-approved variant); each entry matched to its block of the original (title + dates); technologies and numbers of each bullet must belong to that block; company and years must exist; profile / skills / certifications terms and numbers must exist in the CV. Issues carry a stable id and the exact line. Real case flags exactly: title, CI/CD + Docker + GitHub Actions on the PFE, PostgreSQL + Redis on the internship. Not checked: presenting a test-mode integration as real payments (prompt rule only)
 
 ## Known Issues (found while writing tests)
 

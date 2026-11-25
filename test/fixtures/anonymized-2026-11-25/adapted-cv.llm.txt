@@ -1,0 +1,69 @@
+Zoé Martin-Ferré
+Digital Transformation Consultant | Python · FastAPI · Cloud & DevOps · Data Engineering
++000 600 000 000 $|$ candidate_test@example.com $|$ Lyon, France
+
+PROFILE
+AI software engineer with a strong foundation in Python backend development, data pipelines, and cloud-native deployment. Proven ability to design and implement end-to-end solutions, automate workflows, and optimize database performance. Ready to contribute to high-impact digital transformation projects, collaborate in multidisciplinary teams, and deliver strategic IT solutions for leading organizations.
+
+TECHNICAL SKILLS
+Languages: Python · TypeScript · JavaScript · Java · SQL
+Databases: PostgreSQL · MongoDB · Redis · SQLite · ChromaDB
+Backend: FastAPI · Node.js · Express · Spring Boot 3
+Cloud & DevOps: Docker · Kubernetes · GitHub Actions · CI/CD · Render · Vercel
+Data & Retrieval: Vector Search · RAG · Data Modeling · Query Optimization
+AI / LLM: LangGraph · LangChain · Prompt Engineering · Groq API · Ollama · HuggingFace
+Frontend: React 18 · Next.js · TypeScript · Tailwind
+Practices: Git · Agile/Scrum · Unit Testing · SOLID · Rate Limiting · Prompt Injection Guardrails
+
+PROFESSIONAL EXPERIENCE
+>TITLE: Full-Stack Developer – Final Year Project (PFE)
+>COMPANY: Northwind & Co
+>DATE: January – May 2026
+- Designed and implemented seven custom Odoo 17 Python modules (QWeb, SCSS) to support a B2B e-commerce platform, enforcing a price-confidentiality rule that eliminated 95% of manual masking errors.
+- Optimized PostgreSQL queries across 14 data models, reducing page load time by 35% and improving overall data retrieval efficiency.
+- Delivered a cross-platform Flutter application with feature parity on iOS and Android, demonstrating full-stack delivery from backend to mobile UI.
+- Applied CI/CD pipelines with Docker and GitHub Actions to ensure reliable deployments and rapid iteration.
+
+>TITLE: Full-Stack Developer Intern
+>COMPANY: Northwind & Co
+>DATE: June – September 2025
+- Automated a five-state internship workflow using Python CRON tasks and notification services, cutting administrative processing time by 45%.
+- Built a real-time KPI dashboard adopted company-wide; the solution remains in active use after 6+ months, showcasing sustainable impact.
+- Integrated backend services with PostgreSQL and Redis, reinforcing data consistency and performance under concurrent access.
+
+PROJECTS
+>TITLE: Atlas
+>TECH: Python · FastAPI · LangGraph · ChromaDB · React · Docker
+>DATE: 2026
+>LINK: GitHub
+- Developed an agentic RAG assistant that answers queries from a personal document corpus, with every response traced to a cited source.
+- Implemented LangGraph orchestration for retrieval vs. web-search tool calls, SSE streaming, and multi-turn memory, enhancing user interaction.
+- Secured the service with rate limiting and prompt-injection guardrails; deployed end-to-end using Docker on Render and Vercel.
+
+>TITLE: TaskWeave
+>TECH: Python · FastAPI · LangGraph · Ollama · React · Docker
+>DATE: 2025
+- Created a five-agent pipeline (Planner, FileAgent, CodeAgent, Reporter, Supervisor) that executes natural-language tasks end-to-end on a local LLM (Ollama), eliminating external API costs.
+- Managed orchestration, state handling, and error recovery, demonstrating robust workflow automation.
+
+>TITLE: HireLoop
+>TECH: Next.js · TypeScript · Groq AI · Stripe · Supabase
+>DATE: 2026
+>LINK: GitHub
+- Built an AI-powered job search SaaS offering LLM-driven CV adaptation, cover letter generation, and interview question preparation via the Groq API.
+- Integrated payment processing with Stripe and data storage with Supabase, delivering a full product lifecycle.
+
+EDUCATION
+>SCHOOL: École d'Ingénieurs Exemple
+>DEGREE: Engineering Degree in Computer Science
+>DATE: 2023 – 2026
+
+>SCHOOL: Lycée Exemple
+>DEGREE: Preparatory Classes (CPGE), MP/MPSI
+>DATE: 2021 – 2023
+
+CERTIFICATIONS & LANGUAGES
+Applied Machine Learning Practitioner Certificate
+Cloud AI Fundamentals Certificate
+Python: Formation Complète
+French: Native · English: Fluent

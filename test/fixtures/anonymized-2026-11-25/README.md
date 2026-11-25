@@ -9,6 +9,8 @@ values were changed consistently across the three files.
 The real PDFs stay on the owner's machine in `test/fixtures/real-*/`
 (git-ignored); tests that read them are skipped when the folder is absent (CI).
 
+`adapted-cv.llm.txt` is the same adapted CV in the format the model returns (`>TITLE:`, `>COMPANY:`, `>DATE:` ...), which is what the fact-checker reads; `adapted-cv.txt` is the text of the rendered PDF.
+
 `original-cv.txt` is the text as `extractPdfText` returns it for a LaTeX CV:
 accents come out detached from their letter (`Zo´e`, `Compl\`ete`).
 
