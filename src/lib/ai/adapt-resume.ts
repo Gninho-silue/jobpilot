@@ -10,7 +10,7 @@ const FORMAT_SPEC = `
 OUTPUT FORMAT — follow EXACTLY, no markdown whatsoever:
 
 LINE 1:  Full Name
-LINE 2:  Job Title / Specialization  (e.g. "Full-Stack Engineer | Java · Spring Boot · React · DevOps")
+LINE 2:  The candidate's job title EXACTLY as written in the CV, optionally followed by " | " and key skills from the CV (e.g. "Backend Engineer | Java · Spring Boot · PostgreSQL")
 LINE 3:  Contact line — each item separated by  $|$  (e.g. "+33 6 00 00 00 00 $|$ email@example.com $|$ https://www.linkedin.com/in/name $|$ Paris, France")
          Profile links: use the full URLs listed on the CV's "Links:" line (LinkedIn, GitHub, portfolio), never a bare label such as "LinkedIn" or "GitHub".
 
@@ -23,9 +23,9 @@ Then sections using these exact headers (ALL CAPS, no punctuation):
   CERTIFICATIONS & LANGUAGES
 
 Inside PROFESSIONAL EXPERIENCE, each entry:
-  >TITLE: Job Title (e.g. "Développeur Full-Stack – PFE" or "Développeur Full-Stack – PFA")
-  >COMPANY: Company Name (e.g. "TechPal Services")
-  >DATE: Date Range (e.g. "Mars – Juillet 2026")
+  >TITLE: Job title as written in the CV (e.g. "Backend Developer – Internship")
+  >COMPANY: Company name as written in the CV (e.g. "Acme Corp")
+  >DATE: Date range as written in the CV (e.g. "March – July 2024")
   Then bullet points starting with a dash "- "
 
 Inside PROJECTS, each entry:
@@ -36,16 +36,16 @@ Inside PROJECTS, each entry:
   Then bullet points starting with a dash "- "
 
 Inside EDUCATION, each entry:
-  >SCHOOL: School Name (e.g. "ENSA Al Hoceima")
-  >DEGREE: Degree and field (e.g. "Diplôme d'Ingénieur en Génie Informatique")
-  >DATE: Year range (e.g. "2023 – 2026")
+  >SCHOOL: School name as written in the CV (e.g. "University of Example")
+  >DEGREE: Degree and field as written in the CV (e.g. "MSc in Computer Science")
+  >DATE: Year range (e.g. "2020 – 2022")
 
 Inside TECHNICAL SKILLS, list skills by categories with colon, separated by middle dots ( · ):
   Category: Skill 1 · Skill 2 · Skill 3
 
 Inside CERTIFICATIONS & LANGUAGES:
-  List certifications line by line
-  List languages with colon separated by middle dots: Français: Langue maternelle · Anglais: Courant
+  List certifications line by line, worded and capitalised exactly as in the CV
+  List languages with colon separated by middle dots: English: Native · Spanish: Fluent
 
 Rules:
 - NO asterisks (**bold**), NO #, NO backticks, NO markdown
@@ -70,10 +70,12 @@ ${langInstruction}
 ${FORMAT_SPEC}
 
 CRITICAL ANTI-HALLUCINATION & TRUTHFULNESS RULES (MANDATORY):
-1. ZERO-HALLUCINATION on past experiences:
-   - NEVER alter or invent the technologies used in past professional experiences.
-   - If an internship/job was done with Odoo, Python, SCSS, or Flutter, you MUST keep those exact technologies. NEVER rewrite past jobs to claim they used React, Node.js, Express, or MongoDB if it was not in the original CV.
-   - PFE / PFA are internship types (Projet de Fin d'Études / Projet de Fin d'Année), NOT company names. Keep the true company name (e.g. "TechPal Services") separate from the date.
+1. ZERO-HALLUCINATION. Everything you write must come from the CV:
+   - Each experience and project keeps ONLY the tools, technologies and achievements the CV lists FOR THAT experience or project. Never move a skill from the skills list, another job or a project into an experience, even if the offer asks for it.
+   - Never add a company, school, job title, date, degree, certification or number (count, percentage, duration) that is not in the CV. Never change one (e.g. "9" stays "9", "60%" stays "60%").
+   - Keep the candidate's own job title (line 2), even if the offer is for a different role.
+   - Keep the status of what the candidate built: a personal, demo or test-mode project (e.g. a payment integration in test mode) is never presented as a production system with real users or real payments.
+   - Keep company names exactly as in the CV, separate from the internship or contract type and from the dates.
 2. HOW TO MATCH THE OFFER HONESTLY:
    - Reorder the TECHNICAL SKILLS section to put skills matching the offer first.
    - Highlight and prioritize matching personal / open-source projects from the candidate's actual projects list.

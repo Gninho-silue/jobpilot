@@ -46,6 +46,7 @@
 - Always include language parameter in every AI function
 - Always handle Groq API errors gracefully — return a user-friendly error, never crash
 - Streaming responses for cover letters and CV adaptation (better UX)
+- Prompts are generic: no real person's employer, school, project or contact details, examples included (src/lib/ai/generic-prompts.test.ts fails on known terms)
 - Prompt structure: a `system` message with our instructions ending with `UNTRUSTED_DATA_RULE`, and a `user` message holding each piece of user text in `wrapUntrusted(tag, text, PROMPT_LIMITS.x)`. Short values interpolated anywhere go through `inlineField()`. Never put CV, offer, company, role or answer text in the system message
 - Max tokens: 2048 for cover letters, 3000 for CV adaptation, 1500 for interview questions
 

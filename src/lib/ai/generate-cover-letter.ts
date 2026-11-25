@@ -9,15 +9,16 @@ Rédige une lettre de motivation professionnelle et personnalisée en français 
 
 Règles de rédaction et d'authenticité (TRÈS STRICTES) :
 - Longueur: 3 paragraphes, maximum 280 mots
-- Paragraphe 1: accroche forte montrant la connaissance et l'intérêt pour l'entreprise et ses missions
+- Paragraphe 1: intérêt pour le poste et l'entreprise, fondé uniquement sur ce que dit l'offre
 - Paragraphe 2: 2-3 réalisations CONCRÈTES et VRAIES issues du CV qui correspondent aux besoins de l'offre
-- Paragraphe 3: conclusion dynamique avec appel à l'action pour un entretien
+- Paragraphe 3: conclusion avec appel à l'action pour un entretien
 
 Règles ANTI-HALLUCINATION & VÉRACITÉ (OBLIGATOIRES) :
-- INTERDICTION FORMELLE d'inventer des technologies pour une expérience professionnelle passée :
-  * Si un stage chez TechPal Services a été fait en Odoo/Python/Flutter, NE DIS PAS qu'il a été fait en React/Node.js/Express/MongoDB. Reste 100% fidèle aux outils réels de chaque expérience.
-  * Pour illustrer les compétences demandées dans l'offre (ex: React, Node.js, Next.js, API REST, Docker), cite les VRAIS projets personnels ou les compétences transversales où le candidat les a réellement utilisées (ex: DevScope, JobPilot, AgentFlow, etc.).
-- Attention aux noms d'entreprises : "PFE" ou "PFA" désigne le type de stage (Projet de Fin d'Études / d'Année), le nom de l'entreprise est la vraie société (ex: "TechPal Services"), ne dis JAMAIS "chez PFEMars".
+- Chaque fait sur le candidat vient du CV. Chaque réalisation est attribuée à l'expérience ou au projet où le CV la place, avec cette entreprise et ces dates : ne fusionne jamais deux expériences (par exemple un stage et un emploi de fin d'études) en une seule.
+- N'attribue jamais à une expérience une technologie ou un outil que le CV ne cite pas pour cette expérience. Pour illustrer une compétence demandée, cite le projet ou l'expérience du CV où elle a réellement été utilisée.
+- Aucune affirmation sur le candidat absente du CV : pas de « je suis depuis longtemps votre entreprise », pas de motivation, de lecture ou d'événement passé inventés.
+- Ne change aucun nombre, aucune date, aucun nom d'entreprise. Le type de stage ou de contrat n'est pas un nom d'entreprise.
+- Un projet personnel, de démonstration ou en mode test n'est jamais présenté comme un système en production.
 - Format propre sans markdown : AUCUN astérisque (**gras** ou *italique*), écris du texte brut fluide.
 - Caractères simples : trait d'union ASCII (-), espaces normales, nombres, pourcentages et versions écrits comme dans le CV (ex. 30 %, Next.js 14, Tailwind CSS).
 - Commencer directement par le texte de la lettre, sans "Objet:" ni en-tête.
@@ -34,14 +35,16 @@ Write a professional, highly tailored cover letter in English for this role at t
 
 Writing & Structure Rules:
 - Length: 3 paragraphs, maximum 280 words
-- Paragraph 1: strong opening showing genuine knowledge and enthusiasm for the company
+- Paragraph 1: interest in the role and the company, based only on what the job offer says
 - Paragraph 2: 2-3 CONCRETE, TRUTHFUL achievements from the CV matching the role
-- Paragraph 3: enthusiastic closing with call to action for an interview
+- Paragraph 3: closing with a call to action for an interview
 
 ANTI-HALLUCINATION & TRUTHFULNESS RULES (MANDATORY):
-- NEVER alter or fabricate technologies for past work experiences. Keep the exact true tools for each past job.
-- To demonstrate skills matching the offer, reference the candidate's actual projects (e.g. personal projects, open source) or real skills where they were actually used.
-- Be precise with company names (e.g. "TechPal Services", not internship acronyms like "PFEMars").
+- Every fact about the candidate comes from the CV. Each achievement is attributed to the experience or project the CV lists it under, with that company and those dates: never merge two experiences (e.g. an internship and a later job) into one.
+- Never attribute to an experience a technology or tool the CV does not list for it. To show a skill the offer asks for, cite the project or experience of the CV where it was actually used.
+- No claim about the candidate that is not in the CV: no "I have closely followed your company", no invented motivation, reading or past event.
+- Do not change any number, date or company name. An internship or contract type is not a company name.
+- A personal, demo or test-mode project is never presented as a production system.
 - Output pure clean plain text with NO markdown asterisks (**bold**), NO backticks. Use plain characters: the ASCII hyphen (-), regular spaces, and numbers, percentages and versions written as in the CV (e.g. 30%, Next.js 14, Tailwind CSS).
 - Start directly with the letter body, no "Subject:" line or header.
 
