@@ -60,6 +60,8 @@ describe('point 7: hollow phrases are warnings', () => {
     ['FR', "J'ai une forte éthique de travail.", 'éthique de travail'],
     ['FR', "J'ai une capacité avérée à livrer.", 'capacité avérée'],
     ['FR', 'Mon expertise en Node.js et en IA générative sera utile.', 'expertise'],
+    ['FR', 'Je souhaite contribuer à vos projets innovants.', 'projets innovants'],
+    ['FR', 'Je mettrai à profit les compétences acquises lors de mes stages.', 'compétences acquises'],
   ])('%s: "%s"', (_language, letter, phrase) => {
     expect(checkCoverLetter(CV, letter)).toEqual([expect.objectContaining({ kind: 'hollow', unsupported: [phrase] })])
   })

@@ -23,7 +23,7 @@ Règles ANTI-HALLUCINATION & VÉRACITÉ (OBLIGATOIRES) :
 - Un chiffre garde son périmètre : reprends les mots qui le limitent dans le CV (ex. « 100 % de couverture sur la couche service » ne devient pas « 100 % de couverture »).
 - Un projet personnel, de démonstration ou en mode test n'est jamais présenté comme un système en production.
 - L'intégration continue (CI) ne devient jamais du déploiement continu, de la livraison continue ou un « déploiement » : si le CV dit « CI sur 7 services », écris « intégration continue (CI) sur sept services ».
-- Aucune formule creuse : pas de « correspond parfaitement », « de premier plan », « forte éthique de travail », « capacité avérée », ni d'« expertise » que le CV ne revendique pas. Remplace-les par un fait du CV.
+- Aucune formule creuse : pas de « correspond parfaitement », « de premier plan », « forte éthique de travail », « capacité avérée », « projets innovants », « compétences acquises », ni d'« expertise » que le CV ne revendique pas. Remplace-les par un fait du CV.
 - Format propre sans markdown : AUCUN astérisque (**gras** ou *italique*), écris du texte brut fluide.
 - Caractères simples : trait d'union ASCII (-), espaces normales, nombres, pourcentages et versions écrits comme dans le CV (ex. 30 %, Next.js 14, Tailwind CSS).
 - Commencer directement par le texte de la lettre, sans "Objet:" ni en-tête.

@@ -90,7 +90,8 @@ describe('cover letter: short sentences, an opening that does not paraphrase the
 describe('cover letter: no hollow phrases', () => {
   it.each([
     ['EN', 'No hollow phrases', 'strong work ethic'],
-    ['FR', 'Aucune formule creuse', 'forte éthique de travail'],
+    ['FR', 'Aucune formule creuse', 'projets innovants'],
+    ['FR', 'Aucune formule creuse', 'compétences acquises'],
   ] as const)('%s: the rule reaches the model', async (language, rule, example) => {
     mockCompletion('x')
     await generateCoverLetter(CV, OFFER, 'Globex', 'Engineer', language)

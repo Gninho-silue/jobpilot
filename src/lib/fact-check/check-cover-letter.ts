@@ -58,7 +58,7 @@ function deploymentClaim(sentence: string, cv: string): string | undefined {
 // Phrases that say nothing a recruiter can check: a fact of the CV says more.
 const HOLLOW_PHRASES = [
   /aligns? perfectly|perfectly aligns?|high-profile|strong work ethic|proven (?:ability|track record)/i,
-  /correspond(?:ent)? parfaitement|aligne(?:nt)? parfaitement|de premier plan|éthique de travail|capacité (?:avérée|prouvée)/i,
+  /correspond(?:ent)? parfaitement|aligne(?:nt)? parfaitement|de premier plan|éthique de travail|capacité (?:avérée|prouvée)|projets? innovants?|compétences acquises/i,
 ]
 // "my expertise in …": only when the CV itself claims expertise.
 const EXPERTISE = /\bexpertise\b/i
