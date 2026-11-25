@@ -65,3 +65,17 @@ describe('FactCheckPanel', () => {
     for (const button of screen.getAllByRole('button')) expect(button).toBeDisabled()
   })
 })
+
+describe('FactCheckPanel — cover letter issues', () => {
+  it('shows merged experiences and statements about the candidate, without a one-click fix', () => {
+    setup([
+      { id: 'claim-2', kind: 'claim', line: 'I have closely followed Contoso.', lineIndex: 2, unsupported: [], fixable: false },
+      { id: 'merged-5', kind: 'merged', entry: 'Final Year Project', line: 'I also automated a workflow.', lineIndex: 5, unsupported: ['45%', '5'], fixable: false },
+    ])
+    const [claim, merged] = screen.getAllByRole('listitem')
+    expect(within(claim!).getByText('Statement about you not in your CV')).toBeInTheDocument()
+    expect(within(merged!).getByText(/Facts from another experience/)).toBeInTheDocument()
+    expect(within(merged!).getByText('45%, 5')).toBeInTheDocument()
+    expect(screen.queryByRole('button')).toBeNull()
+  })
+})

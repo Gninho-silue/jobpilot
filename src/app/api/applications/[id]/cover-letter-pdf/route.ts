@@ -2,9 +2,10 @@ import { auth } from '@clerk/nextjs/server'
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { generateCoverLetterPdf } from '@/lib/pdf/generate-cover-letter-pdf'
+import { reviewCoverLetter } from '@/lib/fact-check/fix-issue'
 
 export async function GET(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { userId } = await auth()
@@ -33,6 +34,14 @@ export async function GET(
     where: { id: userId },
     select: { cvText: true },
   })
+
+  // Unsupported sentences are shown before export; ?confirm=1 means the user saw them.
+  if (new URL(request.url).searchParams.get('confirm') !== '1') {
+    const issues = reviewCoverLetter(user?.cvText ?? null, application.coverLetter)
+    if (issues.length) {
+      return NextResponse.json({ error: 'The cover letter contains claims not found in your CV.', issues }, { status: 409 })
+    }
+  }
 
   try {
     const pdfBuffer = await generateCoverLetterPdf(

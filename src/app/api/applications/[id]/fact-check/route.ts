@@ -2,7 +2,7 @@ import { auth } from '@clerk/nextjs/server'
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { factCheckActionSchema } from '@/lib/validation'
-import { applyIssueFix, reviewAdaptedCv } from '@/lib/fact-check/fix-issue'
+import { applyIssueFix, reviewAdaptedCv, reviewCoverLetter } from '@/lib/fact-check/fix-issue'
 
 type Params = { params: Promise<{ id: string }> }
 
@@ -11,7 +11,7 @@ async function loadOwned(userId: string, id: string) {
   const [application, user] = await Promise.all([
     prisma.application.findUnique({
       where: { id },
-      select: { userId: true, adaptedCvText: true, approvedCvTitle: true },
+      select: { userId: true, adaptedCvText: true, approvedCvTitle: true, coverLetter: true },
     }),
     prisma.user.findUnique({ where: { id: userId }, select: { cvText: true } }),
   ])
@@ -19,8 +19,8 @@ async function loadOwned(userId: string, id: string) {
   return { ...application, cvText: user?.cvText ?? null }
 }
 
-/** Unsupported claims of the adapted CV (shown before export). */
-export async function GET(_request: Request, { params }: Params) {
+/** Unsupported claims of the adapted CV, or of the cover letter with ?document=cover-letter (shown before export). */
+export async function GET(request: Request, { params }: Params) {
   const { userId } = await auth()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
@@ -28,7 +28,11 @@ export async function GET(_request: Request, { params }: Params) {
   const app = await loadOwned(userId, id)
   if (!app) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
-  return NextResponse.json({ data: { issues: reviewAdaptedCv(app.cvText, app.adaptedCvText, app.approvedCvTitle) } })
+  const issues =
+    new URL(request.url).searchParams.get('document') === 'cover-letter'
+      ? reviewCoverLetter(app.cvText, app.coverLetter)
+      : reviewAdaptedCv(app.cvText, app.adaptedCvText, app.approvedCvTitle)
+  return NextResponse.json({ data: { issues } })
 }
 
 /** Fix one issue in one click, or approve a title variant. */

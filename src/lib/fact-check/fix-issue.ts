@@ -1,5 +1,6 @@
 import { checkAdaptedCv, type FactIssue } from './check-adapted-cv'
 import { findTerms } from './cv-facts'
+import { checkCoverLetter, type LetterIssue } from './check-cover-letter'
 
 /** Issues the user can resolve in one click (company and date need a human). */
 export function isFixable(issue: FactIssue): boolean {
@@ -50,17 +51,25 @@ export function applyIssueFix(text: string, issue: FactIssue): string {
   return lines.join('\n')
 }
 
-export type ReviewedIssue = FactIssue & { fixable: boolean }
+/** An issue as shown to the user, for either document. */
+export type ReviewedIssue = (FactIssue | LetterIssue) & { fixable: boolean }
+export type ReviewedCvIssue = FactIssue & { fixable: boolean }
 
 /** Issues of a saved adapted CV, as shown to the user before export. */
 export function reviewAdaptedCv(
   cvText: string | null,
   adaptedCvText: string | null,
   approvedTitle: string | null
-): ReviewedIssue[] {
+): ReviewedCvIssue[] {
   if (!cvText || !adaptedCvText) return []
   return checkAdaptedCv(cvText, adaptedCvText, { approvedTitles: approvedTitle ? [approvedTitle] : [] }).map(issue => ({
     ...issue,
     fixable: isFixable(issue),
   }))
+}
+
+/** Sentences of a saved cover letter the CV does not support (no one-click fix). */
+export function reviewCoverLetter(cvText: string | null, coverLetter: string | null): ReviewedIssue[] {
+  if (!cvText || !coverLetter) return []
+  return checkCoverLetter(cvText, coverLetter).map(issue => ({ ...issue, fixable: false }))
 }

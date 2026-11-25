@@ -130,10 +130,10 @@ describe('POST /api/applications/[id]/cover-letter — free plan: 3 per month', 
     signInAs(user)
 
     for (let i = 1; i <= 3; i++) {
-      mockStream([`Letter ${i}`])
+      mockStream([`Letter ${'ABC'[i - 1]}`]) // no number: the fact-check would flag one absent from the CV
       expect((await letter(app.id)).status).toBe(200)
     }
-    expect((await prisma.application.findUniqueOrThrow({ where: { id: app.id } })).coverLetter).toBe('Letter 3')
+    expect((await prisma.application.findUniqueOrThrow({ where: { id: app.id } })).coverLetter).toBe('Letter C')
 
     const res = await letter(app.id)
     expect(res.status).toBe(403)

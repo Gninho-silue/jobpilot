@@ -3,7 +3,10 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { normalizeTypography } from '@/lib/text/typography'
 import { checkAndIncrementUsage } from '@/lib/usage'
-import { streamCoverLetter } from '@/lib/ai/generate-cover-letter'
+import { generateCoverLetter, streamCoverLetter } from '@/lib/ai/generate-cover-letter'
+import { checkCoverLetter } from '@/lib/fact-check/check-cover-letter'
+import { describeLetterIssues } from '@/lib/fact-check/corrections'
+import { STREAM_REPLACE } from '@/lib/stream-protocol'
 import { checkLlmRateLimit, tooManyRequests } from '@/lib/rate-limit'
 
 export async function POST(
@@ -69,11 +72,35 @@ export async function POST(
             }
           }
 
-          // Save final cover letter text to database
-          if (accumulatedText) {
+          // Fact-check the letter against the original CV; one regeneration at most,
+          // with the corrections. The corrected version replaces the draft on screen.
+          let finalText = normalizeTypography(accumulatedText)
+          const issues = finalText ? checkCoverLetter(user.cvText!, finalText) : []
+          if (issues.length) {
+            try {
+              const corrected = normalizeTypography(
+                await generateCoverLetter(
+                  user.cvText!,
+                  application.offerText,
+                  application.company,
+                  application.role,
+                  application.language,
+                  { corrections: describeLetterIssues(issues) }
+                )
+              )
+              if (corrected.trim()) {
+                finalText = corrected
+                controller.enqueue(encoder.encode(STREAM_REPLACE + corrected))
+              }
+            } catch (regenErr) {
+              console.error('[cover-letter] regeneration failed, keeping the draft:', regenErr)
+            }
+          }
+
+          if (finalText) {
             await prisma.application.update({
               where: { id },
-              data: { coverLetter: normalizeTypography(accumulatedText) },
+              data: { coverLetter: finalText },
             })
           }
 

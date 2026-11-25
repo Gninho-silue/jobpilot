@@ -463,11 +463,28 @@ function CoverLetterTab({ applicationId, hasCv, initialCoverLetter, onGenerated 
   const [downloading, setDownloading] = useState(false)
   const [error, setError] = useState('')
   const [showUpgrade, setShowUpgrade] = useState(false)
+  const [letterIssues, setLetterIssues] = useState<ReviewedIssue[]>([])
 
   useEffect(() => {
     setCoverLetter(initialCoverLetter)
     setError('')
     setShowUpgrade(false)
+    setLetterIssues([])
+  }, [applicationId, initialCoverLetter])
+
+  // Fact-check the saved letter whenever it is shown (and after generation).
+  useEffect(() => {
+    if (!initialCoverLetter) return
+    let cancelled = false
+    fetch(`/api/applications/${applicationId}/fact-check?document=cover-letter`)
+      .then(res => (res.ok ? (res.json() as Promise<{ data?: { issues: ReviewedIssue[] } }>) : null))
+      .then(json => {
+        if (!cancelled && json) setLetterIssues(json.data?.issues ?? [])
+      })
+      .catch(() => {})
+    return () => {
+      cancelled = true
+    }
   }, [applicationId, initialCoverLetter])
 
   async function generate(skipConfirm = false) {
@@ -518,10 +535,11 @@ function CoverLetterTab({ applicationId, hasCv, initialCoverLetter, onGenerated 
         if (done) break
         const chunk = decoder.decode(value, { stream: true })
         accumulated += chunk
-        setCoverLetter(accumulated)
+        // A fact-checked, corrected version may replace the draft (STREAM_REPLACE).
+        setCoverLetter(visibleStreamText(accumulated))
       }
 
-      onGenerated(accumulated)
+      onGenerated(visibleStreamText(accumulated))
       trackEvent.coverLetterGenerated()
     } catch {
       setError('Network error. Please try again.')
@@ -531,9 +549,20 @@ function CoverLetterTab({ applicationId, hasCv, initialCoverLetter, onGenerated 
   }
 
   async function downloadPdf() {
+    if (letterIssues.length > 0) {
+      const count = `${letterIssues.length} ${letterIssues.length === 1 ? 'sentence is' : 'sentences are'}`
+      if (!window.confirm(`${count} not supported by your CV. Export the PDF anyway?`)) return
+    }
     setDownloading(true)
     try {
-      const res = await fetch(`/api/applications/${applicationId}/cover-letter-pdf`)
+      const confirmParam = letterIssues.length > 0 ? '?confirm=1' : ''
+      const res = await fetch(`/api/applications/${applicationId}/cover-letter-pdf${confirmParam}`)
+      if (res.status === 409) {
+        const j = await res.json() as { issues?: ReviewedIssue[] }
+        setLetterIssues(j.issues ?? [])
+        setError('Review the sentences below before exporting.')
+        return
+      }
       if (!res.ok) {
         const j = await res.json() as { error?: string }
         setError(j.error ?? 'Failed to generate PDF')
@@ -651,6 +680,7 @@ function CoverLetterTab({ applicationId, hasCv, initialCoverLetter, onGenerated 
             {error}
           </p>
         )}
+        <FactCheckPanel issues={letterIssues} busy={false} onFix={() => {}} onApproveTitle={() => {}} />
         <div className="flex items-center gap-2">
           <Button
             onClick={downloadPdf}

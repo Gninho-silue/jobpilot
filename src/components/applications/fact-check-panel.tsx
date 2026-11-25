@@ -17,6 +17,8 @@ const KIND_LABEL: Record<ReviewedIssue['kind'], string> = {
   number: 'Number not in your CV',
   company: 'Company not in your CV',
   date: 'Dates not in your CV',
+  merged: 'Facts from another experience',
+  claim: 'Statement about you not in your CV',
 }
 
 const SECONDARY_BUTTON =

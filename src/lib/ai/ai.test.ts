@@ -229,3 +229,15 @@ describe('adaptResume — regeneration with corrections', () => {
     expect(groqCall().messages[1]?.content).not.toContain('<corrections>')
   })
 })
+
+describe('cover letter — regeneration with corrections', () => {
+  it('passes the corrections as a tagged block (EN and FR)', async () => {
+    for (const language of ['EN', 'FR'] as const) {
+      mockCompletion('fixed')
+      await generateCoverLetter(CV, OFFER, 'Globex', 'Engineer', language, { corrections: ['Remove this sentence: "x"'] })
+      const [system, user] = groqCall(language === 'EN' ? 0 : 1).messages.map(m => m.content)
+      expect(system).toContain('<corrections>')
+      expect(user).toContain('<corrections>\n- Remove this sentence: "x"\n</corrections>')
+    }
+  })
+})

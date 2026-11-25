@@ -45,22 +45,22 @@
 
 ## Étape 3 — CV adapté sans invention (TDD, fonctionnalité phare)
 Problème : un LLM qui « adapte » un CV peut ajouter des compétences, entreprises, dates ou chiffres absents du CV d'origine. Pour un candidat, c'est grave (CV mensonger).
-- [ ] Extraire du CV d'origine les **faits** : entreprises, intitulés, dates, établissements, chiffres, compétences.
-- [ ] **Vérificateur déterministe** sur le CV adapté : toute entreprise / date / chiffre / diplôme absent du CV d'origine est signalé ; toute compétence absente est signalée (tolérance pour reformulations listées, ex. « React.js » = « React »).
-- [ ] Si problème : 1 régénération avec la liste des erreurs, puis affichage clair à l'utilisateur des éléments non vérifiés **avant** l'export PDF (il peut les retirer en un clic).
-- [ ] Même principe, plus léger, pour la lettre de motivation (pas d'expérience inventée).
-- [ ] Tests avec faux LLM : CV correct, compétence inventée, entreprise inventée, chiffre gonflé.
-- [ ] **Cas réel (25/11/2026)**, fixtures anonymisées dans `test/fixtures/anonymized-2026-11-25/` (vrais PDF en local dans `test/fixtures/real-*/`, ignorés par git, tests sautés en CI) :
+- [x] Extraire du CV d'origine les **faits** : entreprises, intitulés, dates, établissements, chiffres, compétences.
+- [x] **Vérificateur déterministe** sur le CV adapté : toute entreprise / date / chiffre / diplôme absent du CV d'origine est signalé ; toute compétence absente est signalée (tolérance pour reformulations listées, ex. « React.js » = « React »).
+- [x] Si problème : 1 régénération avec la liste des erreurs, puis affichage clair à l'utilisateur des éléments non vérifiés **avant** l'export PDF (il peut les retirer en un clic).
+- [x] Même principe, plus léger, pour la lettre de motivation (pas d'expérience inventée).
+- [x] Tests avec faux LLM : CV correct, compétence inventée, entreprise inventée, chiffre gonflé.
+- [x] **Cas réel (25/11/2026)**, fixtures anonymisées dans `test/fixtures/anonymized-2026-11-25/` (vrais PDF en local dans `test/fixtures/real-*/`, ignorés par git, tests sautés en CI) :
   - CV adapté : le vérificateur signale « CI/CD with Docker and GitHub Actions » ajouté au PFE, « PostgreSQL and Redis » ajouté au stage, et le titre changé en « Digital Transformation Consultant ». Le titre reste celui du CV d'origine, sauf variante explicitement validée par l'utilisateur. Stripe ne doit pas être présenté comme un vrai paiement.
   - Lettre : pas de fusion de deux expériences (date et entreprise de chaque fait vérifiées), pas d'affirmation sur le candidat absente du CV (« I have closely followed… »).
-- [ ] **Bugs de rendu PDF (TDD)**, causes trouvées :
+- [x] **Bugs de rendu PDF (TDD)**, causes trouvées :
   - le modèle écrit `‑` (U+2011) et une espace fine insécable (U+202F) que Helvetica n'a pas : tiret rendu comme un espace, U+202F rendu comme `/` (« 100/% », « Odoo/17 ») → normaliser la typographie avant rendu et retirer des prompts les contre-exemples « 100/% » ;
   - accents détachés à l'extraction d'un CV LaTeX (« Silu´e ») et accents combinants perdus → recomposer à l'extraction et au rendu ; `stripNonPrintable` de la lettre supprime aussi `´` et `·` ;
   - en-tête de la lettre : la 2e ligne du CV (le titre) est prise pour le contact ;
   - liens : URLs absentes du texte extrait (seuls les libellés « LinkedIn | GitHub | Portfolio ») → lire les annotations de lien du PDF à l'upload ; lien de projet rendu « GitHub ↗ » quelle que soit la valeur (« GitHub — ») ;
   - casse des certifications : `isSectionHeader` met la ligne en majuscules avant de tester si elle est en majuscules, donc toute ligne courte devient un titre de section.
   - Tests avec du texte contenant `-`, `%`, `é`, `&`, `_`.
-- [ ] Commit : `feat(ai): fact-check adapted CVs and cover letters against the original CV` → push.
+- [ ] Commit : `feat(ai): fact-check adapted CVs and cover letters against the original CV` → push. (Fait en un commit par bloc à la demande de Gninho : rendu PDF, prompts génériques, extraction des faits, vérificateur, régénération, marquage avant export, lettre. Push après la migration `20261125000000_application_approved_cv_title`.)
 
 ## Étape 4 — Démo sans inscription
 - [ ] Bouton **« Try the demo »** sur la page d'accueil : ouvre un espace de démonstration avec un **CV fictif** (personnage inventé, aucune donnée réelle) et 4–5 candidatures fictives à différents stades, sans créer de compte.

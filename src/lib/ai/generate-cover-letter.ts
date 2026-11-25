@@ -52,22 +52,35 @@ Respond ONLY with the cover letter text, no explanations.
 
 ${UNTRUSTED_DATA_RULE}`
 
+export interface CoverLetterOptions {
+  /** Corrections from the fact-checker, for the single regeneration (lib/fact-check). */
+  corrections?: string[]
+}
+
+const CORRECTIONS_RULE = {
+  FR: "CORRECTIONS : une version précédente de cette lettre contenait des affirmations que le CV ne soutient pas. Le bloc <corrections> les liste (écrit par notre vérificateur) : applique chaque correction dans la nouvelle version, sans rien ajouter à la place que le CV ne soutienne pas.",
+  EN: 'CORRECTIONS: a previous version of this letter contained claims the CV does not support. The <corrections> block lists them (written by our fact-checker): apply every correction in the new version, and add nothing in their place that the CV does not support.',
+}
+
 function getCoverLetterMessages(
   cvText: string,
   offerText: string,
   company: string,
   role: string,
-  language: 'FR' | 'EN'
+  language: 'FR' | 'EN',
+  { corrections = [] }: CoverLetterOptions = {}
 ) {
   const user = [
     wrapUntrusted('company', inlineField(company, PROMPT_LIMITS.company), PROMPT_LIMITS.company),
     wrapUntrusted('role', inlineField(role, PROMPT_LIMITS.role), PROMPT_LIMITS.role),
     wrapUntrusted('cv', cvText, PROMPT_LIMITS.cv),
     wrapUntrusted('job_offer', offerText, PROMPT_LIMITS.offer),
+    ...(corrections.length ? [wrapUntrusted('corrections', corrections.map(c => `- ${c}`).join('\n'), PROMPT_LIMITS.cv)] : []),
   ].join('\n\n')
 
+  const system = language === 'FR' ? SYSTEM_FR : SYSTEM_EN
   return [
-    { role: 'system' as const, content: language === 'FR' ? SYSTEM_FR : SYSTEM_EN },
+    { role: 'system' as const, content: corrections.length ? `${system}\n\n${CORRECTIONS_RULE[language]}` : system },
     { role: 'user' as const, content: user },
   ]
 }
@@ -77,11 +90,12 @@ export async function generateCoverLetter(
   offerText: string,
   company: string,
   role: string,
-  language: 'FR' | 'EN'
+  language: 'FR' | 'EN',
+  options: CoverLetterOptions = {}
 ): Promise<string> {
   const response = await groq.chat.completions.create({
     model: GROQ_MODEL,
-    messages: getCoverLetterMessages(cvText, offerText, company, role, language),
+    messages: getCoverLetterMessages(cvText, offerText, company, role, language, options),
     max_tokens: 2048,
     temperature: 0.2,
   })
