@@ -280,6 +280,7 @@ export default async function DashboardPage() {
                           <Link
                             href={`/applications?edit=${app.id}`}
                             title="View / Edit"
+            aria-label="View / Edit"
                             className="h-7 w-7 rounded-lg flex items-center justify-center text-[hsl(var(--text-muted))] hover:bg-[hsl(var(--bg-surface-raised))] hover:text-[hsl(var(--text-secondary))] transition-colors"
                           >
                             <FileText className="h-3.5 w-3.5" />
@@ -287,6 +288,7 @@ export default async function DashboardPage() {
                           <Link
                             href={`/applications?edit=${app.id}`}
                             title="Edit"
+            aria-label="Edit"
                             className="h-7 w-7 rounded-lg flex items-center justify-center text-[hsl(var(--text-muted))] hover:bg-[hsl(var(--bg-surface-raised))] hover:text-[hsl(var(--text-secondary))] transition-colors"
                           >
                             <Edit className="h-3.5 w-3.5" />

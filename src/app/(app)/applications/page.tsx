@@ -127,6 +127,7 @@ function ApplicationCard({
           <button
             type="button"
             title="Adapt CV"
+            aria-label="Adapt CV"
             onClick={e => { e.stopPropagation(); onEdit(app) }}
             className="h-7 w-7 rounded-lg flex items-center justify-center text-[hsl(var(--text-muted))] hover:bg-[hsl(var(--bg-surface-raised))] hover:text-[hsl(var(--text-secondary))] transition-colors cursor-pointer"
           >
@@ -135,6 +136,7 @@ function ApplicationCard({
           <button
             type="button"
             title="Edit"
+            aria-label="Edit"
             onClick={e => { e.stopPropagation(); onEdit(app) }}
             className="h-7 w-7 rounded-lg flex items-center justify-center text-[hsl(var(--text-muted))] hover:bg-[hsl(var(--bg-surface-raised))] hover:text-[hsl(var(--text-secondary))] transition-colors cursor-pointer"
           >
@@ -143,6 +145,7 @@ function ApplicationCard({
           <button
             type="button"
             title="Interview prep (coming soon)"
+            aria-label="Interview prep (coming soon)"
             onClick={e => e.stopPropagation()}
             className="h-7 w-7 rounded-lg flex items-center justify-center text-[hsl(var(--text-muted))] hover:bg-[hsl(var(--bg-surface-raised))] hover:text-[hsl(var(--text-secondary))] transition-colors cursor-pointer"
           >
@@ -152,6 +155,7 @@ function ApplicationCard({
         <button
           type="button"
           title="More options"
+            aria-label="More options"
           onClick={e => e.stopPropagation()}
           className="h-7 w-7 rounded-lg flex items-center justify-center text-[hsl(var(--text-muted))] hover:bg-[hsl(var(--bg-surface-raised))] hover:text-[hsl(var(--text-secondary))] transition-colors cursor-pointer"
         >

@@ -34,7 +34,7 @@ export function FactCheckPanel({ issues, busy, onFix, onApproveTitle }: FactChec
   if (issues.length === 0) return null
 
   return (
-    <section className="w-full rounded-xl border border-[hsl(var(--state-warning))] bg-[hsl(var(--bg-surface))] p-4 space-y-3 text-left">
+    <section className="w-full min-w-0 rounded-xl border border-[hsl(var(--state-warning))] bg-[hsl(var(--bg-surface))] p-4 space-y-3 text-left">
       <div className="flex items-start gap-2">
         <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0 text-[hsl(var(--state-warning))]" aria-hidden />
         <div className="space-y-0.5">
@@ -49,9 +49,9 @@ export function FactCheckPanel({ issues, busy, onFix, onApproveTitle }: FactChec
 
       <ul className="space-y-2">
         {issues.map(issue => (
-          <li key={issue.id} className="rounded-lg border border-[hsl(var(--border-default))] p-3 space-y-2">
-            <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
-              <p className="text-xs text-[hsl(var(--text-muted))]">
+          <li key={issue.id} className="min-w-0 rounded-lg border border-[hsl(var(--border-default))] p-3 space-y-2">
+            <div className="flex min-w-0 flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+              <p className="min-w-0 text-xs text-[hsl(var(--text-muted))] [overflow-wrap:anywhere]">
                 {KIND_LABEL[issue.kind]}
                 {issue.entry && issue.kind !== 'title' ? (
                   <>
@@ -60,14 +60,14 @@ export function FactCheckPanel({ issues, busy, onFix, onApproveTitle }: FactChec
                   </>
                 ) : null}
               </p>
-              <p className="text-xs font-semibold text-[hsl(var(--state-warning))]">{issue.unsupported.join(', ')}</p>
+              <p className="min-w-0 text-xs font-semibold text-[hsl(var(--state-warning))] [overflow-wrap:anywhere]">{issue.unsupported.join(', ')}</p>
             </div>
             {issue.line ? (
-              <p className="text-xs text-[hsl(var(--text-secondary))] line-clamp-2">{issue.line.replace(/^[-•*]\s+/, '')}</p>
+              <p className="text-xs text-[hsl(var(--text-secondary))] line-clamp-2 [overflow-wrap:anywhere]">{issue.line.replace(/^[-•*]\s+/, '')}</p>
             ) : null}
 
             {issue.kind === 'title' ? (
-              <div className="flex flex-wrap gap-2">
+              <div className="flex min-w-0 flex-wrap gap-2">
                 <button type="button" className={SECONDARY_BUTTON} disabled={busy} onClick={() => onFix(issue.id)}>
                   Use “{issue.expected}”
                 </button>

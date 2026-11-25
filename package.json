@@ -13,7 +13,8 @@
     "test:unit": "vitest run --project unit",
     "test:integration": "vitest run --project integration",
     "test:watch": "vitest",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test:e2e": "node e2e/run.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.5.0",
@@ -44,6 +45,8 @@
     "zod": "^4.6.7"
   },
   "devDependencies": {
+    "@clerk/testing": "^2.3.8",
+    "@playwright/test": "^1.65.1",
     "@tailwindcss/postcss": "^4",
     "@testcontainers/postgresql": "^12.2.2",
     "@testing-library/dom": "^10.4.2",

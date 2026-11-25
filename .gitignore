@@ -45,3 +45,7 @@ next-env.d.ts
 
 # Real personal PDFs, local only (never commit)
 test/fixtures/real-*/
+
+# Playwright
+/test-results/
+/playwright-report/
