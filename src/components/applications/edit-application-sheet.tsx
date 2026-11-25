@@ -24,6 +24,7 @@ import Link from 'next/link'
 import { streamError, visibleStreamText } from '@/lib/stream-protocol'
 import type { ReviewedIssue } from '@/lib/fact-check/fix-issue'
 import { FactCheckPanel } from '@/components/applications/fact-check-panel'
+import { useConfirm, type ConfirmOptions } from '@/components/confirm-dialog'
 
 type ApplicationStatus = 'APPLIED' | 'PHONE' | 'TECHNICAL' | 'OFFER' | 'REJECTED'
 type Language = 'FR' | 'EN'
@@ -129,13 +130,15 @@ function StatusBadge({
 // ── Resume Tab ────────────────────────────────────────────────────────────────
 
 interface ResumeTabProps {
+  /** App modal (useConfirm), owned by the sheet. */
+  confirm: (options: ConfirmOptions) => Promise<boolean>
   applicationId: string
   hasCv: boolean
   initialAdaptedCvText: string | null
   onAdapted: (text: string) => void
 }
 
-function ResumeTab({ applicationId, hasCv, initialAdaptedCvText, onAdapted }: ResumeTabProps) {
+function ResumeTab({ confirm, applicationId, hasCv, initialAdaptedCvText, onAdapted }: ResumeTabProps) {
   const [adaptedCvText, setAdaptedCvText] = useState(initialAdaptedCvText)
   const [generating, setGenerating] = useState(false)
   const [downloading, setDownloading] = useState(false)
@@ -153,7 +156,8 @@ function ResumeTab({ applicationId, hasCv, initialAdaptedCvText, onAdapted }: Re
 
   async function generate(skipConfirm = false) {
     if (adaptedCvText && !skipConfirm) {
-      if (!window.confirm('Regenerate the adapted CV? The current one will be replaced.')) return
+      const ok = await confirm({ title: 'Regenerate the adapted CV?', description: 'The current one will be replaced.', confirmLabel: 'Regenerate' })
+      if (!ok) return
     }
     setError('')
     setShowUpgrade(false)
@@ -276,7 +280,8 @@ function ResumeTab({ applicationId, hasCv, initialAdaptedCvText, onAdapted }: Re
   async function downloadPdf() {
     if (issues.length > 0) {
       const count = `${issues.length} ${issues.length === 1 ? 'claim is' : 'claims are'}`
-      if (!window.confirm(`${count} not found in your original CV. Export the PDF anyway?`)) return
+      const ok = await confirm({ title: `${count} not found in your original CV`, description: 'Export the PDF anyway?', confirmLabel: 'Export anyway' })
+      if (!ok) return
     }
     setDownloading(true)
     try {
@@ -458,13 +463,15 @@ function ResumeTab({ applicationId, hasCv, initialAdaptedCvText, onAdapted }: Re
 // ── Cover Letter Tab ──────────────────────────────────────────────────────────
 
 interface CoverLetterTabProps {
+  /** App modal (useConfirm), owned by the sheet. */
+  confirm: (options: ConfirmOptions) => Promise<boolean>
   applicationId: string
   hasCv: boolean
   initialCoverLetter: string | null
   onGenerated: (text: string) => void
 }
 
-function CoverLetterTab({ applicationId, hasCv, initialCoverLetter, onGenerated }: CoverLetterTabProps) {
+function CoverLetterTab({ confirm, applicationId, hasCv, initialCoverLetter, onGenerated }: CoverLetterTabProps) {
   const [coverLetter, setCoverLetter] = useState(initialCoverLetter)
   const [generating, setGenerating] = useState(false)
   const [downloading, setDownloading] = useState(false)
@@ -496,7 +503,8 @@ function CoverLetterTab({ applicationId, hasCv, initialCoverLetter, onGenerated 
 
   async function generate(skipConfirm = false) {
     if (coverLetter && !skipConfirm) {
-      if (!window.confirm('Regenerate the cover letter? The current one will be replaced.')) return
+      const ok = await confirm({ title: 'Regenerate the cover letter?', description: 'The current one will be replaced.', confirmLabel: 'Regenerate' })
+      if (!ok) return
     }
     setError('')
     setShowUpgrade(false)
@@ -565,7 +573,8 @@ function CoverLetterTab({ applicationId, hasCv, initialCoverLetter, onGenerated 
   async function downloadPdf() {
     if (letterIssues.length > 0) {
       const count = `${letterIssues.length} ${letterIssues.length === 1 ? 'sentence is' : 'sentences are'}`
-      if (!window.confirm(`${count} not supported by your CV. Export the PDF anyway?`)) return
+      const ok = await confirm({ title: `${count} not supported by your CV`, description: 'Export the PDF anyway?', confirmLabel: 'Export anyway' })
+      if (!ok) return
     }
     setDownloading(true)
     try {
@@ -747,6 +756,8 @@ function CoverLetterTab({ applicationId, hasCv, initialCoverLetter, onGenerated 
 // ── Interview Tab ─────────────────────────────────────────────────────────────
 
 interface InterviewTabProps {
+  /** App modal (useConfirm), owned by the sheet. */
+  confirm: (options: ConfirmOptions) => Promise<boolean>
   applicationId: string
   company: string
   hasCv: boolean
@@ -756,7 +767,7 @@ interface InterviewTabProps {
   onGenerated: (questions: InterviewQuestion[]) => void
 }
 
-function InterviewTab({ applicationId, company, hasCv, language, isPro, initialQuestions, onGenerated }: InterviewTabProps) {
+function InterviewTab({ confirm, applicationId, company, hasCv, language, isPro, initialQuestions, onGenerated }: InterviewTabProps) {
   const [questions, setQuestions] = useState<InterviewQuestion[] | null>(initialQuestions)
   const [generating, setGenerating] = useState(false)
   const [error, setError] = useState('')
@@ -769,7 +780,8 @@ function InterviewTab({ applicationId, company, hasCv, language, isPro, initialQ
 
   async function generate(skipConfirm = false) {
     if (questions?.length && !skipConfirm) {
-      if (!window.confirm('Regenerate interview questions? The current ones will be replaced.')) return
+      const ok = await confirm({ title: 'Regenerate the interview questions?', description: 'The current ones will be replaced.', confirmLabel: 'Regenerate' })
+      if (!ok) return
     }
     setError('')
     setGenerating(true)
@@ -981,6 +993,8 @@ export function EditApplicationSheet({
   const [notes, setNotes] = useState('')
   const [saving, setSaving] = useState(false)
   const [deleting, setDeleting] = useState(false)
+  // One app modal for the sheet and its tabs (replaces window.confirm).
+  const [confirm, confirmDialog] = useConfirm()
   const [error, setError] = useState('')
 
   useEffect(() => {
@@ -1014,7 +1028,8 @@ export function EditApplicationSheet({
 
   async function handleDelete() {
     if (!application) return
-    if (!window.confirm(`Delete application for ${application.company}?`)) return
+    const ok = await confirm({ title: `Delete the application for ${application.company}?`, description: 'This cannot be undone.', confirmLabel: 'Delete', destructive: true })
+    if (!ok) return
     setDeleting(true)
     try {
       const res = await fetch(`/api/applications/${application.id}`, { method: 'DELETE' })
@@ -1186,6 +1201,7 @@ export function EditApplicationSheet({
           {/* ── Resume ── */}
           <TabsContent value="resume" className="flex-1 overflow-y-auto min-h-0">
             <ResumeTab
+              confirm={confirm}
               applicationId={application.id}
               hasCv={hasCv}
               initialAdaptedCvText={application.adaptedCvText}
@@ -1196,6 +1212,7 @@ export function EditApplicationSheet({
           {/* ── Cover Letter ── */}
           <TabsContent value="cover-letter" className="flex-1 overflow-y-auto min-h-0">
             <CoverLetterTab
+              confirm={confirm}
               applicationId={application.id}
               hasCv={hasCv}
               initialCoverLetter={application.coverLetter}
@@ -1206,6 +1223,7 @@ export function EditApplicationSheet({
           {/* ── Interview ── */}
           <TabsContent value="interview" className="flex-1 overflow-y-auto min-h-0">
             <InterviewTab
+              confirm={confirm}
               applicationId={application.id}
               company={application.company}
               hasCv={hasCv}
@@ -1216,6 +1234,7 @@ export function EditApplicationSheet({
             />
           </TabsContent>
         </Tabs>
+        {confirmDialog}
       </SheetContent>
     </Sheet>
   )
