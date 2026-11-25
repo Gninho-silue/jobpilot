@@ -703,7 +703,7 @@ function CoverLetterTab({ confirm, applicationId, hasCv, initialCoverLetter, onG
             {error}
           </p>
         )}
-        <FactCheckPanel issues={letterIssues} busy={false} onFix={() => {}} onApproveTitle={() => {}} />
+        <FactCheckPanel document="letter" issues={letterIssues} busy={false} onFix={() => {}} onApproveTitle={() => {}} />
         <div className="flex items-center gap-2">
           <Button
             onClick={downloadPdf}

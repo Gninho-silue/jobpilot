@@ -133,6 +133,31 @@ const MONTHS =
 /** A line that dates an entry: "March – July 2026", "2023 – 2026", "… | Docker 2025". */
 const DATED_LINE = new RegExp(`((${MONTHS})\\.?\\s+(19|20)\\d{2})|((${MONTHS})\\.?\\s*[–-]\\s*(${MONTHS})\\.?\\s+(19|20)\\d{2})|((19|20)\\d{2}\\s*[–-]\\s*((19|20)\\d{2}|present|now|aujourd'hui|présent))|((19|20)\\d{2}\\s*$)`, 'iu')
 
+/** The dates of an entry heading, wherever they sit in it. */
+const ENTRY_DATE = new RegExp(
+  `((${MONTHS})\\.?\\s*[–-]\\s*(${MONTHS})\\.?\\s+(19|20)\\d{2})|((19|20)\\d{2}\\s*[–-]\\s*((19|20)\\d{2}|present|now|aujourd'hui|présent))|((${MONTHS})\\.?\\s+(19|20)\\d{2})|((19|20)\\d{2})`,
+  'iu'
+)
+
+/**
+ * What the fact-check panel shows for an entry: "role · company · dates" for an
+ * experience or a degree, "project · year" for a project ("Name | stack | link | 2026").
+ * Never the body of the entry, which the header of a block often contains.
+ */
+export function entryLabel(header: string): string {
+  const firstLine = header.split('\n')[0]!.replace(/\s+/g, ' ').trim()
+  const text = header.replace(/\s+/g, ' ').trim()
+  const date = text.match(ENTRY_DATE)
+  if (!date) return firstLine
+  const heading = text.slice(0, date.index).replace(/[\s|,–-]+$/, '')
+  if (heading.includes(' | ')) return [heading.split(' | ')[0], date[0]].join(' · ')
+
+  const [role, ...rest] = heading.split(/,\s+/)
+  // "…, Northwind & Co, Lyon": a last single word after the company is the city.
+  if (rest.length >= 2 && !/\s/.test(rest[rest.length - 1]!)) rest.pop()
+  return [role, rest[rest.length - 1], date[0]].filter(Boolean).join(' · ')
+}
+
 const SECTION_WORDS =
   /^(profile|profil|summary|résumé|about|technical skills|skills|compétences( techniques)?|(professional )?experience|expériences?( professionnelles?)?|(ai |personal |side |academic )?projects|projets( personnels)?|education|formation|certifications?( & languages| & langues| et langues)?|languages|langues|interests|centres d'intérêt)$/i
 

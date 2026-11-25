@@ -13,6 +13,8 @@ export interface FactIssue {
   kind: IssueKind
   /** Entry title (e.g. "Backend Developer") or section heading (e.g. "TECHNICAL SKILLS"). */
   entry?: string
+  /** Short name of the entry, for display: "title · company · dates". */
+  label?: string
   /** The exact line of the adapted CV the issue is about. */
   line: string
   lineIndex: number
@@ -118,13 +120,14 @@ export function checkAdaptedCv(originalCv: string, adaptedCv: string, options: C
     const terms = block?.terms ?? facts.terms
     const numbers = block?.numbers ?? facts.numbers
     const years = block?.years ?? facts.years
+    const where = { entry: e.title, label: [e.title, e.company?.value, e.date?.value].filter(Boolean).join(' · ') }
 
     if (e.company && !originalText.includes(norm(e.company.value))) {
-      add({ kind: 'company', entry: e.title, lineIndex: e.company.lineIndex, unsupported: [e.company.value] })
+      add({ kind: 'company', ...where, lineIndex: e.company.lineIndex, unsupported: [e.company.value] })
     }
     if (e.date) {
       const wrongYears = [...e.date.value.matchAll(/(19|20)\d{2}/g)].map(m => m[0]).filter(y => !years.has(y))
-      if (wrongYears.length) add({ kind: 'date', entry: e.title, lineIndex: e.date.lineIndex, unsupported: wrongYears })
+      if (wrongYears.length) add({ kind: 'date', ...where, lineIndex: e.date.lineIndex, unsupported: wrongYears })
     }
     // Not in this entry of the CV: an invention if absent from the whole CV;
     // only "to verify" if the CV has it elsewhere (never sent as a removal).
@@ -137,9 +140,9 @@ export function checkAdaptedCv(originalCv: string, adaptedCv: string, options: C
         ...extraTerms.filter(term => facts.terms.has(term)),
         ...extraNumbers.filter(n => facts.numbers.has(n)),
       ]
-      if (inventedTerms.length) add({ kind: 'technology', entry: e.title, lineIndex, unsupported: inventedTerms })
-      if (inventedNumbers.length) add({ kind: 'number', entry: e.title, lineIndex, unsupported: inventedNumbers })
-      if (elsewhere.length) add({ kind: 'verify', entry: e.title, lineIndex, unsupported: elsewhere })
+      if (inventedTerms.length) add({ kind: 'technology', ...where, lineIndex, unsupported: inventedTerms })
+      if (inventedNumbers.length) add({ kind: 'number', ...where, lineIndex, unsupported: inventedNumbers })
+      if (elsewhere.length) add({ kind: 'verify', ...where, lineIndex, unsupported: elsewhere })
     }
     if (e.tech) checkLine(e.tech.value, e.tech.lineIndex)
     for (const bullet of e.bullets) checkLine(bullet.text, bullet.lineIndex)

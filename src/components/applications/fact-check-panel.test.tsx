@@ -94,3 +94,36 @@ describe('FactCheckPanel — cover letter issues', () => {
     expect(screen.getByText('continuous deployment')).toBeInTheDocument()
   })
 })
+
+describe('FactCheckPanel — point 6: short labels, and what to do for a letter', () => {
+  it('shows the short label of the entry, not its full text', () => {
+    setup([
+      {
+        id: 'technology-4',
+        kind: 'technology',
+        entry: 'Full-Stack Developer Intern, Final Year Project (PFE), Northwind & Co, Lyon | January – May 2026 Built 7 custom modules.',
+        label: 'Full-Stack Developer Intern · Northwind & Co · January – May 2026',
+        line: 'I used Kafka.',
+        lineIndex: 4,
+        unsupported: ['Kafka'],
+        fixable: false,
+      },
+    ])
+    expect(screen.getByText('Full-Stack Developer Intern · Northwind & Co · January – May 2026')).toBeInTheDocument()
+    expect(screen.queryByText(/Built 7 custom modules/)).toBeNull()
+  })
+
+  it('a letter issue says to edit the letter, not the CV', () => {
+    render(
+      <FactCheckPanel
+        document="letter"
+        issues={[{ id: 'claim-2', kind: 'claim', line: 'I have closely followed Contoso.', lineIndex: 2, unsupported: [], fixable: false }]}
+        busy={false}
+        onFix={vi.fn()}
+        onApproveTitle={vi.fn()}
+      />
+    )
+    expect(screen.getByText(/edit the letter/i)).toBeInTheDocument()
+    expect(screen.queryByText(/edit the CV/i)).toBeNull()
+  })
+})

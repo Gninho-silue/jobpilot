@@ -5,6 +5,8 @@ import type { ReviewedIssue } from '@/lib/fact-check/fix-issue'
 
 interface FactCheckPanelProps {
   issues: ReviewedIssue[]
+  /** What the issues are about: the adapted CV (default) or the cover letter. */
+  document?: 'cv' | 'letter'
   /** A fix or approval is being saved. */
   busy: boolean
   onFix: (issueId: string) => void
@@ -37,7 +39,7 @@ const SECONDARY_BUTTON =
  * Claims of the adapted CV that the original CV does not support, shown before
  * export. Each one can be removed (or the title restored / kept) in one click.
  */
-export function FactCheckPanel({ issues, busy, onFix, onApproveTitle }: FactCheckPanelProps) {
+export function FactCheckPanel({ issues, document = 'cv', busy, onFix, onApproveTitle }: FactCheckPanelProps) {
   if (issues.length === 0) return null
 
   return (
@@ -60,10 +62,10 @@ export function FactCheckPanel({ issues, busy, onFix, onApproveTitle }: FactChec
             <div className="flex min-w-0 flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
               <p className="min-w-0 text-xs text-[hsl(var(--text-muted))] [overflow-wrap:anywhere]">
                 {kindLabel(issue)}
-                {issue.entry && issue.kind !== 'title' ? (
+                {(issue.label ?? issue.entry) && issue.kind !== 'title' ? (
                   <>
                     {' · '}
-                    <span className="text-[hsl(var(--text-secondary))]">{issue.entry}</span>
+                    <span className="text-[hsl(var(--text-secondary))]">{issue.label ?? issue.entry}</span>
                   </>
                 ) : null}
               </p>
@@ -95,7 +97,9 @@ export function FactCheckPanel({ issues, busy, onFix, onApproveTitle }: FactChec
               <p className="text-xs text-[hsl(var(--text-muted))]">
                 {issue.kind === 'verify'
                   ? 'Your CV mentions this elsewhere: check that it belongs here.'
-                  : 'This one cannot be removed automatically: regenerate or edit the CV.'}
+                  : document === 'letter'
+                    ? 'This one cannot be removed automatically: edit the letter.'
+                    : 'This one cannot be removed automatically: regenerate or edit the CV.'}
               </p>
             )}
           </li>

@@ -1,4 +1,4 @@
-import { extractCvFacts, findTerms, numberOccurrences, numbersIn, periodsIn, type CvBlock } from './cv-facts'
+import { entryLabel, extractCvFacts, findTerms, numberOccurrences, numbersIn, periodsIn, type CvBlock } from './cv-facts'
 
 /**
  * `verify`: in the CV, but under another experience; shown, never sent as a removal.
@@ -13,6 +13,8 @@ export interface LetterIssue {
   kind: LetterIssueKind
   /** The experience the sentence is about (its context in the letter). */
   entry?: string
+  /** Short name of that experience, for display: "role · company · dates". */
+  label?: string
   /** The sentence. */
   line: string
   lineIndex: number
@@ -114,7 +116,8 @@ export function checkCoverLetter(originalCv: string, letter: string): LetterIssu
     .filter(({ sentence }) => sentence)
 
   const issues: LetterIssue[] = []
-  const add = (issue: Omit<LetterIssue, 'id'>) => issues.push({ ...issue, id: `${issue.kind}-${issue.lineIndex}` })
+  const add = (issue: Omit<LetterIssue, 'id'>) =>
+    issues.push({ ...issue, ...(issue.entry && context ? { label: entryLabel(context.header) } : {}), id: `${issue.kind}-${issue.lineIndex}` })
   let context: CvBlock | undefined
   let currentParagraph = 0
 
