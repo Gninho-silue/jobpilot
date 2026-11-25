@@ -63,12 +63,12 @@ Problème : un LLM qui « adapte » un CV peut ajouter des compétences, entrepr
 - [ ] Commit : `feat(ai): fact-check adapted CVs and cover letters against the original CV` → push. (Fait en un commit par bloc à la demande de Gninho : rendu PDF, prompts génériques, extraction des faits, vérificateur, régénération, marquage avant export, lettre. Push après la migration `20261125000000_application_approved_cv_title`.)
 
 ## Étape 4 — Démo sans inscription
-- [ ] Bouton **« Try the demo »** sur la page d'accueil : ouvre un espace de démonstration avec un **CV fictif** (personnage inventé, aucune donnée réelle) et 4–5 candidatures fictives à différents stades, sans créer de compte.
-- [ ] Données de démo isolées par visiteur (identifiant aléatoire en cookie), en lecture/écriture, **réinitialisées toutes les 24 h** ; quotas IA de démo stricts (ex. 3 générations par visiteur et par jour) pour protéger la clé Groq.
-- [ ] Bandeau permanent en mode démo : « Demo workspace — data resets daily. Payments run in Stripe test mode (card 4242 4242 4242 4242). »
-- [ ] Le bouton « Upgrade » en démo ouvre Stripe Checkout en mode test (ça montre l'intégration) ; aucune vraie transaction possible.
-- [ ] Tests : isolation entre visiteurs de démo, réinitialisation, quotas.
-- [ ] Commit : `feat(demo): no-signup demo workspace with seeded fictional data` → push.
+- [x] Bouton **« Try the demo »** sur la page d'accueil : ouvre un espace de démonstration avec un **CV fictif** (personnage inventé, aucune donnée réelle) et 4–5 candidatures fictives à différents stades, sans créer de compte.
+- [x] Données de démo isolées par visiteur (identifiant aléatoire en cookie), en lecture/écriture, **réinitialisées toutes les 24 h** ; quotas IA de démo stricts (ex. 3 générations par visiteur et par jour) pour protéger la clé Groq.
+- [x] Bandeau permanent en mode démo : « Demo workspace — data resets daily. Payments run in Stripe test mode (card 4242 4242 4242 4242). »
+- [x] Le bouton « Upgrade » en démo ouvre Stripe Checkout en mode test (ça montre l'intégration) ; aucune vraie transaction possible.
+- [x] Tests : isolation entre visiteurs de démo, réinitialisation, quotas.
+- [ ] Commit : `feat(demo): no-signup demo workspace with seeded fictional data` → push. (Fait en une série de commits `feat(demo)` ; push après la migration et les variables Vercel.)
 
 ## Étape 5 — Corrections de données affichées
 - [ ] Dashboard : si aucune donnée le mois précédent, afficher « — » au lieu de « +X % vs last month » ; libeller la variation en **points** (« +12 pts »).
