@@ -70,6 +70,23 @@ const YEAR = /(?<![\p{N}])(19\d{2}|20\d{2})(?![\p{N}])/gu
 
 /** Counts, percentages and "N+" (number words as digits); not years or product versions. */
 export function numbersIn(text: string): Set<string> {
+  return new Set(numberOccurrences(text).map(occurrence => occurrence.value))
+}
+
+const CONTEXT_STOPWORDS = new Set(['with', 'that', 'from', 'this', 'have', 'into', 'over', 'dans', 'pour', 'avec', 'plus', 'sont', 'mais', 'leur', 'their', 'which', 'were', 'been'])
+
+/** Words around a figure ("custom", "module", "time"…), lower-case and singular, for comparing contexts. */
+function contextWords(text: string): string[] {
+  return (text.toLowerCase().match(/\p{L}{4,}/gu) ?? [])
+    .map(word => word.replace(/s$/, ''))
+    .filter(word => !CONTEXT_STOPWORDS.has(word))
+}
+
+/**
+ * Each figure of a text (counts, percentages, "N+"; number words as digits; not
+ * years or product versions) with the words around it: 4 before, 4 after.
+ */
+export function numberOccurrences(text: string): Array<{ value: string; context: Set<string> }> {
   let rest = text
   // A number right after a technology is its version ("Odoo 17", "React 18").
   for (const { pattern } of TERM_PATTERNS) {
@@ -77,13 +94,34 @@ export function numbersIn(text: string): Set<string> {
   }
   rest = rest.replace(NUMBER_WORD, word => NUMBER_WORDS[word.toLowerCase()]!)
 
-  const numbers = new Set<string>()
-  for (const [, value, suffix] of rest.matchAll(NUMBER)) {
+  const occurrences: Array<{ value: string; context: Set<string> }> = []
+  for (const match of rest.matchAll(NUMBER)) {
+    const [whole, value, suffix] = match
     const isYear = /^(19|20)\d{2}$/.test(value!) && !suffix
     if (isYear) continue
-    numbers.add(value!.replace(',', '.') + (suffix ? suffix.trim() : ''))
+    const before = contextWords(rest.slice(Math.max(0, match.index! - 80), match.index)).slice(-4)
+    const after = contextWords(rest.slice(match.index! + whole.length, match.index! + whole.length + 80)).slice(0, 4)
+    occurrences.push({ value: value!.replace(',', '.') + (suffix ? suffix.trim() : ''), context: new Set([...before, ...after]) })
   }
-  return numbers
+  return occurrences
+}
+
+const MONTH_NUMBER: Array<[RegExp, number]> = [
+  [/^jan/i, 1], [/^f[ée]v|^feb/i, 2], [/^mar/i, 3], [/^a[pv]r/i, 4], [/^ma[iy]/i, 5], [/^jui?n|^june?/i, 6],
+  [/^juil|^jul/i, 7], [/^ao[uû]|^aug/i, 8], [/^sep/i, 9], [/^oct/i, 10], [/^nov/i, 11], [/^d[ée]c/i, 12],
+]
+const monthNumber = (word: string) => {
+  // "juil" before "juin": both start with "jui".
+  if (/^juil/i.test(word)) return 7
+  return MONTH_NUMBER.find(([pattern]) => pattern.test(word))?.[1]
+}
+/** Month ranges of a text, EN or FR ("March – July 2026", "mars-juillet 2026") as "3-7-2026". */
+export function periodsIn(text: string): Set<string> {
+  // Built here: MONTHS is declared further down.
+  const period = new RegExp(`(${MONTHS})\\.?\\s*[–-]\\s*(${MONTHS})\\.?\\s+((?:19|20)\\d{2})`, 'giu')
+  return new Set(
+    Array.from(text.replace(/\s+/g, ' ').matchAll(period), ([, from, to, year]) => `${monthNumber(from!)}-${monthNumber(to!)}-${year}`)
+  )
 }
 
 function yearsIn(text: string): Set<string> {

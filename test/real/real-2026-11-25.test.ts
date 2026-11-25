@@ -124,4 +124,12 @@ describe.skipIf(!existsSync(DIR_25B) || !existsSync(DIR_26))('real letters of 20
     const french = checkCoverLetter(cvText, await letterBody('cover-letter-capgemini-fr.pdf'))
     expect(french.filter(i => i.entry?.includes('Engineering Degree'))).toEqual([])
   })
+
+  it('point 4: "cinq modules Odoo 17" is a figure different from the CV (9), not a merge', async () => {
+    const { checkCoverLetter } = await import('@/lib/fact-check/check-cover-letter')
+    const cvText = (await extractPdfText(readFileSync(DIR_26 + 'original-cv.pdf'))).text
+    const french = checkCoverLetter(cvText, await letterBody('cover-letter-capgemini-fr.pdf'))
+    const modules = french.filter(i => /cinq modules/.test(i.line))
+    expect(modules).toEqual([expect.objectContaining({ kind: 'number', unsupported: ['5'], expected: '9' })])
+  })
 })

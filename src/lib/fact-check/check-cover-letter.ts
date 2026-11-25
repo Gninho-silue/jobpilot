@@ -1,4 +1,4 @@
-import { extractCvFacts, findTerms, numbersIn, type CvBlock } from './cv-facts'
+import { extractCvFacts, findTerms, numberOccurrences, numbersIn, periodsIn, type CvBlock } from './cv-facts'
 
 /** `verify`: in the CV, but under another experience; shown, never sent as a removal. */
 export type LetterIssueKind = 'merged' | 'technology' | 'number' | 'claim' | 'verify'
@@ -14,6 +14,8 @@ export interface LetterIssue {
   line: string
   lineIndex: number
   unsupported: string[]
+  /** For a changed figure: the figure of the CV. */
+  expected?: string
 }
 
 // Claims about the candidate's past that a CV cannot back ("I have closely followed
@@ -63,6 +65,16 @@ function distinctiveWords(blocks: CvBlock[]): Map<CvBlock, Set<string>> {
     perBlock.set(block, new Set([...candidates].filter(word => count.get(word) === 1)))
   }
   return perBlock
+}
+
+/** The occurrence whose surrounding words overlap most with `context` (score 0 if none). */
+function closest(context: Set<string>, candidates: Array<{ value: string; context: Set<string> }>) {
+  let best: { score: number; value?: string } = { score: 0 }
+  for (const candidate of candidates) {
+    const score = [...context].filter(word => candidate.context.has(word)).length
+    if (score > best.score) best = { score, value: candidate.value }
+  }
+  return best
 }
 
 const sorted = (items: Iterable<string>) => [...items].sort((a, b) => a.localeCompare(b))
@@ -116,18 +128,45 @@ export function checkCoverLetter(originalCv: string, letter: string): LetterIssu
         bestScore = score
       }
     }
+    const periods = periodsIn(sentence)
+    const dated = periods.size ? facts.blocks.filter(block => [...periodsIn(block.header)].some(p => periods.has(p))) : []
+    if (dated.length === 1) named = dated[0]
     if (named) context = named
 
     const terms = findTerms(sentence)
     const numbers = numbersIn(sentence)
     const entry = context ? oneLine(context.header) : undefined
 
+    // Figures of this experience that the sentence changed ("cinq modules" for 7).
+    const changed: Array<{ value: string; expected: string }> = []
+
     if (context) {
-      // Facts that are not in this experience but in another one: two experiences merged.
-      const foreign = [...numbers].filter(n => !context!.numbers.has(n) && facts.numbers.has(n))
+      // A figure absent from this experience is either changed (its words match a
+      // figure of this experience: "cinq modules" ↔ "7 … modules") or taken from
+      // another experience (they match that one better: two experiences merged).
+      const own = numberOccurrences(context.text)
+      const others = facts.blocks.filter(block => block !== context).flatMap(block => numberOccurrences(block.text))
+      const foreign: string[] = []
+      for (const occurrence of numberOccurrences(sentence)) {
+        if (context.numbers.has(occurrence.value)) continue
+        const closestOwn = closest(occurrence.context, own.filter(o => o.value !== occurrence.value))
+        const closestElsewhere = closest(occurrence.context, others.filter(o => o.value === occurrence.value))
+        if (closestOwn.score > closestElsewhere.score) changed.push({ value: occurrence.value, expected: closestOwn.value! })
+        else if (facts.numbers.has(occurrence.value)) foreign.push(occurrence.value)
+      }
       if (foreign.length) {
         add({ kind: 'merged', entry, line: sentence, lineIndex: index, unsupported: sorted(foreign) })
         return
+      }
+      if (changed.length) {
+        add({
+          kind: 'number',
+          entry,
+          line: sentence,
+          lineIndex: index,
+          unsupported: changed.map(c => c.value),
+          expected: changed.map(c => c.expected).join(', '),
+        })
       }
       const extraTerms = [...terms].filter(t => !context!.terms.has(t))
       const invented = extraTerms.filter(t => !facts.terms.has(t))
@@ -139,8 +178,8 @@ export function checkCoverLetter(originalCv: string, letter: string): LetterIssu
       if (extraTerms.length) add({ kind: 'technology', line: sentence, lineIndex: index, unsupported: sorted(extraTerms) })
     }
 
-    const invented = [...numbers].filter(n => !facts.numbers.has(n))
-    if (invented.length) add({ kind: 'number', entry, line: sentence, lineIndex: index, unsupported: sorted(invented) })
+    const invented = [...numbers].filter(n => !facts.numbers.has(n) && !changed.some(c => c.value === n))
+    if (invented.length && !changed.length) add({ kind: 'number', entry, line: sentence, lineIndex: index, unsupported: sorted(invented) })
   })
 
   return issues

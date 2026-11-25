@@ -52,7 +52,9 @@ export function describeLetterIssues(issues: LetterIssue[]): string[] {
           ? `Do not attribute ${items} to "${issue.entry}": "${issue.line}"`
           : `Remove ${items}, not in the CV: "${issue.line}"`
       case 'number':
-        return `Use only numbers from the CV, not ${items}: "${issue.line}"`
+        return issue.expected
+          ? `The CV says ${issue.expected}, not ${items}, for "${issue.entry}": "${issue.line}"`
+          : `Use only numbers from the CV, not ${items}: "${issue.line}"`
       case 'verify':
         return ''
     }

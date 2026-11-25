@@ -38,3 +38,32 @@ describe('point 3: each sentence is attached to the right experience', () => {
     expect(issuesOf(letter)).toEqual([])
   })
 })
+
+describe('point 4: a wrong figure in the right experience is "different from your CV", not a merge', () => {
+  it('"cinq modules" for the 7 modules of the final-year project → number different from the CV (7)', () => {
+    const letter =
+      "Lors de mon stage « Full-Stack Developer Intern » chez Northwind & Co (janvier-mai 2026), j'ai conçu et déployé cinq modules ERPNext 15 intégrant des appels REST, réduisant le temps de chargement des pages de 35%."
+    const issues = issuesOf(letter)
+    expect(issues).toEqual([
+      expect.objectContaining({ kind: 'number', unsupported: ['5'], expected: '7', entry: expect.stringContaining('Final Year Project') }),
+    ])
+  })
+
+  it('the same sentence in English with the right figures has no issue (the dates set the context)', () => {
+    const letter =
+      'At Northwind & Co, as a Full-Stack Developer Intern (January-May 2026) I built seven custom ERPNext 15 Python modules that eliminated 95% of manual price-masking errors, and I optimized PostgreSQL queries across 14 data models, cutting page-load time by 35%.'
+    expect(issuesOf(letter)).toEqual([])
+  })
+
+  it('a figure of another experience under these dates is still a merge', () => {
+    const letter =
+      'During my final-year internship (January-May 2026) I automated a five-state workflow, reducing administrative processing time by 45%.'
+    expect(issuesOf(letter)).toEqual([expect.objectContaining({ kind: 'merged', unsupported: expect.arrayContaining(['45%']) })])
+  })
+
+  it('the earlier internship, named by its dates in French, is its own context', () => {
+    const letter =
+      "Auparavant, lors de mon stage chez Northwind & Co (juin-septembre 2025), j'ai automatisé un workflow de cinq états avec des tâches CRON, diminuant le temps de traitement administratif de 45%."
+    expect(issuesOf(letter)).toEqual([])
+  })
+})

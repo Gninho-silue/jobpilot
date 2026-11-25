@@ -35,12 +35,14 @@ describe('describeLetterIssues', () => {
         { id: 'merged-5', kind: 'merged', entry: 'Final Year Project 2026', line: 'I also automated a workflow.', lineIndex: 5, unsupported: ['45%', '5'] },
         { id: 'technology-6', kind: 'technology', entry: 'Acme Corp', line: 'I used Kafka.', lineIndex: 6, unsupported: ['Kafka'] },
         { id: 'number-7', kind: 'number', line: 'I cut latency by 70%.', lineIndex: 7, unsupported: ['70%'] },
+        { id: 'number-8', kind: 'number', entry: 'Final Year Project', line: 'I built five modules.', lineIndex: 8, unsupported: ['5'], expected: '7' },
       ])
     ).toEqual([
       'Remove this sentence, the CV does not support it: "I have closely followed Contoso."',
       'This sentence attributes to "Final Year Project 2026" facts (45%, 5) that belong to another experience of the CV: name the right experience for each fact, with its company and dates: "I also automated a workflow."',
       'Do not attribute Kafka to "Acme Corp": "I used Kafka."',
       'Use only numbers from the CV, not 70%: "I cut latency by 70%."',
+      'The CV says 7, not 5, for "Final Year Project": "I built five modules."',
     ])
   })
 })

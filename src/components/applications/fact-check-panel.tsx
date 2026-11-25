@@ -52,7 +52,7 @@ export function FactCheckPanel({ issues, busy, onFix, onApproveTitle }: FactChec
           <li key={issue.id} className="min-w-0 rounded-lg border border-[hsl(var(--border-default))] p-3 space-y-2">
             <div className="flex min-w-0 flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
               <p className="min-w-0 text-xs text-[hsl(var(--text-muted))] [overflow-wrap:anywhere]">
-                {KIND_LABEL[issue.kind]}
+                {issue.kind === 'number' && issue.expected ? `Number different from your CV (${issue.expected})` : KIND_LABEL[issue.kind]}
                 {issue.entry && issue.kind !== 'title' ? (
                   <>
                     {' · '}

@@ -78,4 +78,11 @@ describe('FactCheckPanel — cover letter issues', () => {
     expect(within(merged!).getByText('45%, 5')).toBeInTheDocument()
     expect(screen.queryByRole('button')).toBeNull()
   })
+
+  it('a changed figure says which figure the CV has', () => {
+    setup([
+      { id: 'number-3', kind: 'number', entry: 'Final Year Project', line: "J'ai conçu cinq modules.", lineIndex: 3, unsupported: ['5'], expected: '7', fixable: false },
+    ])
+    expect(screen.getByText(/Number different from your CV \(7\)/)).toBeInTheDocument()
+  })
 })

@@ -28,6 +28,7 @@ export const TECHNOLOGIES: Technology[] = [
   { name: 'Node.js', aliases: ['NodeJS'] }, { name: 'Express', aliases: ['Express.js', 'ExpressJS'], exactCase: true },
   { name: 'NestJS' }, { name: 'FastAPI' }, { name: 'Django' }, { name: 'Flask', exactCase: true },
   { name: 'Spring Boot' }, { name: 'Spring', exactCase: true }, { name: 'Laravel' }, { name: 'Rails', aliases: ['Ruby on Rails'], exactCase: true },
+  { name: 'ERPNext' }, { name: 'SAP', exactCase: true },
   { name: '.NET', aliases: ['dotnet', 'ASP.NET'] }, { name: 'Odoo' }, { name: 'Prisma' },
   // Data
   { name: 'PostgreSQL', aliases: ['Postgres'] }, { name: 'MySQL' }, { name: 'MariaDB' }, { name: 'SQLite' },
