@@ -20,7 +20,7 @@ export async function GET(
 
   const application = await prisma.application.findUnique({
     where: { id },
-    select: { userId: true, coverLetter: true, company: true, role: true },
+    select: { userId: true, coverLetter: true, company: true, role: true, language: true },
   })
 
   if (!application || application.userId !== userId) {
@@ -48,7 +48,8 @@ export async function GET(
       application.coverLetter,
       user?.cvText ?? '',
       application.company,
-      application.role
+      application.role,
+      { language: application.language }
     )
 
     const slug = `${application.company}-${application.role}`

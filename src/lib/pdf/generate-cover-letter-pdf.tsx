@@ -37,12 +37,19 @@ function extractCandidateHeader(cvText: string): { name: string; contact: string
   return { name, contact }
 }
 
-function formatDate(): string {
-  return new Date().toLocaleDateString('en-US', {
+export type LetterLanguage = 'FR' | 'EN'
+
+/** Date and subject line of the letter, in its language ("25 novembre 2026", "Objet : …"). */
+export function letterHeader(language: LetterLanguage, role: string, date: Date): { date: string; subject: string } {
+  const formatted = date.toLocaleDateString(language === 'FR' ? 'fr-FR' : 'en-US', {
     year: 'numeric',
     month: 'long',
     day: 'numeric',
+    timeZone: 'Europe/Paris',
   })
+  return language === 'FR'
+    ? { date: formatted, subject: `Objet : Candidature au poste de ${role}` }
+    : { date: formatted, subject: `Subject: Application for the ${role} position` }
 }
 
 const C = {
@@ -130,9 +137,10 @@ interface CoverLetterDocProps {
   role: string
   company: string
   body: string
+  header: { date: string; subject: string }
 }
 
-function CoverLetterDoc({ candidateName, candidateContact, role, company, body }: CoverLetterDocProps) {
+function CoverLetterDoc({ candidateName, candidateContact, role, company, body, header }: CoverLetterDocProps) {
   const cleanBody = stripMarkdown(body)
   const paragraphs = cleanBody
     .split(/\n{2,}/)
@@ -150,8 +158,8 @@ function CoverLetterDoc({ candidateName, candidateContact, role, company, body }
         {candidateContact ? <Text style={S.contact}>{candidateContact}</Text> : null}
         <View style={S.headerRule} />
 
-        <Text style={S.date}>{formatDate()}</Text>
-        <Text style={S.recipientLabel}>Re: Application for {role}</Text>
+        <Text style={S.date}>{header.date}</Text>
+        <Text style={S.recipientLabel}>{header.subject}</Text>
         <Text style={S.recipientCompany}>{company}</Text>
 
         {paragraphs.map((p, i) => (
@@ -170,7 +178,8 @@ export async function generateCoverLetterPdf(
   coverLetter: string,
   cvText: string,
   company: string,
-  role: string
+  role: string,
+  { language = 'EN', date = new Date() }: { language?: LetterLanguage; date?: Date } = {}
 ): Promise<Buffer> {
   // Only characters the built-in Helvetica can draw (see lib/text/typography.ts).
   const { name, contact } = extractCandidateHeader(toPdfSafe(cvText))
@@ -181,6 +190,7 @@ export async function generateCoverLetterPdf(
       role={toPdfSafe(role)}
       company={toPdfSafe(company)}
       body={toPdfSafe(coverLetter)}
+      header={letterHeader(language, toPdfSafe(role), date)}
     />
   )
 }

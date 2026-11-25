@@ -153,3 +153,25 @@ EDUCATION
     expect(text).toContain('Lycée Exemple')
   })
 })
+
+describe('cover letter PDF: header in the language of the letter', () => {
+  const DATE = new Date('2026-11-25T12:00:00Z')
+
+  it('FR: French date and "Objet : Candidature au poste de …"', async () => {
+    const { text } = await extractPdfText(
+      await generateCoverLetterPdf('Corps.', ORIGINAL_CV, 'Contoso Consulting', 'Consultant', { language: 'FR', date: DATE })
+    )
+    expect(text).toContain('25 novembre 2026')
+    expect(text).toContain('Objet : Candidature au poste de Consultant')
+    expect(text).not.toMatch(/November|Application for|Re:/)
+  })
+
+  it('EN: English date and "Subject: Application for …"', async () => {
+    const { text } = await extractPdfText(
+      await generateCoverLetterPdf('Body.', ORIGINAL_CV, 'Contoso Consulting', 'Consultant', { language: 'EN', date: DATE })
+    )
+    expect(text).toContain('November 25, 2026')
+    expect(text).toContain('Subject: Application for the Consultant position')
+    expect(text).not.toMatch(/novembre|Objet|Re:/)
+  })
+})
