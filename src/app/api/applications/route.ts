@@ -1,11 +1,13 @@
-import { auth, currentUser } from '@clerk/nextjs/server'
+import { currentUser } from '@clerk/nextjs/server'
+import { getActor } from '@/lib/actor'
 import { NextResponse } from 'next/server'
 import { createApplicationSchema } from '@/lib/validation'
 import { prisma } from '@/lib/prisma'
 import { checkAndIncrementUsage } from '@/lib/usage'
 
 export async function GET() {
-  const { userId } = await auth()
+  const actor = await getActor()
+  const userId = actor?.id
   if (!userId) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
@@ -19,7 +21,8 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  const { userId } = await auth()
+  const actor = await getActor()
+  const userId = actor?.id
   if (!userId) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
@@ -36,8 +39,8 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: parsed.error.issues[0]?.message ?? 'Invalid input' }, { status: 400 })
   }
 
-  // Ensure user exists in our DB
-  const clerkUser = await currentUser()
+  // Ensure user exists in our DB (a demo row always exists: it has no Clerk user)
+  const clerkUser = actor?.kind === 'user' ? await currentUser() : null
   await prisma.user.upsert({
     where: { id: userId },
     create: {

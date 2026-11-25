@@ -1,4 +1,4 @@
-import { auth } from '@clerk/nextjs/server'
+import { getActor } from '@/lib/actor'
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { generateCoverLetterPdf } from '@/lib/pdf/generate-cover-letter-pdf'
@@ -8,7 +8,8 @@ export async function GET(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const { userId } = await auth()
+  const actor = await getActor()
+  const userId = actor?.id
   if (!userId) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }

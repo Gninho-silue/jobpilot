@@ -1,11 +1,12 @@
-import { auth } from '@clerk/nextjs/server'
+import { getActor } from '@/lib/actor'
 import { Navbar } from '@/components/layout/navbar'
 import { Sidebar } from '@/components/layout/sidebar'
 import { Toaster } from 'sonner'
 import { prisma } from '@/lib/prisma'
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
-  const { userId } = await auth()
+  const actor = await getActor()
+  const userId = actor?.id
   const dbUser = userId
     ? await prisma.user.findUnique({ where: { id: userId }, select: { plan: true } })
     : null

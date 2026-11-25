@@ -1,4 +1,4 @@
-import { auth } from '@clerk/nextjs/server'
+import { getActor } from '@/lib/actor'
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { factCheckActionSchema } from '@/lib/validation'
@@ -21,7 +21,8 @@ async function loadOwned(userId: string, id: string) {
 
 /** Unsupported claims of the adapted CV, or of the cover letter with ?document=cover-letter (shown before export). */
 export async function GET(request: Request, { params }: Params) {
-  const { userId } = await auth()
+  const actor = await getActor()
+  const userId = actor?.id
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const { id } = await params
@@ -37,7 +38,8 @@ export async function GET(request: Request, { params }: Params) {
 
 /** Fix one issue in one click, or approve a title variant. */
 export async function POST(request: Request, { params }: Params) {
-  const { userId } = await auth()
+  const actor = await getActor()
+  const userId = actor?.id
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const { id } = await params

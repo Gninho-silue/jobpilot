@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { auth } from '@clerk/nextjs/server'
+import { getActor } from '@/lib/actor'
 import { redirect } from 'next/navigation'
 import { Zap, Crown, CreditCard } from 'lucide-react'
 
@@ -11,8 +11,9 @@ import { UpgradeButton } from '@/components/upgrade-button'
 import { ManageSubscriptionButton } from '@/components/manage-subscription-button'
 
 export default async function SettingsPage() {
-  const { userId } = await auth()
-  if (!userId) redirect('/sign-in')
+  const actor = await getActor()
+  if (!actor) redirect('/sign-in')
+  const userId = actor.id
 
   const dbUser = await prisma.user.findUnique({
     where: { id: userId },

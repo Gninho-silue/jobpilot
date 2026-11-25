@@ -1,4 +1,4 @@
-import { auth } from '@clerk/nextjs/server'
+import { getActor } from '@/lib/actor'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { isOwnCvPath, signCvUrl } from '@/lib/cv-storage'
@@ -9,7 +9,8 @@ import { isOwnCvPath, signCvUrl } from '@/lib/cv-storage'
  * Storage send it as an attachment.
  */
 export async function GET(request: NextRequest) {
-  const { userId } = await auth()
+  const actor = await getActor()
+  const userId = actor?.id
   if (!userId) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }

@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { create as groqCreate } from '@test/mocks/groq'
+import { setRequestCookie } from '@test/mocks/next-headers'
+import { DEMO_COOKIE, DEMO_TTL_MS, signDemoCookie } from '@/lib/demo/cookie'
 import { emptyRequest, formRequest, jsonRequest, readJson, routeParams } from '@test/helpers/http'
 import * as applications from '@/app/api/applications/route'
 import * as application from '@/app/api/applications/[id]/route'
@@ -54,5 +56,25 @@ describe('every authenticated API route', () => {
     expect(res.status).toBe(401)
     expect(await readJson(res)).toEqual({ error: 'Unauthorized' })
     expect(groqCreate).not.toHaveBeenCalled()
+  })
+})
+
+describe('every authenticated API route rejects a bad demo cookie', () => {
+  it.each(cases)('%s → 401 with a forged demo cookie', async (_name, call) => {
+    setRequestCookie(DEMO_COOKIE, signDemoCookie('demo_visitor99').slice(0, -4) + 'AAAA')
+    const res = await call()
+    expect(res.status).toBe(401)
+    expect(groqCreate).not.toHaveBeenCalled()
+  })
+
+  it.each(cases)('%s → 401 with an expired demo cookie', async (_name, call) => {
+    setRequestCookie(DEMO_COOKIE, signDemoCookie('demo_visitor99', Date.now() - DEMO_TTL_MS - 1000))
+    const res = await call()
+    expect(res.status).toBe(401)
+    expect(groqCreate).not.toHaveBeenCalled()
+  })
+
+  it('covers the 17 authenticated route files', () => {
+    expect(new Set(cases.map(([name]) => name.replace(/^\S+ /, ''))).size).toBe(17)
   })
 })

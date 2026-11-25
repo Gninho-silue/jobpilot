@@ -1,11 +1,14 @@
-import { auth, currentUser } from '@clerk/nextjs/server'
+import { currentUser } from '@clerk/nextjs/server'
+import { getActor } from '@/lib/actor'
 import { NextResponse } from 'next/server'
 import { billing } from '@/lib/billing'
 import { prisma } from '@/lib/prisma'
 
 export async function POST() {
-  const { userId } = await auth()
+  const actor = await getActor()
+  const userId = actor?.id
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  if (actor?.kind === 'demo') return NextResponse.json({ error: 'Not available in the demo workspace' }, { status: 403 })
 
   const user = await currentUser()
   const email = user?.emailAddresses[0]?.emailAddress

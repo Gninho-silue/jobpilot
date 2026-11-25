@@ -1,4 +1,5 @@
-import { auth, currentUser } from '@clerk/nextjs/server'
+import { currentUser } from '@clerk/nextjs/server'
+import { getActor } from '@/lib/actor'
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { CV_FILE_ROUTE, uploadCv } from '@/lib/cv-storage'
@@ -8,9 +9,14 @@ import { extractPdfText } from '@/lib/pdf/extract-text'
 const PDF_MAGIC = [0x25, 0x50, 0x44, 0x46] // %PDF
 
 export async function POST(request: Request) {
-  const { userId } = await auth()
+  const actor = await getActor()
+  const userId = actor?.id
   if (!userId) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+  // The demo comes with a fictional CV: no real file is ever stored for a demo.
+  if (actor?.kind === 'demo') {
+    return NextResponse.json({ error: 'CV upload is not available in the demo workspace.' }, { status: 403 })
   }
 
   let formData: FormData
@@ -69,7 +75,7 @@ export async function POST(request: Request) {
   }
   const cvPath = uploaded.path
 
-  const clerkUser = await currentUser()
+  const clerkUser = actor?.kind === 'user' ? await currentUser() : null
   await prisma.user.upsert({
     where: { id: userId },
     create: {

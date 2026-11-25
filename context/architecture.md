@@ -77,7 +77,8 @@ UsageCounter
 - Every user signs in via Clerk (email, Google, or GitHub)
 - Clerk user ID is the primary key in our database
 - Every application belongs to exactly one user
-- API routes validate Clerk session before any data access
+- API routes call `getActor()` (`lib/actor.ts`) before any data access: a Clerk session, or else a demo visitor named by the signed `jp_demo` cookie (`lib/demo/cookie.ts`, HMAC-SHA256 with `DEMO_COOKIE_SECRET`, 24 h). A Clerk session always wins, and signing in removes the demo cookie (`lib/demo/proxy.ts`)
+- A demo visitor is a `User` row with `id = demo_<random>` and `isDemo = true`, holding fictional data only, purged after 24 h. The `userId` filters that isolate users therefore isolate demos too. No CV upload in the demo
 - Supabase Storage files are namespaced by userId: `cvs/{userId}/cv.pdf`; the bucket is private and no public URL is ever built (`lib/cv-storage.ts`)
 
 ## Language Detection
@@ -88,7 +89,7 @@ UsageCounter
 
 ## Invariants
 
-1. No API route runs without first validating the Clerk session
+1. No API route runs without an authenticated actor (Clerk session or signed demo cookie). Exceptions, each with its own protection: the billing webhook (provider signature), the demo purge cron (`CRON_SECRET`) and `POST /api/demo`, which creates the demo actor (rate-limited per IP)
 2. Free tier limits are checked server-side before every AI generation call
 3. CV text is extracted once on upload and stored — never re-parsed on every request
 4. All AI prompts are defined in `lib/ai/` — no prompt strings inline in route handlers

@@ -1,4 +1,4 @@
-import { auth } from '@clerk/nextjs/server'
+import { getActor } from '@/lib/actor'
 import { redirect } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
@@ -45,8 +45,7 @@ const kanbanColumns = [
 ]
 
 export default async function LandingPage() {
-  const { userId } = await auth()
-  if (userId) redirect('/dashboard')
+  if (await getActor()) redirect('/dashboard')
 
   return (
     <div

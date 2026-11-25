@@ -1,4 +1,4 @@
-import { auth } from '@clerk/nextjs/server'
+import { getActor } from '@/lib/actor'
 import { NextResponse } from 'next/server'
 import { parseOfferSchema } from '@/lib/validation'
 import { parseJobOffer } from '@/lib/ai/parse-offer'
@@ -6,7 +6,8 @@ import { checkLlmRateLimit, tooManyRequests } from '@/lib/rate-limit'
 import { TruncatedAnswerError } from '@/lib/ai/call'
 
 export async function POST(request: Request) {
-  const { userId } = await auth()
+  const actor = await getActor()
+  const userId = actor?.id
   if (!userId) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }

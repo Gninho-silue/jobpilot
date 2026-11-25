@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
-import { auth, currentUser } from '@clerk/nextjs/server'
+import { currentUser } from '@clerk/nextjs/server'
+import { getActor } from '@/lib/actor'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 
@@ -53,10 +54,11 @@ function timeAgo(date: Date): string {
 }
 
 export default async function DashboardPage() {
-  const { userId } = await auth()
-  if (!userId) redirect('/sign-in')
+  const actor = await getActor()
+  if (!actor) redirect('/sign-in')
+  const userId = actor.id
 
-  const clerkUser = await currentUser()
+  const clerkUser = actor.kind === 'user' ? await currentUser() : null
   const firstName = clerkUser?.firstName ?? 'there'
 
   const now = new Date()

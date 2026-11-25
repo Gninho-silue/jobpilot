@@ -25,7 +25,8 @@ relevant file before continuing.
 
 ## Key Invariants (never violate)
 
-- No API route runs without first validating the Clerk session
+- No API route runs without an authenticated actor (Clerk session or signed
+  demo cookie), via `getActor()` in `lib/actor.ts`. Exceptions, each with its own protection: the billing webhook (provider signature), the demo purge cron (`CRON_SECRET`) and `POST /api/demo`, which creates the demo actor (rate-limited per IP)
 - Free tier limits are checked server-side before every AI call
 - All AI prompts are defined in lib/ai/ — never inline
 - components/ui/\* is never modified manually
