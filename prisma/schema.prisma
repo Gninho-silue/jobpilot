@@ -97,3 +97,19 @@ model ProcessedBillingEvent {
   type        String
   processedAt DateTime @default(now())
 }
+
+/// One execution of a scheduled job (Vercel Cron), kept because the free Vercel
+/// logs only go back one hour.
+model CronRun {
+  id         String    @id @default(cuid())
+  job        String
+  startedAt  DateTime  @default(now())
+  finishedAt DateTime?
+  /// "success" or "error"
+  status     String
+  /// Demo workspaces deleted (purge-demo); null when the run failed.
+  deleted    Int?
+  error      String?   @db.Text
+
+  @@index([job, startedAt])
+}

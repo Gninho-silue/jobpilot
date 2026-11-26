@@ -136,9 +136,34 @@ describe('GET /api/cron/purge-demo', () => {
   const call = (authorization?: string) =>
     cron.GET(new NextRequest('http://localhost:3000/api/cron/purge-demo', { headers: authorization ? { authorization } : {} }))
 
-  it('401 without or with a wrong CRON_SECRET', async () => {
+  it('401 without or with a wrong CRON_SECRET, and nothing is recorded', async () => {
     expect((await call()).status).toBe(401)
     expect((await call('Bearer wrong')).status).toBe(401)
+    expect(await prisma.cronRun.count()).toBe(0)
+  })
+
+  it('records each run: time, demos deleted, status', async () => {
+    await prisma.user.create({ data: { id: 'demo_expired03', email: 'demo_expired03@demo.invalid', isDemo: true, createdAt: new Date(Date.now() - DEMO_MAX_AGE_MS - 1000) } })
+    await call(`Bearer ${process.env.CRON_SECRET}`)
+    await call(`Bearer ${process.env.CRON_SECRET}`)
+    const runs = await prisma.cronRun.findMany({ orderBy: { startedAt: 'asc' } })
+    expect(runs.map(r => [r.job, r.status, r.deleted, r.error])).toEqual([
+      ['purge-demo', 'success', 1, null],
+      ['purge-demo', 'success', 0, null],
+    ])
+    expect(runs[0]!.finishedAt!.getTime()).toBeGreaterThanOrEqual(runs[0]!.startedAt.getTime())
+  })
+
+  it('a failed run is recorded with its error, and answers 500', async () => {
+    const spy = vi.spyOn(prisma.user, 'findMany').mockRejectedValueOnce(new Error('connection lost'))
+    try {
+      const res = await call(`Bearer ${process.env.CRON_SECRET}`)
+      expect(res.status).toBe(500)
+    } finally {
+      spy.mockRestore()
+    }
+    const [run] = await prisma.cronRun.findMany()
+    expect(run).toEqual(expect.objectContaining({ job: 'purge-demo', status: 'error', deleted: null, error: 'connection lost' }))
   })
 
   it('purges with the right secret', async () => {
