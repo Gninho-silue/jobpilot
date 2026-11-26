@@ -3,7 +3,11 @@ import { ClerkProvider } from '@clerk/nextjs'
 import { Providers } from '@/components/providers'
 import { Analytics } from '@vercel/analytics/react'
 import { SpeedInsights } from '@vercel/speed-insights/next'
+import { Geist } from 'next/font/google'
 import './globals.css'
+
+// Text font (JetBrains Mono stays for figures and code: see globals.css).
+const geist = Geist({ subsets: ['latin'], variable: '--font-geist', display: 'swap' })
 
 export const viewport: Viewport = {
   themeColor: [
@@ -84,7 +88,7 @@ export default function RootLayout({
 }>) {
   return (
     <ClerkProvider>
-      <html lang="en" suppressHydrationWarning className="dark h-full">
+      <html lang="en" suppressHydrationWarning className={`dark h-full ${geist.variable}`}>
         <head>
           {/* Runs before React hydrates — prevents FOUC without injecting into React tree */}
           <script dangerouslySetInnerHTML={{ __html: themeScript }} />

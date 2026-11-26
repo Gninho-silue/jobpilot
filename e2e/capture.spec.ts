@@ -1,14 +1,19 @@
 import { mkdirSync } from 'node:fs'
 import { expect, test, type Page } from '@playwright/test'
 
-// Step 6.1 of JOBPILOT_PLAN.md: "before" screenshots of every screen, from the
-// demo workspace (fictional data), at 1440 and 390 px, dark and light themes.
-// Run only on demand: CAPTURE=1 npm run test:e2e -- capture-before.spec.ts
+// Step 6 of JOBPILOT_PLAN.md: screenshots of every screen, from the demo workspace
+// (fictional data), at 1440 and 390 px, dark and light themes.
+// Run only on demand:
+//   CAPTURE=1 npm run test:e2e -- capture.spec.ts                 → design/before (PNG, 6.1)
+//   CAPTURE=1 CAPTURE_DIR=design/after npm run test:e2e -- capture.spec.ts   (JPEG)
+//   CAPTURE_ONLY=dashboard|kanban keeps only the matching screens.
 // Every AI and Stripe call is blocked: no credit spent, nothing created outside.
 test.skip(!process.env.CAPTURE, 'screenshots only on demand (CAPTURE=1)')
 test.describe.configure({ timeout: 300_000 })
 
-const OUT = 'design/before'
+const OUT = process.env.CAPTURE_DIR ?? 'design/before'
+const ONLY = process.env.CAPTURE_ONLY ? new RegExp(process.env.CAPTURE_ONLY) : null
+const JPEG = OUT !== 'design/before'
 mkdirSync(OUT, { recursive: true })
 
 const BLOCKED = /\/api\/(offers\/parse|interview\/feedback|stripe\/(checkout|portal)|applications\/[^/]+\/(adapt-resume|cover-letter|interview))$/
@@ -31,8 +36,10 @@ for (const viewport of VIEWPORTS) {
       await page.addInitScript(t => localStorage.setItem('theme', t), theme)
       await blockOutsideCalls(page)
       const shot = async (name: string, fullPage = true) => {
+        if (ONLY && !ONLY.test(name)) return
         await page.waitForTimeout(400)
-        await page.screenshot({ path: `${OUT}/${name}-${viewport.name}-${theme}.png`, fullPage, animations: 'disabled' })
+        const path = `${OUT}/${name}-${viewport.name}-${theme}.${JPEG ? 'jpg' : 'png'}`
+        await page.screenshot({ path, fullPage, animations: 'disabled', ...(JPEG ? { type: 'jpeg' as const, quality: 72 } : {}) })
       }
 
       // Public pages.

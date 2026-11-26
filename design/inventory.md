@@ -2,8 +2,8 @@
 
 Screenshots in `design/before/`, taken from the demo workspace (fictional data), at
 **1440 px and 390 px**, **dark and light** themes: `<screen>-<width>-<theme>.png`
-(92 files). To capture them again: `CAPTURE=1 npm run test:e2e -- capture-before.spec.ts`
-(`e2e/capture-before.spec.ts`). The script blocks every AI and Stripe call.
+(92 files). To capture them again: `CAPTURE=1 npm run test:e2e -- capture.spec.ts`
+(`e2e/capture.spec.ts`). The script blocks every AI and Stripe call.
 
 The round "N" badge at the bottom left and the "Compiling…" pill are the Next.js dev
 indicator: they are not in production.
