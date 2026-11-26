@@ -60,14 +60,14 @@ function ApplicationCard({ app, onEdit, isDragging, onDragStart, onDragEnd }: Ap
       onDragStart={e => onDragStart?.(e, app.id)}
       onDragEnd={onDragEnd}
       onClick={() => onEdit(app)}
-      className={`grid w-full gap-2 rounded-xl border bg-[hsl(var(--bg-surface))] p-3 text-left transition-colors select-none cursor-grab active:cursor-grabbing ${
+      className={`grid w-full min-w-0 grid-cols-[minmax(0,1fr)] gap-2 overflow-hidden rounded-xl border bg-[hsl(var(--bg-surface))] p-3 text-left transition-colors select-none cursor-grab active:cursor-grabbing ${
         isDragging
           ? 'opacity-40 border-[hsl(var(--accent-primary))]'
           : 'border-[hsl(var(--border-default))] hover:border-[hsl(var(--border-strong))]'
       }`}
     >
-      <span className="flex items-start justify-between gap-2">
-        <span className="min-w-0">
+      <span className="flex min-w-0 items-start justify-between gap-2">
+        <span className="min-w-0 flex-1">
           <span className="block truncate text-sm font-semibold text-[hsl(var(--text-primary))]">{app.company}</span>
           <span className="block truncate text-sm text-[hsl(var(--text-secondary))]">{app.role}</span>
         </span>
@@ -75,9 +75,9 @@ function ApplicationCard({ app, onEdit, isDragging, onDragStart, onDragEnd }: Ap
           {app.language}
         </span>
       </span>
-      <span className="flex items-center justify-between gap-2 text-xs text-[hsl(var(--text-muted))]">
-        <span>{timeAgo(app.createdAt)}</span>
-        {app.salary ? <span className="num text-[hsl(var(--text-secondary))]">{app.salary}</span> : null}
+      <span className="flex min-w-0 items-center justify-between gap-2 text-xs text-[hsl(var(--text-muted))]">
+        <span className="shrink-0">{timeAgo(app.createdAt)}</span>
+        {app.salary ? <span className="num min-w-0 truncate text-[hsl(var(--text-secondary))]">{app.salary}</span> : null}
       </span>
     </button>
   )
@@ -129,7 +129,7 @@ function KanbanColumn({ status, label, apps, draggedAppId, onAddClick, onEditApp
         <span className="num text-xs font-medium text-[hsl(var(--text-muted))]">{apps.length}</span>
       </h2>
 
-      <div className="flex min-h-[90px] flex-1 flex-col gap-2">
+      <div className="flex min-h-[90px] min-w-0 flex-1 flex-col gap-2">
         {apps.map(app => (
           <ApplicationCard
             key={app.id}
