@@ -83,7 +83,8 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <ClerkProvider>
+    // No Clerk telemetry from the browser; the server side reads NEXT_PUBLIC_CLERK_TELEMETRY_DISABLED.
+    <ClerkProvider telemetry={false}>
       <html lang="en" suppressHydrationWarning className="dark h-full">
         <head>
           {/* Runs before React hydrates — prevents FOUC without injecting into React tree */}
