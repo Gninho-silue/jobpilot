@@ -87,10 +87,10 @@ Cas réels vus dans la démo le 25/11 :
 **Sur une branche `redesign`. Aucun push sur `main` avant validation de Gninho sur la preview Vercel.**
 
 ### 6.1 Inventaire (sans toucher au code)
-- [ ] Avec la démo (pas besoin de Clerk), captures **avant** de chaque écran à 1440 et 390 px, thèmes sombre et clair : accueil, connexion et inscription, dashboard, Applications (kanban + panneau de détail : Overview, Resume, Cover Letter, Interview), My CV, Interview Prep, entretien simulé, Settings, modales (nouvelle candidature, upgrade, confirmations), bandeau de démo, états vides, chargement, erreur.
+- [x] Avec la démo (pas besoin de Clerk), captures **avant** de chaque écran à 1440 et 390 px, thèmes sombre et clair : accueil, connexion et inscription, dashboard, Applications (kanban + panneau de détail : Overview, Resume, Cover Letter, Interview), My CV, Interview Prep, entretien simulé, Settings, modales (nouvelle candidature, upgrade, confirmations), bandeau de démo, états vides, chargement, erreur.
 
 ### 6.2 Direction visuelle — **STOP : attendre la validation de Gninho**
-- [ ] Une page de proposition : typographie, palette, espacements, composants, et **la solution mobile** (voir 6.4), avec 2 écrans maquettés (dashboard desktop + dashboard mobile 390 px).
+- [x] Une page de proposition : typographie, palette, espacements, composants, et **la solution mobile** (voir 6.4), avec 2 écrans maquettés (dashboard desktop + dashboard mobile 390 px).
 - [ ] Ne rien coder avant la validation.
 
 ### 6.3 Contraintes générales
