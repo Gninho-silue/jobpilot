@@ -27,8 +27,13 @@ export default defineConfig({
     screenshot: 'only-on-failure',
   },
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
+  // CI fails fast (no retries: an unstable test gets fixed, not retried) and keeps
+  // screenshots of failures; locally the same settings apply.
+  forbidOnly: Boolean(process.env.CI),
+  retries: 0,
   webServer: {
-    command: 'npx next dev --port 3100',
+    // CI tests the production build (`npm run build` runs before); locally the dev server.
+    command: process.env.CI ? 'npx next start --port 3100' : 'npx next dev --port 3100',
     url: 'http://localhost:3100',
     // Never reuse a running dev server: it would use the real DATABASE_URL.
     reuseExistingServer: false,
