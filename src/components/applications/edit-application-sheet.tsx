@@ -754,12 +754,13 @@ interface InterviewTabProps {
   company: string
   hasCv: boolean
   language: 'FR' | 'EN'
-  isPro: boolean
+  /** Feedback on interview answers: Pro accounts and the demo. */
+  feedbackAvailable: boolean
   initialQuestions: InterviewQuestion[] | null
   onGenerated: (questions: InterviewQuestion[]) => void
 }
 
-function InterviewTab({ confirm, applicationId, company, hasCv, language, isPro, initialQuestions, onGenerated }: InterviewTabProps) {
+function InterviewTab({ confirm, applicationId, company, hasCv, language, feedbackAvailable, initialQuestions, onGenerated }: InterviewTabProps) {
   const [questions, setQuestions] = useState<InterviewQuestion[] | null>(initialQuestions)
   const [generating, setGenerating] = useState(false)
   const [error, setError] = useState('')
@@ -922,7 +923,7 @@ function InterviewTab({ confirm, applicationId, company, hasCv, language, isPro,
             company={company}
             questions={questions}
             language={language}
-            isPro={isPro}
+            feedbackAvailable={feedbackAvailable}
             onClose={() => setMockOpen(false)}
           />
         )}
@@ -960,7 +961,8 @@ interface EditApplicationSheetProps {
   application: Application | null
   open: boolean
   hasCv: boolean
-  isPro: boolean
+  /** Feedback on interview answers: Pro accounts and the demo. */
+  feedbackAvailable: boolean
   onOpenChange: (open: boolean) => void
   onUpdated: () => void
   onDeleted: () => void
@@ -973,7 +975,7 @@ export function EditApplicationSheet({
   application,
   open,
   hasCv,
-  isPro,
+  feedbackAvailable,
   onOpenChange,
   onUpdated,
   onDeleted,
@@ -1220,7 +1222,7 @@ export function EditApplicationSheet({
               company={application.company}
               hasCv={hasCv}
               language={application.language}
-              isPro={isPro}
+              feedbackAvailable={feedbackAvailable}
               initialQuestions={application.interviewQs}
               onGenerated={qs => onInterviewQsGenerated(application.id, qs)}
             />

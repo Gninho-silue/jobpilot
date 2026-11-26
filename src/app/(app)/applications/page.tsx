@@ -170,7 +170,7 @@ export default function ApplicationsPage() {
   const [editApp, setEditApp] = useState<Application | null>(null)
   const [sheetOpen, setSheetOpen] = useState(false)
   const [userHasCv, setUserHasCv] = useState(false)
-  const [userIsPro, setUserIsPro] = useState(false)
+  const [feedbackAvailable, setFeedbackAvailable] = useState(false)
   const [draggedAppId, setDraggedAppId] = useState<string | null>(null)
 
   // A failed load is an error to show, never an empty board ("No applications yet").
@@ -242,8 +242,8 @@ export default function ApplicationsPage() {
       .then(j => { if (j.data?.hasCv) setUserHasCv(true) })
       .catch(() => {})
     fetch('/api/user/plan')
-      .then(r => r.json() as Promise<{ data?: { plan: string } }>)
-      .then(j => { if (j.data?.plan === 'PRO') setUserIsPro(true) })
+      .then(r => r.json() as Promise<{ data?: { plan: string; interviewFeedback?: boolean } }>)
+      .then(j => { if (j.data?.interviewFeedback) setFeedbackAvailable(true) })
       .catch(() => {})
   }, [fetchApplications])
 
@@ -556,7 +556,7 @@ export default function ApplicationsPage() {
         application={editApp}
         open={sheetOpen}
         hasCv={userHasCv}
-        isPro={userIsPro}
+        feedbackAvailable={feedbackAvailable}
         onOpenChange={handleSheetOpenChange}
         onUpdated={() => void fetchApplications()}
         onDeleted={() => void fetchApplications()}

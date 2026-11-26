@@ -118,7 +118,7 @@ Capture du téléphone de Gninho à 390 px le 25/11 : la barre latérale prend l
 - [ ] Push de la branche `redesign` → donner l'URL de preview Vercel à Gninho. Merge dans `main` seulement après sa validation.
 
 ## Étape 7 — E2E et vérification en production
-- [x] Playwright : parcours démo complet (ouvrir la démo → créer une candidature depuis une offre → adapter le CV → voir la vérification → générer la lettre → entraînement d'entretien → export PDF). Avec un modèle factice (`E2E_FAKE_LLM=1`). Sans l'entraînement d'entretien : dans l'interface, le retour sur les réponses est réservé au plan Pro, même en démo.
+- [x] Playwright : parcours démo complet (ouvrir la démo → créer une candidature depuis une offre → adapter le CV → voir la vérification → générer la lettre → entraînement d'entretien → export PDF). Avec un modèle factice (`E2E_FAKE_LLM=1`), y compris une réponse d'entretien et son retour (ouvert à la démo dans son quota quotidien).
 - [x] Parcours connecté avec Clerk en mode test (testing tokens), si faisable sans secrets dans le repo. (Panneau de vérification connecté avec `@clerk/testing` ; clés et mot de passe dans les secrets GitHub.)
 - [x] Test de fumée après chaque déploiement Vercel (page d'accueil, démo, API santé) : brancher `npm run smoke:prod` (sitemap, robots, métadonnées) sur chaque déploiement en production (demande de Gninho, 26/11).
 - [ ] Commit : `test(e2e): demo flow and production smoke test` → push.

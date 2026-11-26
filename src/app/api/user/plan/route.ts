@@ -14,5 +14,9 @@ export async function GET() {
     select: { plan: true },
   })
 
-  return NextResponse.json({ data: { plan: user?.plan ?? 'FREE' } })
+  const plan = user?.plan ?? 'FREE'
+  const demo = actor?.kind === 'demo'
+  // Feedback on interview answers: Pro accounts, and demo visitors within their
+  // daily feedback quota (lib/demo/quota.ts, checked by /api/interview/feedback).
+  return NextResponse.json({ data: { plan, demo, interviewFeedback: plan === 'PRO' || demo } })
 }

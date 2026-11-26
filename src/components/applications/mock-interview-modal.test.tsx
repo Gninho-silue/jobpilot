@@ -14,7 +14,7 @@ const QUESTIONS = [
 
 describe('MockInterviewModal: an accessible dialog', () => {
   it('is a modal dialog named after the company, focused on open', () => {
-    render(<MockInterviewModal company="Woodgrove Bank" questions={QUESTIONS} language="EN" isPro={false} onClose={vi.fn()} />)
+    render(<MockInterviewModal company="Woodgrove Bank" questions={QUESTIONS} language="EN" feedbackAvailable={false} onClose={vi.fn()} />)
     const dialog = screen.getByRole('dialog', { name: 'Mock interview: Woodgrove Bank' })
     expect(dialog).toHaveAttribute('aria-modal', 'true')
     expect(dialog).toHaveFocus()
@@ -22,7 +22,7 @@ describe('MockInterviewModal: an accessible dialog', () => {
 
   it('Escape closes it', async () => {
     const onClose = vi.fn()
-    render(<MockInterviewModal company="Woodgrove Bank" questions={QUESTIONS} language="EN" isPro={false} onClose={onClose} />)
+    render(<MockInterviewModal company="Woodgrove Bank" questions={QUESTIONS} language="EN" feedbackAvailable={false} onClose={onClose} />)
     await userEvent.keyboard('{Escape}')
     expect(onClose).toHaveBeenCalled()
   })

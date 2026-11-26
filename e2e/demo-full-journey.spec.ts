@@ -15,7 +15,7 @@ async function exportPdf(page: Page, panel: ReturnType<Page['getByRole']>) {
   expect(file.suggestedFilename()).toMatch(/\.pdf$/)
 }
 
-test('demo: offer → application → adapted CV with its fact-check → letter → PDFs', async ({ page }) => {
+test('demo: offer → application → adapted CV with its fact-check → letter → PDFs → interview feedback', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 })
   await page.goto('/')
   await page.getByRole('button', { name: 'Try the demo' }).click()
@@ -45,4 +45,15 @@ test('demo: offer → application → adapted CV with its fact-check → letter 
   await panel.getByRole('button', { name: 'Generate Cover Letter' }).click()
   await expect(panel.getByText('Terraform').first()).toBeVisible({ timeout: 30_000 })
   await exportPdf(page, panel)
+
+  // Interview practice: one question, one answer, feedback on it (open to the
+  // demo within its daily feedback quota; Pro-only for free accounts).
+  await page.goto('/interview')
+  await page.waitForLoadState('networkidle')
+  await page.getByRole('button', { name: 'Practice' }).click()
+  const interview = page.getByRole('dialog', { name: 'Mock interview: Woodgrove Bank' })
+  await interview.getByPlaceholder(/Type your answer/).fill('I cached the slowest shipment queries in Redis and measured p95 before and after.')
+  await interview.getByRole('button', { name: /Next/ }).click()
+  await expect(interview.getByText('7/10')).toBeVisible()
+  await expect(interview.getByText('Concrete example from the CV.')).toBeVisible()
 })

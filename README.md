@@ -35,7 +35,7 @@ Cover letters go through a lighter version of the same check. It catches:
 - continuous integration turned into "continuous deployment";
 - generic phrases such as "aligns perfectly".
 
-The other features are a kanban tracker, interview questions built from the offer and the CV with feedback on answers (Pro plan), and PDF export.
+The other features are a kanban tracker, interview questions built from the offer and the CV with feedback on answers (Pro plan, and in the demo within a daily quota), and PDF export.
 
 ## Architecture
 
@@ -81,9 +81,9 @@ flowchart LR
 
 | Suite | Tests | What it covers |
 | --- | --- | --- |
-| Unit (Vitest) | 497 | fact-checker, prompts, LLM response parsing, dashboard figures, demo cookie, components (Testing Library) |
-| Integration (Vitest + Postgres) | 213 | every API route: 401 without a session, 404 on another user's data, quotas, rate limits, webhooks, demo isolation and purge |
-| End-to-end (Playwright) | 13 | the full demo journey (offer, adapted CV and its fact-check, cover letter, both PDFs), the fact-check panel at 1440, 1175 and 390 px, and the demo at 390 px, which fails if anything goes past the edge of the screen |
+| Unit (Vitest) | 499 | fact-checker, prompts, LLM response parsing, dashboard figures, demo cookie, components (Testing Library) |
+| Integration (Vitest + Postgres) | 216 | every API route: 401 without a session, 404 on another user's data, quotas, rate limits, webhooks, demo isolation and purge |
+| End-to-end (Playwright) | 13 | the full demo journey (offer, adapted CV and its fact-check, cover letter, both PDFs, feedback on an interview answer), the fact-check panel at 1440, 1175 and 390 px, and the demo at 390 px, which fails if anything goes past the edge of the screen |
 
 The unit project also has 10 tests that run only when the real (git-ignored) PDFs are present, so CI skips them. The tests never call Groq, Stripe or Supabase. The end-to-end tests answer with a fake language model (`E2E_FAKE_LLM=1`, which a production build refuses) and sign in with a Clerk test account.
 

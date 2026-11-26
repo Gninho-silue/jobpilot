@@ -12,7 +12,8 @@ interface MockInterviewModalProps {
   company: string
   questions: InterviewQuestion[]
   language: 'FR' | 'EN'
-  isPro: boolean
+  /** Feedback on each answer: Pro accounts and the demo (GET /api/user/plan → interviewFeedback). */
+  feedbackAvailable: boolean
   onClose: () => void
 }
 
@@ -106,7 +107,7 @@ function FeedbackCard({
   )
 }
 
-export function MockInterviewModal({ company, questions, language, isPro, onClose }: MockInterviewModalProps) {
+export function MockInterviewModal({ company, questions, language, feedbackAvailable, onClose }: MockInterviewModalProps) {
   const [index, setIndex] = useState(0)
   const [answers, setAnswers] = useState<string[]>(() => questions.map(() => ''))
   const [hintOpen, setHintOpen] = useState(false)
@@ -202,7 +203,7 @@ export function MockInterviewModal({ company, questions, language, isPro, onClos
   function shouldFetchFeedback(questionIndex: number): boolean {
     const answer = answers[questionIndex] ?? ''
     return (
-      isPro &&
+      feedbackAvailable &&
       answer.length >= 10 &&
       !feedbacks[questionIndex] &&
       !feedbackAttempted.has(questionIndex) &&
@@ -374,7 +375,7 @@ export function MockInterviewModal({ company, questions, language, isPro, onClos
           />
 
           {/* Feedback area */}
-          {!isPro && currentAnswer.length >= 10 && (
+          {!feedbackAvailable && currentAnswer.length >= 10 && (
             <div className="flex items-center justify-between rounded-lg border border-[hsl(var(--accent-primary))] bg-[hsl(var(--accent-light))] px-4 py-3">
               <p className="text-xs text-[hsl(var(--text-secondary))]">
                 Upgrade to Pro for AI feedback on your answers
@@ -388,14 +389,14 @@ export function MockInterviewModal({ company, questions, language, isPro, onClos
             </div>
           )}
 
-          {isPro && feedbackLoading && (
+          {feedbackAvailable && feedbackLoading && (
             <div className="flex items-center gap-2 text-xs text-[hsl(var(--text-muted))] py-2">
               <span className="h-3.5 w-3.5 border-2 border-[hsl(var(--accent-primary))] border-t-[hsl(var(--text-secondary))] rounded-full animate-spin inline-block" />
               Getting AI feedback...
             </div>
           )}
 
-          {isPro && currentFeedback && !feedbackLoading && (
+          {feedbackAvailable && currentFeedback && !feedbackLoading && (
             <FeedbackCard
               feedback={currentFeedback}
               betterOpen={betterAnswerOpen}
