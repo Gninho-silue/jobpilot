@@ -60,7 +60,7 @@ Problème : un LLM qui « adapte » un CV peut ajouter des compétences, entrepr
   - liens : URLs absentes du texte extrait (seuls les libellés « LinkedIn | GitHub | Portfolio ») → lire les annotations de lien du PDF à l'upload ; lien de projet rendu « GitHub ↗ » quelle que soit la valeur (« GitHub — ») ;
   - casse des certifications : `isSectionHeader` met la ligne en majuscules avant de tester si elle est en majuscules, donc toute ligne courte devient un titre de section.
   - Tests avec du texte contenant `-`, `%`, `é`, `&`, `_`.
-- [ ] Commit : `feat(ai): fact-check adapted CVs and cover letters against the original CV` → push. (Fait en un commit par bloc à la demande de Gninho : rendu PDF, prompts génériques, extraction des faits, vérificateur, régénération, marquage avant export, lettre. Push après la migration `20261125000000_application_approved_cv_title`.)
+- [x] Commit : `feat(ai): fact-check adapted CVs and cover letters against the original CV` → push. (Fait en un commit par bloc à la demande de Gninho : rendu PDF, prompts génériques, extraction des faits, vérificateur, régénération, marquage avant export, lettre. Push après la migration `20261125000000_application_approved_cv_title`.)
 
 ## Étape 4 — Démo sans inscription
 - [x] Bouton **« Try the demo »** sur la page d'accueil : ouvre un espace de démonstration avec un **CV fictif** (personnage inventé, aucune donnée réelle) et 4–5 candidatures fictives à différents stades, sans créer de compte.
@@ -68,7 +68,7 @@ Problème : un LLM qui « adapte » un CV peut ajouter des compétences, entrepr
 - [x] Bandeau permanent en mode démo : « Demo workspace — data resets daily. Payments run in Stripe test mode (card 4242 4242 4242 4242). »
 - [x] Le bouton « Upgrade » en démo ouvre Stripe Checkout en mode test (ça montre l'intégration) ; aucune vraie transaction possible.
 - [x] Tests : isolation entre visiteurs de démo, réinitialisation, quotas.
-- [ ] Commit : `feat(demo): no-signup demo workspace with seeded fictional data` → push. (Fait en une série de commits `feat(demo)` ; push après la migration et les variables Vercel.)
+- [x] Commit : `feat(demo): no-signup demo workspace with seeded fictional data` → push. (Fait en une série de commits `feat(demo)` ; push après la migration et les variables Vercel.)
 
 ## Étape 4.5 — Corrections préalables (avant l'étape 5)
 - [x] **Test E2E instable** : le test « Use » à 1175 px a expiré une fois. Trouver la cause (élément qui apparaît après une animation ? requête non attendue ?), corriger la cause et pas le timeout, puis lancer le test 10 fois de suite pour le prouver.
@@ -91,7 +91,7 @@ Cas réels vus dans la démo le 25/11 :
 
 ### 6.2 Direction visuelle — **STOP : attendre la validation de Gninho**
 - [x] Une page de proposition : typographie, palette, espacements, composants, et **la solution mobile** (voir 6.4), avec 2 écrans maquettés (dashboard desktop + dashboard mobile 390 px).
-- [ ] Ne rien coder avant la validation.
+- [x] Ne rien coder avant la validation. (Direction validée par Gninho le 26/11.)
 
 ### 6.3 Contraintes générales
 - Police sans-serif pour le texte (Geist Sans ou Inter) ; JetBrains Mono seulement pour les chiffres, le code et les badges techniques. Supprimer `--font-sans: "JetBrains Mono"`.
@@ -115,14 +115,14 @@ Capture du téléphone de Gninho à 390 px le 25/11 : la barre latérale prend l
 
 ### 6.5 Mise en œuvre (après validation)
 - [x] Un commit par zone : système de design et tokens, mise en page générale + mobile, dashboard, kanban et panneau, My CV, entretien, Settings et modales, accueil. Captures **après** à chaque fois.
-- [ ] Push de la branche `redesign` → donner l'URL de preview Vercel à Gninho. Merge dans `main` seulement après sa validation.
+- [x] Push de la branche `redesign` → donner l'URL de preview Vercel à Gninho. Merge dans `main` seulement après sa validation. (PR #1, fusionnée le 26/11.)
 
 ## Étape 7 — E2E et vérification en production
 - [x] Playwright : parcours démo complet (ouvrir la démo → créer une candidature depuis une offre → adapter le CV → voir la vérification → générer la lettre → entraînement d'entretien → export PDF). Avec un modèle factice (`E2E_FAKE_LLM=1`), y compris une réponse d'entretien et son retour (ouvert à la démo dans son quota quotidien).
 - [x] Parcours connecté avec Clerk en mode test (testing tokens), si faisable sans secrets dans le repo. (Panneau de vérification connecté avec `@clerk/testing` ; clés et mot de passe dans les secrets GitHub.)
 - [x] Test de fumée après chaque déploiement Vercel (page d'accueil, démo, API santé) : brancher `npm run smoke:prod` (sitemap, robots, métadonnées) sur chaque déploiement en production (demande de Gninho, 26/11).
-- [ ] Commit : `test(e2e): demo flow and production smoke test` → push.
+- [x] Commit : `test(e2e): demo flow and production smoke test` → push. (PR #2, fusionnée le 26/11.)
 
 ## Étape 8 — README et résumé
 - [x] README : lien démo, captures, architecture (Mermaid), section « How JobPilot avoids inventing experience », sécurité (quotas, rate limit, webhooks idempotents), tests et CI, Stripe en mode test.
-- [ ] Résumé final pour Gninho : fonctionnalités, nombre de tests, textes à mettre à jour (portfolio, LinkedIn, README de profil GitHub).
+- [x] Résumé final pour Gninho : fonctionnalités, nombre de tests, textes à mettre à jour (portfolio, LinkedIn, README de profil GitHub).
