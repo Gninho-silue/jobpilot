@@ -97,27 +97,43 @@ jobs:
       NEXT_PUBLIC_SUPABASE_ANON_KEY: e2e_unused
       SUPABASE_SERVICE_ROLE_KEY: e2e_unused
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - name: Check the Clerk test secrets
+        id: secrets
+        run: |
+          if [ -n "$CLERK_SECRET_KEY" ] && [ -n "$NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY" ]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::warning::E2E skipped: set the E2E_CLERK_PUBLISHABLE_KEY and E2E_CLERK_SECRET_KEY repository secrets."
+          fi
+      - if: steps.secrets.outputs.ready == 'true'
+        uses: actions/checkout@v4
+      - if: steps.secrets.outputs.ready == 'true'
+        uses: actions/setup-node@v4
         with:
           node-version: '22'
           cache: 'npm'
-      - run: npm ci
-      - run: npx prisma generate
+      - if: steps.secrets.outputs.ready == 'true'
+        run: npm ci
+      - if: steps.secrets.outputs.ready == 'true'
+        run: npx prisma generate
       # The migrations themselves are tested here, on an empty database.
-      - run: npx prisma migrate deploy
-      - name: Cache Playwright browsers
+      - if: steps.secrets.outputs.ready == 'true'
+        run: npx prisma migrate deploy
+      - if: steps.secrets.outputs.ready == 'true'
+        name: Cache Playwright browsers
         id: playwright-cache
         uses: actions/cache@v4
         with:
           path: ~/.cache/ms-playwright
           key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
-      - if: steps.playwright-cache.outputs.cache-hit != 'true'
+      - if: steps.secrets.outputs.ready == 'true' && steps.playwright-cache.outputs.cache-hit != 'true'
         run: npx playwright install --with-deps chromium
-      - if: steps.playwright-cache.outputs.cache-hit == 'true'
+      - if: steps.secrets.outputs.ready == 'true' && steps.playwright-cache.outputs.cache-hit == 'true'
         run: npx playwright install-deps chromium
-      - run: npm run build
-      - run: npx playwright test
+      - if: steps.secrets.outputs.ready == 'true'
+        run: npm run build
+      - if: steps.secrets.outputs.ready == 'true'
+        run: npx playwright test
       - name: Screenshots of failed tests
         if: failure()
         uses: actions/upload-artifact@v4
