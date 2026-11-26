@@ -1,4 +1,8 @@
 import type { NextConfig } from "next";
+import { assertProductionAppUrl } from "./src/lib/env";
+
+// Fails a production build whose public URL is missing, http:// or localhost.
+assertProductionAppUrl();
 
 const nextConfig: NextConfig = {
   // Pin the Turbopack root to this project. Without this, Turbopack's
