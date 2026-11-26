@@ -72,6 +72,13 @@ test('signing in with Clerk during a demo removes the demo cookie', async ({ pag
 })
 
 // Last in the file: it uses up the per-IP limit of demo starts.
+// The next spec files start demos too: give the starts back once this file is done.
+test.afterAll(async () => {
+  process.env.DATABASE_URL = process.env.E2E_DATABASE_URL
+  const { prisma } = await import('../src/lib/prisma')
+  await prisma.rateLimitHit.deleteMany({ where: { key: { startsWith: 'demo-start:' } } })
+})
+
 test('limit reached: back home with a readable message, and a reload does not re-send the form', async ({ page, playwright }) => {
   // Use up the starts from this IP with cookie-less requests (a demo cookie would skip the limit).
   for (let i = 0; i < 6; i++) {
