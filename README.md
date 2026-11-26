@@ -117,6 +117,8 @@ npx prisma migrate deploy    # creates the tables in DATABASE_URL
 npm run dev                  # http://localhost:3000
 ```
 
+With Supabase, run `prisma migrate deploy` through the session pooler (port 5432) or the direct connection. The transaction pooler (port 6543) does not work for migrations.
+
 In Supabase, create a **private** Storage bucket named `cvs` before uploading a CV.
 
 To enable the demo, generate the two secrets below, put them in `.env.local` as `DEMO_COOKIE_SECRET` and `CRON_SECRET`, and use a different value for each:
