@@ -119,10 +119,10 @@ Capture du téléphone de Gninho à 390 px le 25/11 : la barre latérale prend l
 
 ## Étape 7 — E2E et vérification en production
 - [ ] Playwright : parcours démo complet (ouvrir la démo → créer une candidature depuis une offre → adapter le CV → voir la vérification → générer la lettre → entraînement d'entretien → export PDF).
-- [ ] Parcours connecté avec Clerk en mode test (testing tokens), si faisable sans secrets dans le repo.
+- [x] Parcours connecté avec Clerk en mode test (testing tokens), si faisable sans secrets dans le repo. (Panneau de vérification connecté avec `@clerk/testing` ; clés et mot de passe dans les secrets GitHub.)
 - [x] Test de fumée après chaque déploiement Vercel (page d'accueil, démo, API santé) : brancher `npm run smoke:prod` (sitemap, robots, métadonnées) sur chaque déploiement en production (demande de Gninho, 26/11).
 - [ ] Commit : `test(e2e): demo flow and production smoke test` → push.
 
 ## Étape 8 — README et résumé
-- [ ] README : lien démo, captures, architecture (Mermaid), section « How JobPilot avoids inventing experience », sécurité (quotas, rate limit, webhooks idempotents), tests et CI, Stripe en mode test.
+- [x] README : lien démo, captures, architecture (Mermaid), section « How JobPilot avoids inventing experience », sécurité (quotas, rate limit, webhooks idempotents), tests et CI, Stripe en mode test.
 - [ ] Résumé final pour Gninho : fonctionnalités, nombre de tests, textes à mettre à jour (portfolio, LinkedIn, README de profil GitHub).
