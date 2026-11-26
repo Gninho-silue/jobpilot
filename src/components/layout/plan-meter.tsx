@@ -16,7 +16,7 @@ export function PlanMeter({ plan, used, limit }: PlanUsage) {
   if (plan === 'PRO') {
     return (
       <p className="px-1 text-sm text-[hsl(var(--text-secondary))]">
-        <span className="font-semibold text-[hsl(var(--text-primary))]">Pro plan</span> · unlimited
+        <span className="font-semibold text-[hsl(var(--text-primary))]">Pro plan</span>, unlimited
       </p>
     )
   }
@@ -24,7 +24,7 @@ export function PlanMeter({ plan, used, limit }: PlanUsage) {
   return (
     <div className="grid gap-2 rounded-xl border border-[hsl(var(--border-default))] p-3 text-sm text-[hsl(var(--text-secondary))]">
       <p>
-        <span className="font-semibold text-[hsl(var(--text-primary))]">Free plan</span> · <span className="num">{used}</span> of{' '}
+        <span className="font-semibold text-[hsl(var(--text-primary))]">Free plan</span>: <span className="num">{used}</span> of{' '}
         <span className="num">{limit}</span> applications created this month
       </p>
       <div

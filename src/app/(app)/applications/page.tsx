@@ -465,7 +465,7 @@ export default function ApplicationsPage() {
       ) : loadError && applications.length === 0 ? (
         <div role="alert" className="flex flex-col items-start gap-3 rounded-xl border border-[hsl(var(--border-default))] bg-[hsl(var(--bg-surface))] p-5">
           <p className="font-semibold text-[hsl(var(--text-primary))]">Your applications could not be loaded.</p>
-          <p className="text-sm text-[hsl(var(--text-secondary))]">The server did not answer. Your data is safe: try again in a moment.</p>
+          <p className="text-sm text-[hsl(var(--text-secondary))]">The server did not answer. Try again in a moment.</p>
           <Button
             variant="outline"
             onClick={() => {

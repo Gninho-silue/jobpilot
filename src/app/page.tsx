@@ -18,11 +18,11 @@ const features = [
   },
   {
     title: 'A cover letter in French or English',
-    desc: 'Written from the offer and your CV. Claims your CV does not support and generic phrases ("aligns perfectly", "proven ability") are flagged before you export.',
+    desc: 'Written from the offer and your CV. Before you export, JobPilot flags claims your CV does not support and generic phrases such as "aligns perfectly" or "proven ability".',
   },
   {
     title: 'Interview practice',
-    desc: 'Ten questions from the offer and your CV, five technical and five behavioural. On the Pro plan, feedback on each answer.',
+    desc: 'JobPilot asks ten questions based on the offer and your CV, five technical and five behavioural. On the Pro plan, you also get feedback on each answer.',
   },
 ]
 
@@ -75,8 +75,8 @@ export default async function LandingPage({ searchParams }: { searchParams: Prom
               Tailor your CV to every job offer, without inventing anything.
             </h1>
             <p className="mt-5 max-w-2xl text-lg leading-relaxed text-[hsl(var(--text-secondary))]">
-              JobPilot adapts your CV and writes your cover letter from the offer, then checks each claim against your original CV.
-              What it cannot find there is flagged before you export. In French or English.
+              JobPilot adapts your CV and writes your cover letter from the job offer, in French or English. It then checks each claim
+              against your original CV and flags what it cannot find there, before you export anything.
             </p>
             <DemoNotice reason={typeof demo === 'string' ? demo : undefined} />
             <div className="mt-8 flex flex-wrap gap-3">
@@ -114,7 +114,7 @@ export default async function LandingPage({ searchParams }: { searchParams: Prom
                 className="h-auto max-h-[520px] w-full object-cover object-top"
               />
               <figcaption className="border-t border-[hsl(var(--border-default))] px-4 py-2.5 text-sm text-[hsl(var(--text-secondary))]">
-                Each flagged claim, with its experience and a Remove button.
+                Each flagged claim shows its experience and a Remove button.
               </figcaption>
             </figure>
           </div>
@@ -172,7 +172,7 @@ export default async function LandingPage({ searchParams }: { searchParams: Prom
       <footer className="border-t border-[hsl(var(--border-default))]">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-4 py-8 text-sm text-[hsl(var(--text-secondary))] md:px-6">
           <span>
-            <span className="font-semibold text-[hsl(var(--text-primary))]">JobPilot</span> · CVs and letters checked against your own CV
+            <span className="font-semibold text-[hsl(var(--text-primary))]">JobPilot</span> checks your adapted CVs and letters against your own CV.
           </span>
           <span className="flex gap-4">
             <a href="https://github.com/Gninho-silue" target="_blank" rel="noopener noreferrer" className="underline underline-offset-2 hover:text-[hsl(var(--text-primary))]">

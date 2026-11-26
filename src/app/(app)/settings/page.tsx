@@ -56,7 +56,7 @@ export default async function SettingsPage() {
                     <span className="num">{FREE_TIER_LIMITS.coverLetters}</span> cover letters. Deleting an application does not give a credit back.
                   </p>
                   {/* The upgrade call itself stays in one place: the plan meter (sidebar, or "More" on mobile). */}
-                  <p className="text-sm text-[hsl(var(--text-secondary))]">To upgrade, use &ldquo;Upgrade to Pro&rdquo; under the plan meter.</p>
+                  <p className="text-sm text-[hsl(var(--text-secondary))]">To upgrade, use &quot;Upgrade to Pro&quot; under the plan meter.</p>
                 </>
               )}
             </div>

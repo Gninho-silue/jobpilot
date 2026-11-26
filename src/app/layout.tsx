@@ -21,11 +21,11 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'https://jobpilot.app'),
   title: {
-    default: 'JobPilot — Tailor your CV to every job offer, without inventing anything',
+    default: 'JobPilot: tailor your CV to every job offer without inventing anything',
     template: '%s | JobPilot',
   },
   description:
-    'Adapt your CV and write your cover letter from each job offer, in French or English. Every claim is checked against your original CV, and what it cannot find is flagged before you export.',
+    'Adapt your CV and write your cover letter from each job offer, in French or English. JobPilot checks every claim against your original CV and flags what it cannot find there before you export.',
   applicationName: 'JobPilot',
   keywords: [
     'Job tracker',
@@ -50,9 +50,9 @@ export const metadata: Metadata = {
     locale: 'en_US',
     url: '/',
     siteName: 'JobPilot',
-    title: 'JobPilot — Tailor your CV to every job offer, without inventing anything',
+    title: 'JobPilot: tailor your CV to every job offer without inventing anything',
     description:
-      'Adapt your CV and write your cover letter from each job offer, in French or English. Every claim is checked against your original CV, and what it cannot find is flagged before you export.',
+      'Adapt your CV and write your cover letter from each job offer, in French or English. JobPilot checks every claim against your original CV and flags what it cannot find there before you export.',
     images: [
       {
         url: '/screenshots/kanban.png',
@@ -64,9 +64,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'JobPilot — Tailor your CV to every job offer, without inventing anything',
+    title: 'JobPilot: tailor your CV to every job offer without inventing anything',
     description:
-      'Adapt your CV and write your cover letter from each job offer, in French or English. Every claim is checked against your original CV, and what it cannot find is flagged before you export.',
+      'Adapt your CV and write your cover letter from each job offer, in French or English. JobPilot checks every claim against your original CV and flags what it cannot find there before you export.',
     images: ['/screenshots/kanban.png'],
     creator: '@jobpilot',
   },
