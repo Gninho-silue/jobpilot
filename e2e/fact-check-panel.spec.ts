@@ -92,6 +92,26 @@ async function savedApplication(applicationId: string) {
   return (await db()).application.findUniqueOrThrow({ where: { id: applicationId } })
 }
 
+// The sheet opened from ?edit=<id> must survive a reload or remount of the page
+// (a Clerk dev handshake can reload it): the 1175 px "Use" test once found its
+// button and then lost it for good, because the page had already dropped ?edit.
+test('a reload keeps the detail panel open on the same application', async ({ page }) => {
+  await page.setViewportSize({ width: 1175, height: 900 })
+  const applicationId = await seedApplication(await signIn(page))
+  await openWarnings(page, applicationId)
+  await expect(page).toHaveURL(new RegExp(`[?&]edit=${applicationId}`))
+
+  await page.reload()
+  await page.getByRole('tab', { name: 'Resume' }).click()
+  await expect(page.getByRole('button', { name: 'Use “AI Software Engineer”' })).toBeVisible()
+
+  // Closing the panel removes ?edit: a later reload does not reopen it.
+  await page.keyboard.press('Escape')
+  await expect(page).not.toHaveURL(/[?&]edit=/)
+  await page.reload()
+  await expect(page.getByRole('tab', { name: 'Resume' })).toHaveCount(0)
+})
+
 for (const width of [1440, 1175, 390]) {
   test.describe(`warnings panel at ${width} px`, () => {
     test.beforeEach(async ({ page }) => {

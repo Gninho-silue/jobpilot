@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import {
   Plus,
@@ -314,16 +314,24 @@ export default function ApplicationsPage() {
     }
   }, [searchParams, router])
 
+  // The open application lives in the URL (?edit=<id>) for as long as the sheet
+  // is open: a reload or a remount of the page (a Clerk dev handshake can reload
+  // it) reopens the same sheet. The parameter goes away only when the sheet closes.
+  const editId = searchParams.get('edit')
+  const handledEditId = useRef<string | null>(null)
   useEffect(() => {
-    const editId = searchParams.get('edit')
-    if (editId && applications.length > 0) {
-      const target = applications.find(a => a.id === editId)
-      if (target) {
-        openEdit(target)
-        router.replace('/applications')
-      }
+    if (!editId) {
+      handledEditId.current = null
+      return
     }
-  }, [searchParams, applications, router])
+    if (editId === handledEditId.current) return
+    const target = applications.find(a => a.id === editId)
+    if (target) {
+      handledEditId.current = editId
+      setEditApp(target)
+      setSheetOpen(true)
+    }
+  }, [editId, applications])
 
   useEffect(() => {
     void fetchApplications()
@@ -338,8 +346,15 @@ export default function ApplicationsPage() {
   }, [fetchApplications])
 
   function openEdit(app: Application) {
+    handledEditId.current = app.id
     setEditApp(app)
     setSheetOpen(true)
+    router.replace(`/applications?edit=${app.id}`, { scroll: false })
+  }
+
+  function handleSheetOpenChange(open: boolean) {
+    setSheetOpen(open)
+    if (!open) router.replace('/applications', { scroll: false })
   }
 
   function handleCvAdapted(id: string, text: string) {
@@ -601,7 +616,7 @@ export default function ApplicationsPage() {
         open={sheetOpen}
         hasCv={userHasCv}
         isPro={userIsPro}
-        onOpenChange={setSheetOpen}
+        onOpenChange={handleSheetOpenChange}
         onUpdated={() => void fetchApplications()}
         onDeleted={() => void fetchApplications()}
         onCvAdapted={handleCvAdapted}
