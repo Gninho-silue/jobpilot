@@ -1,5 +1,6 @@
 import { currentUser } from '@clerk/nextjs/server'
 import { getActor } from '@/lib/actor'
+import { refreshFactChecks } from '@/lib/fact-check/refresh'
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { CV_FILE_ROUTE, uploadCv } from '@/lib/cv-storage'
@@ -86,6 +87,9 @@ export async function POST(request: Request) {
     },
     update: { cvPath, cvText },
   })
+
+  // The stored check results were computed against the previous CV.
+  await refreshFactChecks(userId)
 
   return NextResponse.json({ data: { fileUrl: CV_FILE_ROUTE, cvText } })
 }

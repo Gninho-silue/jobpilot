@@ -25,7 +25,7 @@ export function PlanMeter({ plan, used, limit }: PlanUsage) {
     <div className="grid gap-2 rounded-xl border border-[hsl(var(--border-default))] p-3 text-sm text-[hsl(var(--text-secondary))]">
       <p>
         <span className="font-semibold text-[hsl(var(--text-primary))]">Free plan</span> · <span className="num">{used}</span> of{' '}
-        <span className="num">{limit}</span> applications this month
+        <span className="num">{limit}</span> applications created this month
       </p>
       <div
         className="h-1 overflow-hidden rounded-full bg-[hsl(var(--bg-surface-raised))]"

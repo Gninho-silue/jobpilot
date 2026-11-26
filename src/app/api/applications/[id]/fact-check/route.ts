@@ -2,7 +2,9 @@ import { getActor } from '@/lib/actor'
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { factCheckActionSchema } from '@/lib/validation'
+import type { Prisma } from '@prisma/client'
 import { applyIssueFix, reviewAdaptedCv, reviewCoverLetter } from '@/lib/fact-check/fix-issue'
+import { summarizeIssues } from '@/lib/fact-check/summary'
 
 type Params = { params: Promise<{ id: string }> }
 
@@ -73,9 +75,13 @@ export async function POST(request: Request, { params }: Params) {
     }
   }
 
-  await prisma.application.update({ where: { id }, data: { adaptedCvText, approvedCvTitle } })
+  const issues = reviewAdaptedCv(app.cvText, adaptedCvText, approvedCvTitle)
+  await prisma.application.update({
+    where: { id },
+    data: { adaptedCvText, approvedCvTitle, adaptedCvCheck: summarizeIssues(issues) as unknown as Prisma.InputJsonValue },
+  })
 
   return NextResponse.json({
-    data: { adaptedCvText, issues: reviewAdaptedCv(app.cvText, adaptedCvText, approvedCvTitle) },
+    data: { adaptedCvText, issues },
   })
 }

@@ -17,7 +17,7 @@ test('"Try the demo" opens a seeded workspace with the banner and the fact-check
   // Step 5: honest dashboard figures (the exact numbers depend on the date: see test/api/dashboard.int.test.ts).
   await expect(page.getByText('Welcome back, Sam.', { exact: false })).toBeVisible()
   await expect(page.getByText(/Welcome back, there/)).toHaveCount(0)
-  await expect(page.getByText(/Free plan — \d of 5 applications created this month/)).toBeVisible()
+  await expect(page.getByText(/Free plan · \d of 5 applications created this month/)).toBeVisible()
   await expect(page.getByText(/% vs last month/)).toHaveCount(0)
 
   await page.goto('/applications')
