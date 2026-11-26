@@ -19,7 +19,7 @@ export default function InterviewPrepPage() {
   const [apps, setApps] = useState<AppWithQuestions[]>([])
   const [loading, setLoading] = useState(true)
   const [active, setActive] = useState<AppWithQuestions | null>(null)
-  const [isPro, setIsPro] = useState(false)
+  const [feedbackAvailable, setFeedbackAvailable] = useState(false)
 
   useEffect(() => {
     fetch('/api/applications')
@@ -40,8 +40,8 @@ export default function InterviewPrepPage() {
       .finally(() => setLoading(false))
 
     fetch('/api/user/plan')
-      .then(r => r.json() as Promise<{ data?: { plan: string } }>)
-      .then(j => { if (j.data?.plan === 'PRO') setIsPro(true) })
+      .then(r => r.json() as Promise<{ data?: { plan: string; interviewFeedback?: boolean } }>)
+      .then(j => { if (j.data?.interviewFeedback) setFeedbackAvailable(true) })
       .catch(() => {})
   }, [])
 
@@ -121,7 +121,7 @@ export default function InterviewPrepPage() {
           company={active.company}
           questions={active.interviewQs}
           language={active.language}
-          isPro={isPro}
+          feedbackAvailable={feedbackAvailable}
           onClose={() => setActive(null)}
         />
       )}

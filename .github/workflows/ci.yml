@@ -56,6 +56,92 @@ jobs:
       - run: npm run test:unit
       - run: npm run test:integration
 
+  e2e:
+    name: E2E (Playwright)
+    runs-on: ubuntu-latest
+    # Needs the Clerk test secrets: pushes, and pull requests from this repository (not forks).
+    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: jobpilot_e2e
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      CI: true
+      # Throwaway service database; playwright.config.ts refuses a non-local one.
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/jobpilot_e2e
+      E2E_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/jobpilot_e2e
+      NEXT_PUBLIC_APP_URL: http://localhost:3100
+      DEMO_COOKIE_SECRET: e2e-demo-cookie-secret-0123456789abcdef
+      NEXT_PUBLIC_CLERK_TELEMETRY_DISABLED: '1'
+      # Clerk development instance (test keys) and the test account's password: GitHub secrets.
+      NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.E2E_CLERK_PUBLISHABLE_KEY }}
+      CLERK_SECRET_KEY: ${{ secrets.E2E_CLERK_SECRET_KEY }}
+      E2E_CLERK_PASSWORD: ${{ secrets.E2E_CLERK_PASSWORD }}
+      # The E2E tests never call Groq, Stripe or Supabase: placeholders only.
+      GROQ_API_KEY: gsk_e2e_unused
+      STRIPE_SECRET_KEY: sk_test_e2e_unused
+      STRIPE_WEBHOOK_SECRET: whsec_e2e_unused
+      STRIPE_PRO_PRICE_ID: price_e2e_unused
+      NEXT_PUBLIC_SUPABASE_URL: https://e2e-unused.supabase.co
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: e2e_unused
+      SUPABASE_SERVICE_ROLE_KEY: e2e_unused
+    steps:
+      - name: Check the Clerk test secrets
+        id: secrets
+        run: |
+          if [ -n "$CLERK_SECRET_KEY" ] && [ -n "$NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY" ]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::warning::E2E skipped: set the E2E_CLERK_PUBLISHABLE_KEY and E2E_CLERK_SECRET_KEY repository secrets."
+          fi
+      - if: steps.secrets.outputs.ready == 'true'
+        uses: actions/checkout@v4
+      - if: steps.secrets.outputs.ready == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+      - if: steps.secrets.outputs.ready == 'true'
+        run: npm ci
+      - if: steps.secrets.outputs.ready == 'true'
+        run: npx prisma generate
+      # The migrations themselves are tested here, on an empty database.
+      - if: steps.secrets.outputs.ready == 'true'
+        run: npx prisma migrate deploy
+      - if: steps.secrets.outputs.ready == 'true'
+        name: Cache Playwright browsers
+        id: playwright-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+      - if: steps.secrets.outputs.ready == 'true' && steps.playwright-cache.outputs.cache-hit != 'true'
+        run: npx playwright install --with-deps chromium
+      - if: steps.secrets.outputs.ready == 'true' && steps.playwright-cache.outputs.cache-hit == 'true'
+        run: npx playwright install-deps chromium
+      - if: steps.secrets.outputs.ready == 'true'
+        run: npm run build
+      - if: steps.secrets.outputs.ready == 'true'
+        run: npx playwright test
+      - name: Screenshots of failed tests
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-failures
+          path: test-results/
+          retention-days: 7
+
   build:
     name: Build
     runs-on: ubuntu-latest

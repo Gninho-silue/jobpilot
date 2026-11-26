@@ -27,13 +27,22 @@ export default defineConfig({
     screenshot: 'only-on-failure',
   },
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
+  // CI fails fast (no retries: an unstable test gets fixed, not retried) and keeps
+  // screenshots of failures; locally the same settings apply.
+  forbidOnly: Boolean(process.env.CI),
+  retries: 0,
   webServer: {
-    command: 'npx next dev --port 3100',
+    // CI tests the production build (`npm run build` runs before); locally the dev server.
+    command: process.env.CI ? 'npx next start --port 3100' : 'npx next dev --port 3100',
     url: 'http://localhost:3100',
     // Never reuse a running dev server: it would use the real DATABASE_URL.
     reuseExistingServer: false,
     timeout: 180_000,
     // A throwaway demo signing secret: the demo workspace is enabled in E2E.
-    env: { DATABASE_URL: databaseUrl, NEXT_PUBLIC_APP_URL: 'http://localhost:3100', DEMO_COOKIE_SECRET: 'e2e-demo-cookie-secret-0123456789abcdef' },
+    env: {
+      DATABASE_URL: databaseUrl, NEXT_PUBLIC_APP_URL: 'http://localhost:3100', DEMO_COOKIE_SECRET: 'e2e-demo-cookie-secret-0123456789abcdef',
+      // Fixed AI answers (src/lib/ai/fake-llm.ts): the E2E tests never call Groq.
+      E2E_FAKE_LLM: '1',
+    },
   },
 })

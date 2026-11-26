@@ -43,7 +43,7 @@ LANGUAGES
 English: Fluent · French: Native`
 
 // The adapted CV for Northwind Traders: faithful, except "Kubernetes" in one bullet.
-const ADAPTED_CV = `Sam Rivera
+export const DEMO_ADAPTED_CV = `Sam Rivera
 Backend Developer | Node.js · TypeScript · PostgreSQL
 sam.rivera@example.com $|$ +00 000 000 000 $|$ Remote
 
@@ -84,7 +84,7 @@ EDUCATION
 CERTIFICATIONS & LANGUAGES
 English: Fluent · French: Native`
 
-const COVER_LETTER = `Your offer for a Backend Engineer mentions slow shipment queries and a growing number of services, and my experience aligns perfectly with your needs.
+export const DEMO_COVER_LETTER = `Your offer for a Backend Engineer mentions slow shipment queries and a growing number of services, and my experience aligns perfectly with your needs.
 
 At Fabrikam Logistics, I built 6 REST services with Node.js and PostgreSQL for shipment tracking across 12 warehouses. I cut p95 API latency by 35% with Redis caching, and I set up CI with GitHub Actions for 4 services.
 
@@ -119,8 +119,8 @@ export const DEMO_APPLICATIONS: DemoApplication[] = [
     language: 'EN',
     offerText: 'Northwind Traders is hiring a Backend Engineer (Node.js, TypeScript, PostgreSQL) to speed up shipment queries and run a growing number of services. Remote in Europe.',
     salary: '55k€',
-    adaptedCvText: ADAPTED_CV,
-    coverLetter: COVER_LETTER,
+    adaptedCvText: DEMO_ADAPTED_CV,
+    coverLetter: DEMO_COVER_LETTER,
     daysAgo: 1,
   },
   {

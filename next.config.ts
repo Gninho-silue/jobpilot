@@ -1,8 +1,11 @@
 import type { NextConfig } from "next";
 import { assertProductionAppUrl } from "./src/lib/env";
+import { assertNoFakeLlmInProduction } from "./src/lib/ai/fake-llm-guard";
 
 // Fails a production build whose public URL is missing, http:// or localhost.
 assertProductionAppUrl();
+// Fails a production build that could answer with the end-to-end tests' fake model.
+assertNoFakeLlmInProduction();
 
 const nextConfig: NextConfig = {
   // The dev-only "N" badge covered the bottom of the sidebar in screenshots.
