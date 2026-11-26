@@ -6,6 +6,7 @@ import type {
 } from 'groq-sdk/resources/chat/completions'
 import type { CompletionUsage } from 'groq-sdk/resources/completions'
 import { groq } from '@/lib/groq'
+import { fakeCompletion, fakeLlmEnabled, fakeStream } from './fake-llm'
 
 /**
  * Every model call goes through these two functions, which log one JSON line
@@ -54,7 +55,10 @@ async function create<T>(label: string, params: Params, call: () => Promise<T>):
 }
 
 export async function completeChat(label: string, params: ChatCompletionCreateParamsNonStreaming): Promise<ChatCompletion> {
-  const response = await create(label, params, () => groq.chat.completions.create(params))
+  // End-to-end tests only (E2E_FAKE_LLM=1, never in production): fixed answers, no network.
+  const response = await create(label, params, () =>
+    fakeLlmEnabled() ? Promise.resolve(fakeCompletion(label)) : groq.chat.completions.create(params)
+  )
   logAiCall(label, params, response.choices[0]?.finish_reason, response.usage)
   return response
 }
@@ -64,7 +68,11 @@ export async function streamChat(
   label: string,
   params: ChatCompletionCreateParamsStreaming
 ): Promise<AsyncIterable<ChatCompletionChunk>> {
-  const stream = await create(label, params, () => groq.chat.completions.create(params))
+  const stream = await create(label, params, () =>
+    fakeLlmEnabled()
+      ? Promise.resolve<AsyncIterable<ChatCompletionChunk>>(fakeStream(label))
+      : (groq.chat.completions.create(params) as Promise<AsyncIterable<ChatCompletionChunk>>)
+  )
   return (async function* () {
     let finishReason: string | null | undefined
     let usage: CompletionUsage | null | undefined
