@@ -39,6 +39,10 @@ export default defineConfig({
     reuseExistingServer: false,
     timeout: 180_000,
     // A throwaway demo signing secret: the demo workspace is enabled in E2E.
-    env: { DATABASE_URL: databaseUrl, NEXT_PUBLIC_APP_URL: 'http://localhost:3100', DEMO_COOKIE_SECRET: 'e2e-demo-cookie-secret-0123456789abcdef' },
+    env: {
+      DATABASE_URL: databaseUrl, NEXT_PUBLIC_APP_URL: 'http://localhost:3100', DEMO_COOKIE_SECRET: 'e2e-demo-cookie-secret-0123456789abcdef',
+      // Fixed AI answers (src/lib/ai/fake-llm.ts): the E2E tests never call Groq.
+      E2E_FAKE_LLM: '1',
+    },
   },
 })
