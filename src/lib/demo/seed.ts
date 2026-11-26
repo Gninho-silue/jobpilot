@@ -1,6 +1,7 @@
 import { randomBytes } from 'node:crypto'
 import { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
+import { adaptedCvCheck, coverLetterCheck } from '@/lib/fact-check/summary'
 import { DEMO_APPLICATIONS, DEMO_CV } from './seed-data'
 
 const DAY = 24 * 60 * 60 * 1000
@@ -21,6 +22,9 @@ export async function createDemoWorkspace(now = new Date()): Promise<string> {
         userId: id,
         interviewQs: interviewQs ? (interviewQs as unknown as Prisma.InputJsonValue) : undefined,
         createdAt: dates[index],
+        // Stored check results, as if the texts had been generated: the dashboard lists them.
+        adaptedCvCheck: adaptedCvCheck(DEMO_CV, app.adaptedCvText ?? null, null) ?? undefined,
+        coverLetterCheck: coverLetterCheck(DEMO_CV, app.coverLetter ?? null) ?? undefined,
       })),
     }),
     prisma.usageCounter.create({ data: { userId: id, month, applications: createdThisMonth } }),

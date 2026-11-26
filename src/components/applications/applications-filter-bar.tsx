@@ -141,7 +141,7 @@ export function ApplicationsFilterBar({
             value={filters.search}
             onChange={e => handleSearchChange(e.target.value)}
             placeholder="Search company, role, or notes..."
-            className="pl-8 pr-8 h-9 rounded-lg bg-[hsl(var(--bg-surface))] border-[hsl(var(--border-default))] text-sm text-[hsl(var(--text-primary))] placeholder:text-[hsl(var(--text-muted))] focus-visible:border-amber-500/60 focus-visible:ring-amber-500/20"
+            className="pl-8 pr-8 h-9 rounded-lg bg-[hsl(var(--bg-surface))] border-[hsl(var(--border-default))] text-sm text-[hsl(var(--text-primary))] placeholder:text-[hsl(var(--text-muted))] focus-visible:border-[hsl(var(--focus))] focus-visible:ring-[hsl(var(--focus))]"
           />
           {filters.search && (
             <button
@@ -165,7 +165,7 @@ export function ApplicationsFilterBar({
                 onClick={() => handleLanguageChange(lang)}
                 className={`px-2.5 py-1 rounded-md font-medium transition-colors ${
                   isActive
-                    ? 'bg-amber-500 text-black font-semibold shadow-xs'
+                    ? 'bg-[hsl(var(--bg-surface-raised))] text-[hsl(var(--text-primary))] font-semibold'
                     : 'text-[hsl(var(--text-muted))] hover:text-[hsl(var(--text-primary))]'
                 }`}
               >
@@ -183,14 +183,14 @@ export function ApplicationsFilterBar({
             onClick={() => setPopoverOpen(!popoverOpen)}
             className={`rounded-lg border h-9 px-3 text-sm flex items-center gap-1.5 transition-colors ${
               activeFilterCount > 0 || popoverOpen
-                ? 'border-amber-500/60 bg-amber-500/10 text-amber-400 hover:bg-amber-500/20'
+                ? 'border-[hsl(var(--text-secondary))] bg-[hsl(var(--bg-surface-raised))] text-[hsl(var(--text-primary))] hover:bg-[hsl(var(--bg-surface-raised))]'
                 : 'border-[hsl(var(--border-default))] text-[hsl(var(--text-secondary))] hover:bg-[hsl(var(--bg-surface-raised))]'
             }`}
           >
             <Filter className="h-3.5 w-3.5" />
             <span>Filters</span>
             {activeFilterCount > 0 && (
-              <span className="flex items-center justify-center h-5 min-w-5 px-1 rounded-full bg-amber-500 text-black text-[10px] font-bold">
+              <span className="flex items-center justify-center h-5 min-w-5 px-1 rounded-full bg-[hsl(var(--text-primary))] text-[hsl(var(--bg-surface))] text-[10px] font-bold">
                 {activeFilterCount}
               </span>
             )}
@@ -202,7 +202,7 @@ export function ApplicationsFilterBar({
               {/* Header */}
               <div className="flex items-center justify-between pb-2 border-b border-[hsl(var(--border-default))]">
                 <div className="flex items-center gap-2">
-                  <Filter className="h-4 w-4 text-amber-500" />
+                  <Filter className="h-4 w-4 text-[hsl(var(--text-primary))]" />
                   <span className="text-sm font-semibold text-[hsl(var(--text-primary))]">
                     Filter Applications
                   </span>
@@ -211,7 +211,7 @@ export function ApplicationsFilterBar({
                   <button
                     type="button"
                     onClick={resetFilters}
-                    className="text-xs text-amber-500 hover:text-amber-400 font-medium flex items-center gap-1 transition-colors cursor-pointer"
+                    className="text-xs text-[hsl(var(--text-primary))] hover:text-[hsl(var(--text-primary))] font-medium flex items-center gap-1 transition-colors cursor-pointer"
                   >
                     <RotateCcw className="h-3 w-3" />
                     Reset
@@ -234,7 +234,7 @@ export function ApplicationsFilterBar({
                         onClick={() => toggleStage(stage)}
                         className={`text-xs px-2.5 py-1 rounded-lg border font-medium transition-all cursor-pointer ${
                           isSelected
-                            ? 'border-amber-500/80 bg-amber-500/15 text-amber-400'
+                            ? 'border-[hsl(var(--text-secondary))] bg-[hsl(var(--bg-surface-raised))] text-[hsl(var(--text-primary))]'
                             : 'border-[hsl(var(--border-default))] bg-[hsl(var(--bg-surface-raised))] text-[hsl(var(--text-secondary))] hover:border-[hsl(var(--border-strong))]'
                         }`}
                       >
@@ -248,7 +248,7 @@ export function ApplicationsFilterBar({
               {/* AI Generated Assets */}
               <div className="space-y-2">
                 <label className="text-[11px] font-semibold text-[hsl(var(--text-muted))] uppercase tracking-wider flex items-center gap-1.5">
-                  <Sparkles className="h-3 w-3 text-amber-500" />
+                  <Sparkles className="h-3 w-3 text-[hsl(var(--text-primary))]" />
                   AI Assets Ready
                 </label>
                 <div className="space-y-1.5">
@@ -257,7 +257,7 @@ export function ApplicationsFilterBar({
                     onClick={() => toggleAiAsset('hasAdaptedCv')}
                     className={`w-full flex items-center justify-between p-2 rounded-lg border text-xs transition-colors cursor-pointer ${
                       filters.aiAssets.hasAdaptedCv
-                        ? 'border-amber-500/80 bg-amber-500/10 text-[hsl(var(--text-primary))]'
+                        ? 'border-[hsl(var(--text-secondary))] bg-[hsl(var(--bg-surface-raised))] text-[hsl(var(--text-primary))]'
                         : 'border-[hsl(var(--border-default))] bg-[hsl(var(--bg-surface-raised))] text-[hsl(var(--text-secondary))] hover:bg-[hsl(var(--bg-surface))]'
                     }`}
                   >
@@ -265,7 +265,7 @@ export function ApplicationsFilterBar({
                       <FileText className="h-3.5 w-3.5 text-indigo-400" />
                       Adapted CV Ready
                     </span>
-                    {filters.aiAssets.hasAdaptedCv && <Check className="h-3.5 w-3.5 text-amber-500" />}
+                    {filters.aiAssets.hasAdaptedCv && <Check className="h-3.5 w-3.5 text-[hsl(var(--text-primary))]" />}
                   </button>
 
                   <button
@@ -273,7 +273,7 @@ export function ApplicationsFilterBar({
                     onClick={() => toggleAiAsset('hasCoverLetter')}
                     className={`w-full flex items-center justify-between p-2 rounded-lg border text-xs transition-colors cursor-pointer ${
                       filters.aiAssets.hasCoverLetter
-                        ? 'border-amber-500/80 bg-amber-500/10 text-[hsl(var(--text-primary))]'
+                        ? 'border-[hsl(var(--text-secondary))] bg-[hsl(var(--bg-surface-raised))] text-[hsl(var(--text-primary))]'
                         : 'border-[hsl(var(--border-default))] bg-[hsl(var(--bg-surface-raised))] text-[hsl(var(--text-secondary))] hover:bg-[hsl(var(--bg-surface))]'
                     }`}
                   >
@@ -281,7 +281,7 @@ export function ApplicationsFilterBar({
                       <FileCode className="h-3.5 w-3.5 text-emerald-400" />
                       Cover Letter Ready
                     </span>
-                    {filters.aiAssets.hasCoverLetter && <Check className="h-3.5 w-3.5 text-amber-500" />}
+                    {filters.aiAssets.hasCoverLetter && <Check className="h-3.5 w-3.5 text-[hsl(var(--text-primary))]" />}
                   </button>
 
                   <button
@@ -289,7 +289,7 @@ export function ApplicationsFilterBar({
                     onClick={() => toggleAiAsset('hasInterviewQs')}
                     className={`w-full flex items-center justify-between p-2 rounded-lg border text-xs transition-colors cursor-pointer ${
                       filters.aiAssets.hasInterviewQs
-                        ? 'border-amber-500/80 bg-amber-500/10 text-[hsl(var(--text-primary))]'
+                        ? 'border-[hsl(var(--text-secondary))] bg-[hsl(var(--bg-surface-raised))] text-[hsl(var(--text-primary))]'
                         : 'border-[hsl(var(--border-default))] bg-[hsl(var(--bg-surface-raised))] text-[hsl(var(--text-secondary))] hover:bg-[hsl(var(--bg-surface))]'
                     }`}
                   >
@@ -297,7 +297,7 @@ export function ApplicationsFilterBar({
                       <MessageSquare className="h-3.5 w-3.5 text-sky-400" />
                       Interview Prep Ready
                     </span>
-                    {filters.aiAssets.hasInterviewQs && <Check className="h-3.5 w-3.5 text-amber-500" />}
+                    {filters.aiAssets.hasInterviewQs && <Check className="h-3.5 w-3.5 text-[hsl(var(--text-primary))]" />}
                   </button>
                 </div>
               </div>
@@ -311,7 +311,7 @@ export function ApplicationsFilterBar({
                 <select
                   value={filters.sortBy}
                   onChange={e => handleSortChange(e.target.value as SortOption)}
-                  className="w-full h-8 px-2.5 rounded-lg bg-[hsl(var(--bg-surface-raised))] border border-[hsl(var(--border-default))] text-xs text-[hsl(var(--text-primary))] focus:border-amber-500/60 outline-none"
+                  className="w-full h-8 px-2.5 rounded-lg bg-[hsl(var(--bg-surface-raised))] border border-[hsl(var(--border-default))] text-xs text-[hsl(var(--text-primary))] focus:border-[hsl(var(--focus))] outline-none"
                 >
                   <option value="newest">Newest First</option>
                   <option value="oldest">Oldest First</option>
@@ -374,13 +374,13 @@ export function ApplicationsFilterBar({
             <Badge
               key={st}
               variant="outline"
-              className="flex items-center gap-1 px-2 py-0.5 rounded-md border-amber-500/40 bg-amber-500/10 text-amber-400"
+              className="flex items-center gap-1 px-2 py-0.5 rounded-md border-[hsl(var(--text-secondary))] bg-[hsl(var(--bg-surface-raised))] text-[hsl(var(--text-primary))]"
             >
               <span>Stage: {STAGE_LABELS[st]}</span>
               <button
                 type="button"
                 onClick={() => toggleStage(st)}
-                className="hover:text-amber-300 cursor-pointer"
+                className="hover:text-[hsl(var(--text-primary))] cursor-pointer"
               >
                 <X className="h-3 w-3" />
               </button>
@@ -466,7 +466,7 @@ export function ApplicationsFilterBar({
           <button
             type="button"
             onClick={resetFilters}
-            className="text-amber-500 hover:text-amber-400 underline font-medium ml-1 cursor-pointer"
+            className="text-[hsl(var(--text-primary))] hover:text-[hsl(var(--text-primary))] underline font-medium ml-1 cursor-pointer"
           >
             Clear all
           </button>

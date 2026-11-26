@@ -1,0 +1,259 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>JobPilot — dashboard mockup (proposal 6.2)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="tokens.css">
+<script>
+  // ?theme=light for the light mockup.
+  if (new URLSearchParams(location.search).get('theme') === 'light') document.documentElement.dataset.theme = 'light'
+</script>
+<style>
+  * { box-sizing: border-box; margin: 0; }
+  body { font: var(--text-base)/1.5 var(--font-sans); background: var(--bg); color: var(--text); -webkit-font-smoothing: antialiased; }
+  .num { font-family: var(--font-mono); font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
+  a { color: inherit; }
+  :focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; border-radius: 4px; }
+
+  /* ---------- Shell ---------- */
+  .shell { display: grid; grid-template-columns: 232px 1fr; min-height: 100vh; }
+  .side { border-right: 1px solid var(--line); padding: 20px 14px; display: flex; flex-direction: column; gap: 24px; position: sticky; top: 0; height: 100vh; }
+  .brand { font-weight: 600; font-size: 17px; letter-spacing: -0.02em; padding: 0 8px; }
+  .nav { display: flex; flex-direction: column; gap: 2px; list-style: none; padding: 0; }
+  .nav a { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: var(--radius-s); text-decoration: none; color: var(--text-2); font-weight: 500; }
+  .nav a[aria-current="page"] { background: var(--raised); color: var(--text); box-shadow: inset 2px 0 0 var(--text); }
+  .nav svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 1.7; }
+  .plan { margin-top: auto; padding: 12px; border: 1px solid var(--line); border-radius: var(--radius-m); display: grid; gap: 8px; font-size: var(--text-s); color: var(--text-2); }
+  .plan strong { color: var(--text); font-weight: 600; }
+  .meter { height: 4px; background: var(--raised); border-radius: 2px; overflow: hidden; }
+  .meter span { display: block; height: 100%; width: 80%; background: var(--text-2); }
+  .plan a { color: var(--text); font-weight: 500; text-underline-offset: 3px; }
+
+  main { min-width: 0; }
+  .demo { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 7px 32px; border-bottom: 1px solid var(--line); font-size: var(--text-s); color: var(--text-2); background: var(--surface); }
+  .demo b { color: var(--text); font-weight: 600; }
+  .demo button { background: none; border: 0; color: var(--text); font: inherit; font-weight: 500; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+  .content { max-width: 1120px; padding: 28px 32px 48px; display: grid; gap: 28px; }
+
+  .head { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; }
+  h1 { font-size: var(--text-xl); font-weight: 600; letter-spacing: -0.025em; line-height: 1.2; }
+  .head p { color: var(--text-2); margin-top: 4px; }
+  .btn-primary { display: inline-flex; align-items: center; gap: 8px; height: 38px; padding: 0 14px; border-radius: var(--radius-s); border: 0; background: var(--amber); color: var(--on-amber); font: 600 var(--text-base) var(--font-sans); cursor: pointer; white-space: nowrap; }
+  .btn-primary svg { width: 16px; height: 16px; stroke: currentColor; stroke-width: 2.2; fill: none; }
+
+  /* ---------- Figures: one panel, four cells ---------- */
+  .figures { display: grid; grid-template-columns: repeat(4, 1fr); border: 1px solid var(--line); border-radius: var(--radius-m); background: var(--surface); }
+  .figure { padding: 16px 18px; display: grid; gap: 4px; }
+  .figure + .figure { border-left: 1px solid var(--line); }
+  .figure .label { display: flex; align-items: center; gap: 8px; font-size: var(--text-s); color: var(--text-2); }
+  .figure .label svg { width: 15px; height: 15px; stroke: var(--muted); fill: none; stroke-width: 1.7; flex: none; }
+  .figure .value { font-size: 30px; line-height: 1.15; color: var(--text); }
+  .figure .note { font-size: var(--text-s); color: var(--muted); }
+  .trend-down { color: var(--flag); }
+  .trend-up { color: var(--ok); }
+
+  /* ---------- Pipeline: the one memorable element ---------- */
+  .pipeline { display: grid; gap: 10px; }
+  .section-title { font-size: var(--text-m); font-weight: 600; letter-spacing: -0.01em; }
+  .bar { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr 1fr; gap: 3px; }
+  .stage { padding: 10px 12px 9px; background: var(--surface); border: 1px solid var(--line); display: grid; gap: 2px; }
+  .stage:first-child { border-radius: var(--radius-m) 0 0 var(--radius-m); }
+  .stage:last-child { border-radius: 0 var(--radius-m) var(--radius-m) 0; }
+  .stage .count { font-size: 20px; }
+  .stage .name { font-size: var(--text-s); color: var(--text-2); }
+  .stage .short { display: none; }
+  .stage.offer { box-shadow: inset 0 3px 0 var(--ok); }
+  .stage.rejected .count, .stage.rejected .name { color: var(--muted); }
+
+  /* ---------- Two columns: to check, recent ---------- */
+  .cols { display: grid; grid-template-columns: 1fr 1.4fr; gap: 20px; align-items: start; }
+  .panel { border: 1px solid var(--line); border-radius: var(--radius-m); background: var(--surface); }
+  .panel > header { display: flex; justify-content: space-between; align-items: baseline; padding: 14px 18px; border-bottom: 1px solid var(--line); }
+  .panel > header a { font-size: var(--text-s); color: var(--text-2); text-underline-offset: 3px; }
+  .check { list-style: none; padding: 6px 0; }
+  .check li { display: grid; grid-template-columns: 8px 1fr; gap: 12px; padding: 10px 18px; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; margin-top: 7px; background: var(--flag); }
+  .dot.warn { background: var(--amber-text); }
+  .dot.ok { background: var(--ok); }
+  .check strong { font-weight: 600; }
+  .check p { color: var(--text-2); font-size: var(--text-s); }
+  .check .tech { font-family: var(--font-mono); font-size: 12px; padding: 1px 6px; border-radius: 4px; background: var(--raised); color: var(--text); }
+
+  .recent { width: 100%; border-collapse: collapse; }
+  .recent th { text-align: left; font-weight: 500; font-size: var(--text-s); color: var(--muted); padding: 10px 18px; border-bottom: 1px solid var(--line); }
+  .recent td { padding: 11px 18px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+  .recent tr:last-child td { border-bottom: 0; }
+  .company { font-weight: 600; }
+  .role { color: var(--text-2); font-size: var(--text-s); }
+  .lang { font-family: var(--font-mono); font-size: 11px; color: var(--text-2); border: 1px solid var(--line); border-radius: 4px; padding: 0 5px; margin-left: 6px; }
+  .status { display: inline-flex; align-items: center; gap: 6px; font-size: var(--text-s); color: var(--text-2); }
+  .status::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--muted); }
+  .status.offer::before { background: var(--ok); }
+  .status.phone::before, .status.technical::before { background: var(--text-2); }
+  .when { color: var(--muted); font-size: var(--text-s); white-space: nowrap; }
+
+  .mobile-only { display: none; }
+
+  /* ---------- Mobile: under 768 px ---------- */
+  @media (max-width: 767px) {
+    .shell { grid-template-columns: 1fr; }
+    .side { display: none; }
+    .mobile-only { display: flex; }
+    .topbar { position: sticky; top: 0; z-index: 2; display: flex; justify-content: space-between; align-items: center; padding: 10px 16px; background: var(--bg); border-bottom: 1px solid var(--line); }
+    .icon-primary { width: 40px; height: 40px; border-radius: var(--radius-s); border: 0; background: var(--amber); color: var(--on-amber); display: grid; place-items: center; }
+    .icon-primary svg { width: 20px; height: 20px; stroke: currentColor; stroke-width: 2.2; fill: none; }
+    .demo { padding: 7px 16px; white-space: nowrap; }
+    .demo span { overflow: hidden; text-overflow: ellipsis; }
+    .content { padding: 20px 16px 96px; gap: 22px; }
+    .head .btn-primary { display: none; }
+    .figures { grid-template-columns: 1fr 1fr; }
+    .figure + .figure { border-left: 0; }
+    .figure:nth-child(even) { border-left: 1px solid var(--line); }
+    .figure:nth-child(n + 3) { border-top: 1px solid var(--line); }
+    .figure .value { font-size: 26px; }
+    .bar { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+    .stage { padding: 8px 6px 7px; }
+    .stage .name { font-size: 12px; white-space: nowrap; }
+    .stage .long { display: none; }
+    .stage .short { display: inline; }
+    .cols { grid-template-columns: 1fr; }
+    .recent thead { display: none; }
+    .recent td { display: block; border: 0; padding: 0 18px; }
+    .recent tr { display: grid; grid-template-columns: 1fr auto; padding: 11px 0; border-bottom: 1px solid var(--line); }
+    .recent tr:last-child { border-bottom: 0; }
+    .recent td.col-status { grid-column: 1; padding-top: 4px; }
+    .recent td.col-when { grid-column: 2; grid-row: 1; }
+    .recent td.col-role { display: none; }
+    .bottomnav { position: fixed; bottom: 0; left: 0; right: 0; display: grid; grid-template-columns: repeat(4, 1fr); background: var(--surface); border-top: 1px solid var(--line); padding: 6px 4px calc(6px + env(safe-area-inset-bottom)); }
+    .bottomnav a { display: grid; justify-items: center; gap: 2px; padding: 6px 0; font-size: 12px; text-decoration: none; color: var(--muted); }
+    .bottomnav a[aria-current="page"] { color: var(--text); font-weight: 600; }
+    .bottomnav svg { width: 22px; height: 22px; stroke: currentColor; fill: none; stroke-width: 1.7; }
+  }
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-home" viewBox="0 0 24 24"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></symbol>
+  <symbol id="i-board" viewBox="0 0 24 24"><rect x="3" y="4" width="5" height="16" rx="1"/><rect x="10" y="4" width="5" height="10" rx="1"/><rect x="17" y="4" width="4" height="13" rx="1"/></symbol>
+  <symbol id="i-cv" viewBox="0 0 24 24"><path d="M6 3h9l4 4v14H6z"/><path d="M9 11h7M9 15h7M9 7h3"/></symbol>
+  <symbol id="i-chat" viewBox="0 0 24 24"><path d="M4 5h16v11H9l-5 4z"/></symbol>
+  <symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1"/></symbol>
+  <symbol id="i-more" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="i-stack" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M4 10h16"/></symbol>
+  <symbol id="i-reply" viewBox="0 0 24 24"><path d="M9 14l-5-5 5-5"/><path d="M4 9h10a6 6 0 0 1 6 6v4"/></symbol>
+  <symbol id="i-cal" viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M9 3v4M15 3v4"/></symbol>
+  <symbol id="i-flag" viewBox="0 0 24 24"><path d="M5 21V4h11l-2 4 2 4H5"/></symbol>
+</svg>
+
+<div class="shell">
+  <aside class="side" aria-label="Main navigation">
+    <div class="brand">JobPilot</div>
+    <ul class="nav">
+      <li><a href="#" aria-current="page"><svg><use href="#i-home"/></svg>Dashboard</a></li>
+      <li><a href="#"><svg><use href="#i-board"/></svg>Applications</a></li>
+      <li><a href="#"><svg><use href="#i-cv"/></svg>My CV</a></li>
+      <li><a href="#"><svg><use href="#i-chat"/></svg>Interview prep</a></li>
+      <li><a href="#"><svg><use href="#i-gear"/></svg>Settings</a></li>
+    </ul>
+    <!-- The only upgrade call on the screen. -->
+    <div class="plan">
+      <div><strong>Free plan</strong> · <span class="num">4</span> of <span class="num">5</span> applications this month</div>
+      <div class="meter" aria-hidden="true"><span></span></div>
+      <a href="#">Upgrade to Pro</a>
+    </div>
+  </aside>
+
+  <main>
+    <div class="topbar mobile-only">
+      <span class="brand">JobPilot</span>
+      <button class="icon-primary" aria-label="New application"><svg><use href="#i-plus"/></svg></button>
+    </div>
+    <div class="demo" role="status">
+      <span><b>Demo</b> · resets daily · test card 4242 4242 4242 4242</span>
+      <button aria-expanded="false">Details</button>
+    </div>
+
+    <div class="content">
+      <div class="head">
+        <div>
+          <h1>Dashboard</h1>
+          <p>Welcome back, Sam.</p>
+        </div>
+        <button class="btn-primary"><svg><use href="#i-plus"/></svg>New application</button>
+      </div>
+
+      <section class="figures" aria-label="Your search in figures">
+        <div class="figure">
+          <span class="label"><svg><use href="#i-stack"/></svg>Applications</span>
+          <span class="value num">5</span>
+          <span class="note"><span class="trend-up">+2</span> in the last 7 days</span>
+        </div>
+        <div class="figure">
+          <span class="label"><svg><use href="#i-reply"/></svg>Response rate</span>
+          <span class="value num">80%</span>
+          <span class="note"><span class="trend-down" aria-label="down 20 points">↓ −20 pts</span> vs October</span>
+        </div>
+        <div class="figure">
+          <span class="label"><svg><use href="#i-cal"/></svg>Interviews</span>
+          <span class="value num">1</span>
+          <span class="note">at the technical stage</span>
+        </div>
+        <div class="figure">
+          <span class="label"><svg><use href="#i-flag"/></svg>Offers</span>
+          <span class="value num">1</span>
+          <span class="note">out of 5 applications</span>
+        </div>
+      </section>
+
+      <section class="pipeline" aria-label="Pipeline">
+        <h2 class="section-title">Pipeline</h2>
+        <div class="bar">
+          <div class="stage"><span class="count num">1</span><span class="name">Applied</span></div>
+          <div class="stage"><span class="count num">1</span><span class="name"><span class="long">Phone screen</span><span class="short">Phone</span></span></div>
+          <div class="stage"><span class="count num">1</span><span class="name">Technical</span></div>
+          <div class="stage offer"><span class="count num">1</span><span class="name">Offer</span></div>
+          <div class="stage rejected"><span class="count num">1</span><span class="name">Rejected</span></div>
+        </div>
+      </section>
+
+      <div class="cols">
+        <section class="panel" aria-label="To check">
+          <header><h2 class="section-title">To check</h2></header>
+          <ul class="check">
+            <li><span class="dot"></span><div><strong>Northwind Traders</strong><p>Adapted CV: <span class="tech">Kubernetes</span> is not in your CV.</p></div></li>
+            <li><span class="dot warn"></span><div><strong>Northwind Traders</strong><p>Cover letter: one generic phrase, "aligns perfectly".</p></div></li>
+            <li><span class="dot ok"></span><div><strong>Adventure Works</strong><p>Offer stage: the application is waiting for your answer.</p></div></li>
+          </ul>
+        </section>
+
+        <section class="panel" aria-label="Recent applications">
+          <header><h2 class="section-title">Recent applications</h2><a href="#">See all</a></header>
+          <table class="recent">
+            <thead><tr><th>Company</th><th>Role</th><th>Stage</th><th>Added</th></tr></thead>
+            <tbody>
+              <tr><td><span class="company">Northwind Traders</span><span class="lang">EN</span></td><td class="col-role role">Backend Engineer</td><td class="col-status"><span class="status">Applied</span></td><td class="col-when when">1 day ago</td></tr>
+              <tr><td><span class="company">Tailspin Toys</span><span class="lang">EN</span></td><td class="col-role role">Node.js Developer</td><td class="col-status"><span class="status phone">Phone screen</span></td><td class="col-when when">6 days ago</td></tr>
+              <tr><td><span class="company">Woodgrove Bank</span><span class="lang">EN</span></td><td class="col-role role">Backend Developer</td><td class="col-status"><span class="status technical">Technical</span></td><td class="col-when when">12 days ago</td></tr>
+              <tr><td><span class="company">Adventure Works</span><span class="lang">FR</span></td><td class="col-role role">Développeur Backend</td><td class="col-status"><span class="status offer">Offer</span></td><td class="col-when when">20 days ago</td></tr>
+              <tr><td><span class="company">Litware</span><span class="lang">EN</span></td><td class="col-role role">Platform Engineer</td><td class="col-status"><span class="status">Rejected</span></td><td class="col-when when">30 days ago</td></tr>
+            </tbody>
+          </table>
+        </section>
+      </div>
+    </div>
+
+    <nav class="bottomnav mobile-only" aria-label="Main navigation">
+      <a href="#" aria-current="page"><svg><use href="#i-home"/></svg>Dashboard</a>
+      <a href="#"><svg><use href="#i-board"/></svg>Applications</a>
+      <a href="#"><svg><use href="#i-chat"/></svg>Interview</a>
+      <a href="#"><svg><use href="#i-more"/></svg>More</a>
+    </nav>
+  </main>
+</div>
+</body>
+</html>

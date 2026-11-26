@@ -87,10 +87,10 @@ Cas réels vus dans la démo le 25/11 :
 **Sur une branche `redesign`. Aucun push sur `main` avant validation de Gninho sur la preview Vercel.**
 
 ### 6.1 Inventaire (sans toucher au code)
-- [ ] Avec la démo (pas besoin de Clerk), captures **avant** de chaque écran à 1440 et 390 px, thèmes sombre et clair : accueil, connexion et inscription, dashboard, Applications (kanban + panneau de détail : Overview, Resume, Cover Letter, Interview), My CV, Interview Prep, entretien simulé, Settings, modales (nouvelle candidature, upgrade, confirmations), bandeau de démo, états vides, chargement, erreur.
+- [x] Avec la démo (pas besoin de Clerk), captures **avant** de chaque écran à 1440 et 390 px, thèmes sombre et clair : accueil, connexion et inscription, dashboard, Applications (kanban + panneau de détail : Overview, Resume, Cover Letter, Interview), My CV, Interview Prep, entretien simulé, Settings, modales (nouvelle candidature, upgrade, confirmations), bandeau de démo, états vides, chargement, erreur.
 
 ### 6.2 Direction visuelle — **STOP : attendre la validation de Gninho**
-- [ ] Une page de proposition : typographie, palette, espacements, composants, et **la solution mobile** (voir 6.4), avec 2 écrans maquettés (dashboard desktop + dashboard mobile 390 px).
+- [x] Une page de proposition : typographie, palette, espacements, composants, et **la solution mobile** (voir 6.4), avec 2 écrans maquettés (dashboard desktop + dashboard mobile 390 px).
 - [ ] Ne rien coder avant la validation.
 
 ### 6.3 Contraintes générales
@@ -114,13 +114,13 @@ Capture du téléphone de Gninho à 390 px le 25/11 : la barre latérale prend l
 - **Test E2E** : parcours complet de la démo à 390 px (dashboard, kanban, panneau, My CV, entretien) qui vérifie qu'aucun élément ne déborde de l'écran.
 
 ### 6.5 Mise en œuvre (après validation)
-- [ ] Un commit par zone : système de design et tokens, mise en page générale + mobile, dashboard, kanban et panneau, My CV, entretien, Settings et modales, accueil. Captures **après** à chaque fois.
+- [x] Un commit par zone : système de design et tokens, mise en page générale + mobile, dashboard, kanban et panneau, My CV, entretien, Settings et modales, accueil. Captures **après** à chaque fois.
 - [ ] Push de la branche `redesign` → donner l'URL de preview Vercel à Gninho. Merge dans `main` seulement après sa validation.
 
 ## Étape 7 — E2E et vérification en production
 - [ ] Playwright : parcours démo complet (ouvrir la démo → créer une candidature depuis une offre → adapter le CV → voir la vérification → générer la lettre → entraînement d'entretien → export PDF).
 - [ ] Parcours connecté avec Clerk en mode test (testing tokens), si faisable sans secrets dans le repo.
-- [ ] Test de fumée après chaque déploiement Vercel (page d'accueil, démo, API santé).
+- [ ] Test de fumée après chaque déploiement Vercel (page d'accueil, démo, API santé) : brancher `npm run smoke:prod` (sitemap, robots, métadonnées) sur chaque déploiement en production (demande de Gninho, 26/11).
 - [ ] Commit : `test(e2e): demo flow and production smoke test` → push.
 
 ## Étape 8 — README et résumé

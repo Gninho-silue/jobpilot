@@ -3,14 +3,13 @@
 @import "shadcn/tailwind.css";
 @import "@fontsource/jetbrains-mono/400.css";
 @import "@fontsource/jetbrains-mono/500.css";
-@import "@fontsource/jetbrains-mono/600.css";
-@import "@fontsource/jetbrains-mono/700.css";
 
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
-  --font-mono: "JetBrains Mono", monospace;
-  --font-sans: "JetBrains Mono", monospace;
+  /* Text: Geist (next/font, see app/layout.tsx). Mono: figures, code and technical badges only. */
+  --font-sans: var(--font-geist), "Inter", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
 
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -38,109 +37,113 @@
   --radius-2xl: calc(var(--radius) * 2);
 }
 
-/* ─── Light mode tokens ─── */
+/* ─── Light mode tokens (design/proposal/tokens.css; contrast AA measured there) ─── */
 :root {
-  --bg-base: 0 0% 100%;
-  --bg-surface: 210 40% 98%;
-  --bg-surface-raised: 214 32% 95%;
-  --border-default: 214 32% 91%;
-  --border-strong: 215 20% 80%;
-  --text-primary: 222 47% 7%;
-  --text-secondary: 215 16% 35%;
-  --text-muted: 215 16% 60%;
-  --accent-primary: 38 92% 50%;
-  --accent-hover: 32 95% 44%;
-  --accent-light: 48 96% 89%;
-  --state-success: 158 64% 40%;
-  --state-success-light: 152 76% 92%;
-  --state-warning: 38 92% 50%;
-  --state-error: 0 84% 60%;
-  --state-error-light: 0 86% 95%;
+  --bg-base: 60 14% 95.9%;
+  --bg-surface: 0 0% 100%;
+  --bg-surface-raised: 60 11% 92.5%;
+  --border-default: 60 8% 85.9%;
+  --border-strong: 219 6% 56.9%;
+  --text-primary: 223 12% 11.6%;
+  --text-secondary: 220 10% 30.4%;
+  --text-muted: 219 8% 40.6%;
+  --accent-primary: 36 86% 58.4%;
+  --accent-hover: 34 77% 52.7%;
+  --accent-light: 39 71% 90.6%;
+  --accent-on: 40 53% 6.7%;
+  --state-success: 164 51% 30.2%;
+  --state-success-light: 160 35% 91.6%;
+  --state-warning: 35 100% 30.2%;
+  --state-error: 10 60% 44.1%;
+  --state-error-light: 13 60% 92.2%;
+  --focus: 221 61% 47.6%;
 
-  /* Kanban column colors */
-  --kanban-applied-bg: 239 100% 97%;
-  --kanban-applied-text: 239 68% 49%;
-  --kanban-phone-bg: 48 100% 93%;
-  --kanban-phone-text: 32 95% 44%;
-  --kanban-technical-bg: 198 96% 94%;
-  --kanban-technical-text: 202 89% 40%;
-  --kanban-offer-bg: 152 76% 92%;
-  --kanban-offer-text: 160 84% 39%;
-  --kanban-rejected-bg: 0 86% 95%;
-  --kanban-rejected-text: 0 72% 51%;
+  /* Kanban stages */
+  --kanban-applied-bg: 60 11% 92.5%;
+  --kanban-applied-text: 220 10% 30.4%;
+  --kanban-phone-bg: 60 11% 92.5%;
+  --kanban-phone-text: 220 10% 30.4%;
+  --kanban-technical-bg: 60 11% 92.5%;
+  --kanban-technical-text: 220 10% 30.4%;
+  --kanban-offer-bg: 160 35% 91.6%;
+  --kanban-offer-text: 164 51% 30.2%;
+  --kanban-rejected-bg: 60 11% 92.5%;
+  --kanban-rejected-text: 219 8% 40.6%;
 
   /* shadcn/ui compatibility */
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.13 0.03 255);
-  --card: oklch(0.99 0.005 240);
-  --card-foreground: oklch(0.13 0.03 255);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.13 0.03 255);
-  --primary: oklch(0.75 0.17 75);
-  --primary-foreground: oklch(0.13 0.03 255);
-  --secondary: oklch(0.95 0.005 240);
-  --secondary-foreground: oklch(0.13 0.03 255);
-  --muted: oklch(0.97 0.003 240);
-  --muted-foreground: oklch(0.55 0.02 245);
-  --accent: oklch(0.95 0.005 240);
-  --accent-foreground: oklch(0.13 0.03 255);
-  --destructive: oklch(0.62 0.22 25);
-  --border: oklch(0.9 0.01 240);
-  --input: oklch(0.9 0.01 240);
-  --ring: oklch(0.75 0.17 75);
+  --background: hsl(60 14% 95.9%);
+  --foreground: hsl(223 12% 11.6%);
+  --card: hsl(0 0% 100%);
+  --card-foreground: hsl(223 12% 11.6%);
+  --popover: hsl(0 0% 100%);
+  --popover-foreground: hsl(223 12% 11.6%);
+  --primary: hsl(36 86% 58.4%);
+  --primary-foreground: hsl(40 53% 6.7%);
+  --secondary: hsl(60 11% 92.5%);
+  --secondary-foreground: hsl(223 12% 11.6%);
+  --muted: hsl(60 11% 92.5%);
+  --muted-foreground: hsl(219 8% 40.6%);
+  --accent: hsl(60 11% 92.5%);
+  --accent-foreground: hsl(223 12% 11.6%);
+  --destructive: hsl(10 60% 44.1%);
+  --border: hsl(60 8% 85.9%);
+  --input: hsl(219 6% 56.9%);
+  --ring: hsl(221 61% 47.6%);
   --radius: 0.5rem;
 }
 
 /* ─── Dark mode tokens ─── */
 .dark {
-  --bg-base: 222 47% 7%;
-  --bg-surface: 222 40% 10%;
-  --bg-surface-raised: 222 35% 14%;
-  --border-default: 222 25% 20%;
-  --border-strong: 222 20% 28%;
-  --text-primary: 210 40% 96%;
-  --text-secondary: 215 20% 70%;
-  --text-muted: 215 16% 48%;
-  --accent-primary: 38 92% 50%;
-  --accent-hover: 38 92% 60%;
-  --accent-light: 38 92% 15%;
-  --state-success: 158 64% 52%;
-  --state-success-light: 158 64% 10%;
-  --state-warning: 38 92% 50%;
-  --state-error: 0 84% 60%;
-  --state-error-light: 0 84% 12%;
+  --bg-base: 223 14% 9.6%;
+  --bg-surface: 220 14% 12.4%;
+  --bg-surface-raised: 222 15% 17.1%;
+  --border-default: 222 12% 21%;
+  --border-strong: 221 9% 33.3%;
+  --text-primary: 48 12% 91.6%;
+  --text-secondary: 220 9% 73.7%;
+  --text-muted: 219 8% 59.4%;
+  --accent-primary: 36 86% 58.4%;
+  --accent-hover: 36 88% 66.1%;
+  --accent-light: 38 49% 15.3%;
+  --accent-on: 40 53% 6.7%;
+  --state-success: 163 41% 55.5%;
+  --state-success-light: 159 35% 14.5%;
+  --state-warning: 36 86% 58.4%;
+  --state-error: 9 80% 66.7%;
+  --state-error-light: 9 41% 16.1%;
+  --focus: 221 77% 78.2%;
 
-  /* Kanban column colors */
-  --kanban-applied-bg: 235 43% 16%;
-  --kanban-applied-text: 234 85% 74%;
-  --kanban-phone-bg: 38 100% 6%;
-  --kanban-phone-text: 38 92% 50%;
-  --kanban-technical-bg: 210 100% 9%;
-  --kanban-technical-text: 197 100% 61%;
-  --kanban-offer-bg: 150 100% 8%;
-  --kanban-offer-text: 136 68% 57%;
-  --kanban-rejected-bg: 0 65% 12%;
-  --kanban-rejected-text: 3 91% 64%;
+  /* Kanban stages */
+  --kanban-applied-bg: 222 15% 17.1%;
+  --kanban-applied-text: 220 9% 73.7%;
+  --kanban-phone-bg: 222 15% 17.1%;
+  --kanban-phone-text: 220 9% 73.7%;
+  --kanban-technical-bg: 222 15% 17.1%;
+  --kanban-technical-text: 220 9% 73.7%;
+  --kanban-offer-bg: 159 35% 14.5%;
+  --kanban-offer-text: 163 41% 55.5%;
+  --kanban-rejected-bg: 222 15% 17.1%;
+  --kanban-rejected-text: 219 8% 59.4%;
 
   /* shadcn/ui compatibility */
-  --background: oklch(0.13 0.03 255);
-  --foreground: oklch(0.96 0.005 240);
-  --card: oklch(0.17 0.03 255);
-  --card-foreground: oklch(0.96 0.005 240);
-  --popover: oklch(0.17 0.03 255);
-  --popover-foreground: oklch(0.96 0.005 240);
-  --primary: oklch(0.75 0.17 75);
-  --primary-foreground: oklch(0.13 0.03 255);
-  --secondary: oklch(0.22 0.03 255);
-  --secondary-foreground: oklch(0.96 0.005 240);
-  --muted: oklch(0.22 0.03 255);
-  --muted-foreground: oklch(0.6 0.02 245);
-  --accent: oklch(0.22 0.03 255);
-  --accent-foreground: oklch(0.96 0.005 240);
-  --destructive: oklch(0.65 0.22 25);
-  --border: oklch(1 0 0 / 12%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.75 0.17 75);
+  --background: hsl(223 14% 9.6%);
+  --foreground: hsl(48 12% 91.6%);
+  --card: hsl(220 14% 12.4%);
+  --card-foreground: hsl(48 12% 91.6%);
+  --popover: hsl(220 14% 12.4%);
+  --popover-foreground: hsl(48 12% 91.6%);
+  --primary: hsl(36 86% 58.4%);
+  --primary-foreground: hsl(40 53% 6.7%);
+  --secondary: hsl(222 15% 17.1%);
+  --secondary-foreground: hsl(48 12% 91.6%);
+  --muted: hsl(222 15% 17.1%);
+  --muted-foreground: hsl(219 8% 59.4%);
+  --accent: hsl(222 15% 17.1%);
+  --accent-foreground: hsl(48 12% 91.6%);
+  --destructive: hsl(9 80% 66.7%);
+  --border: hsl(222 12% 21%);
+  --input: hsl(221 9% 33.3%);
+  --ring: hsl(221 77% 78.2%);
 }
 
 @layer base {
@@ -149,11 +152,40 @@
   }
   body {
     @apply bg-background text-foreground;
-    font-family: "JetBrains Mono", monospace;
-    font-feature-settings: "liga" 1, "calt" 1;
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
   }
   h1, h2, h3, h4, h5, h6 {
-    font-family: "JetBrains Mono", monospace;
+    font-family: var(--font-sans);
     font-weight: 600;
+    letter-spacing: -0.02em;
+  }
+  /* A visible ring for keyboard users, on every interactive element. */
+  :focus-visible {
+    outline: 2px solid hsl(var(--focus));
+    outline-offset: 2px;
+  }
+  /* Dark scrollbars in the dark theme (the kanban had a white one). */
+  html {
+    color-scheme: light;
+    scrollbar-color: hsl(var(--border-strong)) transparent;
+  }
+  html.dark {
+    color-scheme: dark;
+  }
+}
+
+/* Figures, code and technical badges: JetBrains Mono, aligned digits. */
+@utility num {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }

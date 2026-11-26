@@ -65,7 +65,7 @@ export function useConfirm(): [(options: ConfirmOptions) => Promise<boolean>, Re
             className={
               options?.destructive
                 ? 'rounded-lg bg-red-600 text-white hover:bg-red-500 font-medium'
-                : 'rounded-lg bg-amber-500 text-black hover:bg-amber-400 font-medium'
+                : 'rounded-lg bg-[hsl(var(--accent-primary))] text-[hsl(var(--accent-on))] hover:bg-[hsl(var(--accent-hover))] font-medium'
             }
           >
             {options?.confirmLabel ?? 'Confirm'}

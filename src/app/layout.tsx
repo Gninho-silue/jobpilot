@@ -3,7 +3,11 @@ import { ClerkProvider } from '@clerk/nextjs'
 import { Providers } from '@/components/providers'
 import { Analytics } from '@vercel/analytics/react'
 import { SpeedInsights } from '@vercel/speed-insights/next'
+import { Geist } from 'next/font/google'
 import './globals.css'
+
+// Text font (JetBrains Mono stays for figures and code: see globals.css).
+const geist = Geist({ subsets: ['latin'], variable: '--font-geist', display: 'swap' })
 
 export const viewport: Viewport = {
   themeColor: [
@@ -17,11 +21,11 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'https://jobpilot.app'),
   title: {
-    default: 'JobPilot — AI-Powered Job Search Copilot',
+    default: 'JobPilot: tailor your CV to every job offer without inventing anything',
     template: '%s | JobPilot',
   },
   description:
-    'Track applications, tailor your CV to any job in 1 click, generate compelling cover letters, and master interview questions with your personal AI job search copilot.',
+    'Adapt your CV and write your cover letter from each job offer, in French or English. JobPilot checks every claim against your original CV and flags what it cannot find there before you export.',
   applicationName: 'JobPilot',
   keywords: [
     'Job tracker',
@@ -46,9 +50,9 @@ export const metadata: Metadata = {
     locale: 'en_US',
     url: '/',
     siteName: 'JobPilot',
-    title: 'JobPilot — AI-Powered Job Search Copilot',
+    title: 'JobPilot: tailor your CV to every job offer without inventing anything',
     description:
-      'Organize applications, adapt resumes to match job descriptions, generate personalized cover letters, and practice interview questions with AI.',
+      'Adapt your CV and write your cover letter from each job offer, in French or English. JobPilot checks every claim against your original CV and flags what it cannot find there before you export.',
     images: [
       {
         url: '/screenshots/kanban.png',
@@ -60,9 +64,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'JobPilot — AI-Powered Job Search Copilot',
+    title: 'JobPilot: tailor your CV to every job offer without inventing anything',
     description:
-      'Organize applications, adapt resumes to match job descriptions, generate personalized cover letters, and practice interview questions with AI.',
+      'Adapt your CV and write your cover letter from each job offer, in French or English. JobPilot checks every claim against your original CV and flags what it cannot find there before you export.',
     images: ['/screenshots/kanban.png'],
     creator: '@jobpilot',
   },
@@ -85,7 +89,7 @@ export default function RootLayout({
   return (
     // No Clerk telemetry from the browser; the server side reads NEXT_PUBLIC_CLERK_TELEMETRY_DISABLED.
     <ClerkProvider telemetry={false}>
-      <html lang="en" suppressHydrationWarning className="dark h-full">
+      <html lang="en" suppressHydrationWarning className={`dark h-full ${geist.variable}`}>
         <head>
           {/* Runs before React hydrates — prevents FOUC without injecting into React tree */}
           <script dangerouslySetInnerHTML={{ __html: themeScript }} />

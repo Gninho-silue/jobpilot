@@ -2,75 +2,49 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import {
-  LayoutDashboard,
-  Briefcase,
-  FileText,
-  MessageSquare,
-  Settings,
-  Crown,
-} from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { UpgradeButton } from '@/components/upgrade-button'
+import { AccountControl } from './account-control'
+import { NAV_ITEMS, isActive } from './nav-items'
+import { PlanMeter, type PlanUsage } from './plan-meter'
+import { ThemeToggle } from './theme-toggle'
 
-const navItems = [
-  { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/applications', label: 'Applications', icon: Briefcase },
-  { href: '/my-cv', label: 'My CV', icon: FileText },
-  { href: '/interview', label: 'Interview Prep', icon: MessageSquare },
-  { href: '/settings', label: 'Settings', icon: Settings },
-]
-
-interface SidebarProps {
-  plan: 'FREE' | 'PRO'
-}
-
-export function Sidebar({ plan }: SidebarProps) {
+/** Desktop navigation (768 px and up); the mobile one is BottomNav. */
+export function Sidebar({ usage, isDemo }: { usage: PlanUsage; isDemo: boolean }) {
   const pathname = usePathname()
 
   return (
-    <aside className="fixed left-0 top-16 h-[calc(100vh-4rem)] w-60 border-r border-[hsl(var(--border-default))] bg-[hsl(var(--bg-surface))] flex flex-col">
-      <nav className="flex-1 px-3 py-4 space-y-1">
-        {navItems.map(({ href, label, icon: Icon }) => {
-          const active = pathname === href || pathname.startsWith(href + '/')
+    <aside className="fixed inset-y-0 left-0 z-30 hidden w-60 flex-col gap-6 border-r border-[hsl(var(--border-default))] bg-[hsl(var(--bg-base))] px-3 py-5 md:flex">
+      <Link href="/dashboard" className="px-3 text-[17px] font-semibold tracking-tight text-[hsl(var(--text-primary))]">
+        JobPilot
+      </Link>
+      <nav aria-label="Main navigation" className="flex flex-col gap-0.5">
+        {NAV_ITEMS.map(({ href, label, icon: Icon }) => {
+          const active = isActive(pathname, href)
           return (
             <Link
               key={href}
               href={href}
+              aria-current={active ? 'page' : undefined}
               className={cn(
-                'flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors',
+                'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
                 active
-                  ? 'bg-[hsl(var(--accent-light))] text-amber-500'
+                  ? 'bg-[hsl(var(--bg-surface-raised))] text-[hsl(var(--text-primary))] shadow-[inset_2px_0_0_hsl(var(--text-primary))]'
                   : 'text-[hsl(var(--text-secondary))] hover:bg-[hsl(var(--bg-surface-raised))] hover:text-[hsl(var(--text-primary))]'
               )}
             >
-              <Icon className="h-4 w-4 shrink-0" />
+              <Icon className="h-4 w-4 shrink-0" aria-hidden />
               {label}
             </Link>
           )
         })}
       </nav>
-
-      {plan === 'FREE' && (
-        <div className="p-3 border-t border-[hsl(var(--border-default))]">
-          <div className="rounded-xl bg-[hsl(var(--accent-light))] border border-amber-500/20 p-3 flex flex-col gap-2.5">
-            <div className="flex items-center gap-2">
-              <div className="h-7 w-7 rounded-lg bg-amber-500/20 flex items-center justify-center shrink-0">
-                <Crown className="h-3.5 w-3.5 text-amber-500" />
-              </div>
-              <span className="text-sm font-semibold text-[hsl(var(--text-primary))]">
-                Upgrade to Pro
-              </span>
-            </div>
-            <p className="text-[11px] leading-relaxed text-[hsl(var(--text-muted))]">
-              Unlimited applications, advanced AI tailoring and interview coaching.
-            </p>
-            <UpgradeButton source="sidebar">
-              Upgrade — $9/mo
-            </UpgradeButton>
-          </div>
+      <div className="mt-auto grid gap-3">
+        <PlanMeter {...usage} />
+        <div className="flex items-center justify-between gap-2 px-1">
+          <AccountControl isDemo={isDemo} />
+          <ThemeToggle />
         </div>
-      )}
+      </div>
     </aside>
   )
 }

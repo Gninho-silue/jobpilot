@@ -183,7 +183,7 @@ export function NewApplicationModal({
               value={offerText}
               onChange={e => setOfferText(e.target.value)}
               required
-              className="w-full h-40 field-sizing-fixed resize-none overflow-y-auto bg-[hsl(var(--bg-surface-raised))] border border-[hsl(var(--border-default))] text-[hsl(var(--text-primary))] placeholder:text-[hsl(var(--text-muted))] rounded-lg focus-visible:ring-1 focus-visible:ring-amber-500/60 focus-visible:border-[hsl(var(--border-default))]"
+              className="w-full h-40 field-sizing-fixed resize-none overflow-y-auto bg-[hsl(var(--bg-surface-raised))] border border-[hsl(var(--border-default))] text-[hsl(var(--text-primary))] placeholder:text-[hsl(var(--text-muted))] rounded-lg focus-visible:ring-1 focus-visible:ring-[hsl(var(--focus))] focus-visible:border-[hsl(var(--border-default))]"
             />
             <div className="mt-1.5 flex items-center gap-2">
               {detectedLang && (
@@ -216,14 +216,14 @@ export function NewApplicationModal({
                 value={company}
                 onChange={e => { setCompany(e.target.value); setAutoFilled(a => ({ ...a, company: false })) }}
                 required
-                className="bg-[hsl(var(--bg-surface-raised))] border border-[hsl(var(--border-default))] text-[hsl(var(--text-primary))] placeholder:text-[hsl(var(--text-muted))] rounded-lg focus-visible:ring-1 focus-visible:ring-amber-500/60 focus-visible:border-[hsl(var(--border-default))] pr-8"
+                className="bg-[hsl(var(--bg-surface-raised))] border border-[hsl(var(--border-default))] text-[hsl(var(--text-primary))] placeholder:text-[hsl(var(--text-muted))] rounded-lg focus-visible:ring-1 focus-visible:ring-[hsl(var(--focus))] focus-visible:border-[hsl(var(--border-default))] pr-8"
               />
               {parsing && !company && (
                 <Loader2 className="absolute right-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 animate-spin text-[hsl(var(--text-muted))]" />
               )}
               {autoFilled.company && company && (
-                <span className="absolute -top-1.5 right-1.5 text-[9px] font-semibold uppercase tracking-wide px-1 py-0.5 rounded bg-amber-500/20 text-amber-500 leading-none">
-                  Auto
+                <span className="absolute -top-1.5 right-1.5 text-[10px] font-medium px-1 py-0.5 rounded bg-[hsl(var(--bg-surface-raised))] text-[hsl(var(--text-secondary))] leading-none">
+                  Auto-filled
                 </span>
               )}
             </div>
@@ -235,14 +235,14 @@ export function NewApplicationModal({
                 value={role}
                 onChange={e => { setRole(e.target.value); setAutoFilled(a => ({ ...a, role: false })) }}
                 required
-                className="bg-[hsl(var(--bg-surface-raised))] border border-[hsl(var(--border-default))] text-[hsl(var(--text-primary))] placeholder:text-[hsl(var(--text-muted))] rounded-lg focus-visible:ring-1 focus-visible:ring-amber-500/60 focus-visible:border-[hsl(var(--border-default))] pr-8"
+                className="bg-[hsl(var(--bg-surface-raised))] border border-[hsl(var(--border-default))] text-[hsl(var(--text-primary))] placeholder:text-[hsl(var(--text-muted))] rounded-lg focus-visible:ring-1 focus-visible:ring-[hsl(var(--focus))] focus-visible:border-[hsl(var(--border-default))] pr-8"
               />
               {parsing && !role && (
                 <Loader2 className="absolute right-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 animate-spin text-[hsl(var(--text-muted))]" />
               )}
               {autoFilled.role && role && (
-                <span className="absolute -top-1.5 right-1.5 text-[9px] font-semibold uppercase tracking-wide px-1 py-0.5 rounded bg-amber-500/20 text-amber-500 leading-none">
-                  Auto
+                <span className="absolute -top-1.5 right-1.5 text-[10px] font-medium px-1 py-0.5 rounded bg-[hsl(var(--bg-surface-raised))] text-[hsl(var(--text-secondary))] leading-none">
+                  Auto-filled
                 </span>
               )}
             </div>
@@ -253,7 +253,7 @@ export function NewApplicationModal({
             value={link}
             onChange={e => setLink(e.target.value)}
             type="url"
-            className="bg-[hsl(var(--bg-surface-raised))] border border-[hsl(var(--border-default))] text-[hsl(var(--text-primary))] placeholder:text-[hsl(var(--text-muted))] rounded-lg focus-visible:ring-1 focus-visible:ring-amber-500/60 focus-visible:border-[hsl(var(--border-default))]"
+            className="bg-[hsl(var(--bg-surface-raised))] border border-[hsl(var(--border-default))] text-[hsl(var(--text-primary))] placeholder:text-[hsl(var(--text-muted))] rounded-lg focus-visible:ring-1 focus-visible:ring-[hsl(var(--focus))] focus-visible:border-[hsl(var(--border-default))]"
           />
 
           {/* Salary field */}
@@ -262,11 +262,11 @@ export function NewApplicationModal({
               placeholder="Salary (optional, e.g. $80k)"
               value={salary}
               onChange={e => { setSalary(e.target.value); setAutoFilled(a => ({ ...a, salary: false })) }}
-              className="bg-[hsl(var(--bg-surface-raised))] border border-[hsl(var(--border-default))] text-[hsl(var(--text-primary))] placeholder:text-[hsl(var(--text-muted))] rounded-lg focus-visible:ring-1 focus-visible:ring-amber-500/60 focus-visible:border-[hsl(var(--border-default))] pr-8"
+              className="bg-[hsl(var(--bg-surface-raised))] border border-[hsl(var(--border-default))] text-[hsl(var(--text-primary))] placeholder:text-[hsl(var(--text-muted))] rounded-lg focus-visible:ring-1 focus-visible:ring-[hsl(var(--focus))] focus-visible:border-[hsl(var(--border-default))] pr-8"
             />
             {autoFilled.salary && salary && (
-              <span className="absolute -top-1.5 right-1.5 text-[9px] font-semibold uppercase tracking-wide px-1 py-0.5 rounded bg-amber-500/20 text-amber-500 leading-none">
-                Auto
+              <span className="absolute -top-1.5 right-1.5 text-[10px] font-medium px-1 py-0.5 rounded bg-[hsl(var(--bg-surface-raised))] text-[hsl(var(--text-secondary))] leading-none">
+                Auto-filled
               </span>
             )}
           </div>
@@ -289,7 +289,7 @@ export function NewApplicationModal({
             <Button
               type="submit"
               disabled={loading}
-              className="rounded-lg bg-amber-500 text-black hover:bg-amber-400 font-medium"
+              className="rounded-lg bg-[hsl(var(--accent-primary))] text-[hsl(var(--accent-on))] hover:bg-[hsl(var(--accent-hover))] font-medium"
             >
               {loading ? 'Creating...' : 'Create Application'}
             </Button>

@@ -9,6 +9,7 @@ import { actionableIssues, describeIssues } from '@/lib/fact-check/corrections'
 import { STREAM_ERROR, STREAM_REPLACE } from '@/lib/stream-protocol'
 import { checkLlmRateLimit, tooManyRequests } from '@/lib/rate-limit'
 import { checkDemoQuota } from '@/lib/demo/quota'
+import { adaptedCvCheck } from '@/lib/fact-check/summary'
 
 export async function POST(
   request: Request,
@@ -91,7 +92,8 @@ export async function POST(
           if (finalText) {
             await prisma.application.update({
               where: { id },
-              data: { adaptedCvText: finalText },
+              // The check result is stored with the text: the dashboard reads it.
+              data: { adaptedCvText: finalText, adaptedCvCheck: adaptedCvCheck(user.cvText, finalText, application.approvedCvTitle) ?? undefined },
             })
           } else {
             // Nothing usable was produced: never save a truncated CV, give the credit back.

@@ -9,6 +9,7 @@ import { actionableIssues, describeLetterIssues } from '@/lib/fact-check/correct
 import { STREAM_ERROR, STREAM_REPLACE } from '@/lib/stream-protocol'
 import { checkLlmRateLimit, tooManyRequests } from '@/lib/rate-limit'
 import { checkDemoQuota } from '@/lib/demo/quota'
+import { coverLetterCheck } from '@/lib/fact-check/summary'
 
 export async function POST(
   request: Request,
@@ -101,7 +102,8 @@ export async function POST(
           if (finalText) {
             await prisma.application.update({
               where: { id },
-              data: { coverLetter: finalText },
+              // The check result is stored with the text: the dashboard reads it.
+              data: { coverLetter: finalText, coverLetterCheck: coverLetterCheck(user.cvText, finalText) ?? undefined },
             })
           } else {
             // Nothing usable was produced: never save a truncated letter, give the credit back.

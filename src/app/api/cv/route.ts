@@ -15,11 +15,14 @@ export async function GET() {
     select: { cvPath: true, cvText: true, updatedAt: true },
   })
 
-  const hasCv = !!user?.cvPath
+  // A demo has a fictional CV text and no file: read-only, nothing to download.
+  const demo = actor?.kind === 'demo'
+  const hasFile = !!user?.cvPath
   return NextResponse.json({
     data: {
-      hasCv,
-      fileUrl: hasCv ? CV_FILE_ROUTE : null,
+      hasCv: hasFile || (demo && !!user?.cvText),
+      demo,
+      fileUrl: hasFile ? CV_FILE_ROUTE : null,
       cvText: user?.cvText ?? null,
       cvTextPreview: user?.cvText ? user.cvText.slice(0, 500) : null,
       updatedAt: user?.updatedAt ?? null,

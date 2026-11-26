@@ -5,14 +5,10 @@ import { useSearchParams, useRouter } from 'next/navigation'
 import {
   Plus,
   FileText,
-  Edit,
-  MessageSquare,
-  MoreHorizontal,
   SearchX,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
 import { NewApplicationModal } from '@/components/applications/new-application-modal'
 import { EditApplicationSheet, type Application } from '@/components/applications/edit-application-sheet'
 import {
@@ -23,46 +19,28 @@ import {
 import type { InterviewQuestion } from '@/lib/ai/generate-interview-questions'
 
 type ApplicationStatus = 'APPLIED' | 'PHONE' | 'TECHNICAL' | 'OFFER' | 'REJECTED'
-type Language = 'FR' | 'EN'
 
-const COLUMNS: {
-  status: ApplicationStatus
-  label: string
-  bgVar: string
-  textVar: string
-}[] = [
-  { status: 'APPLIED', label: 'Applied', bgVar: '--kanban-applied-bg', textVar: '--kanban-applied-text' },
-  { status: 'PHONE', label: 'Phone Screen', bgVar: '--kanban-phone-bg', textVar: '--kanban-phone-text' },
-  { status: 'TECHNICAL', label: 'Technical', bgVar: '--kanban-technical-bg', textVar: '--kanban-technical-text' },
-  { status: 'OFFER', label: 'Offer', bgVar: '--kanban-offer-bg', textVar: '--kanban-offer-text' },
-  { status: 'REJECTED', label: 'Rejected', bgVar: '--kanban-rejected-bg', textVar: '--kanban-rejected-text' },
+const COLUMNS: { status: ApplicationStatus; label: string }[] = [
+  { status: 'APPLIED', label: 'Applied' },
+  { status: 'PHONE', label: 'Phone screen' },
+  { status: 'TECHNICAL', label: 'Technical' },
+  { status: 'OFFER', label: 'Offer' },
+  { status: 'REJECTED', label: 'Rejected' },
 ]
 
-const COMPANY_COLORS = [
-  'bg-violet-500',
-  'bg-sky-500',
-  'bg-emerald-500',
-  'bg-amber-500',
-  'bg-rose-500',
-  'bg-indigo-500',
-  'bg-teal-500',
-  'bg-orange-500',
-]
-
-function getCompanyColor(company: string): string {
-  let hash = 0
-  for (let i = 0; i < company.length; i++) {
-    hash = (hash * 31 + company.charCodeAt(i)) & 0xffffffff
-  }
-  return COMPANY_COLORS[Math.abs(hash) % COMPANY_COLORS.length]!
+// Stages are neutral; only Offer (green) and Rejected (dimmed) stand out.
+function stageDot(status: ApplicationStatus): string {
+  if (status === 'OFFER') return 'bg-[hsl(var(--state-success))]'
+  if (status === 'REJECTED') return 'bg-[hsl(var(--text-muted))]'
+  return 'bg-[hsl(var(--text-secondary))]'
 }
 
 function timeAgo(dateStr: string): string {
   const diff = Date.now() - new Date(dateStr).getTime()
   const days = Math.floor(diff / 86400000)
   if (days === 0) return 'today'
-  if (days === 1) return '1d ago'
-  return `${days}d ago`
+  if (days === 1) return '1 day ago'
+  return `${days} days ago`
 }
 
 interface ApplicationCardProps {
@@ -73,106 +51,42 @@ interface ApplicationCardProps {
   onDragEnd?: () => void
 }
 
-function ApplicationCard({
-  app,
-  onEdit,
-  isDragging,
-  onDragStart,
-  onDragEnd,
-}: ApplicationCardProps) {
-  const colorClass = getCompanyColor(app.company)
-  const initial = app.company.charAt(0).toUpperCase()
-
+/** One application: the whole card opens it (keyboard included) and can be dragged to another stage. */
+function ApplicationCard({ app, onEdit, isDragging, onDragStart, onDragEnd }: ApplicationCardProps) {
   return (
-    <div
+    <button
+      type="button"
       draggable
       onDragStart={e => onDragStart?.(e, app.id)}
       onDragEnd={onDragEnd}
       onClick={() => onEdit(app)}
-      className={`bg-[hsl(var(--bg-surface))] border rounded-xl p-3 space-y-3 transition-all select-none cursor-grab active:cursor-grabbing ${
+      className={`grid w-full gap-2 rounded-xl border bg-[hsl(var(--bg-surface))] p-3 text-left transition-colors select-none cursor-grab active:cursor-grabbing ${
         isDragging
-          ? 'opacity-40 border-amber-500 scale-[0.98] shadow-lg'
-          : 'border-[hsl(var(--border-default))] hover:border-[hsl(var(--border-strong))] hover:shadow-2xs'
+          ? 'opacity-40 border-[hsl(var(--accent-primary))]'
+          : 'border-[hsl(var(--border-default))] hover:border-[hsl(var(--border-strong))]'
       }`}
     >
-      <div className="flex items-start justify-between gap-2">
-        <div className="flex items-center gap-2 min-w-0">
-          <div
-            className={`${colorClass} h-8 w-8 rounded-lg shrink-0 flex items-center justify-center text-white text-xs font-semibold`}
-          >
-            {initial}
-          </div>
-          <div className="min-w-0">
-            <p className="text-sm font-semibold text-[hsl(var(--text-primary))] truncate">{app.company}</p>
-            <p className="text-xs text-[hsl(var(--text-secondary))] truncate">{app.role}</p>
-          </div>
-        </div>
-        <Badge
-          variant="outline"
-          className="shrink-0 text-[10px] px-1.5 py-0 border-[hsl(var(--border-strong))] text-[hsl(var(--text-muted))]"
-        >
+      <span className="flex items-start justify-between gap-2">
+        <span className="min-w-0">
+          <span className="block truncate text-sm font-semibold text-[hsl(var(--text-primary))]">{app.company}</span>
+          <span className="block truncate text-sm text-[hsl(var(--text-secondary))]">{app.role}</span>
+        </span>
+        <span className="num shrink-0 rounded border border-[hsl(var(--border-default))] px-1 text-[11px] text-[hsl(var(--text-secondary))]">
           {app.language}
-        </Badge>
-      </div>
-
-      <div className="flex items-center justify-between text-xs text-[hsl(var(--text-muted))]">
+        </span>
+      </span>
+      <span className="flex items-center justify-between gap-2 text-xs text-[hsl(var(--text-muted))]">
         <span>{timeAgo(app.createdAt)}</span>
-        {app.salary && (
-          <span className="text-[hsl(var(--text-secondary))]">{app.salary}</span>
-        )}
-      </div>
-
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-1">
-          <button
-            type="button"
-            title="Adapt CV"
-            aria-label="Adapt CV"
-            onClick={e => { e.stopPropagation(); onEdit(app) }}
-            className="h-7 w-7 rounded-lg flex items-center justify-center text-[hsl(var(--text-muted))] hover:bg-[hsl(var(--bg-surface-raised))] hover:text-[hsl(var(--text-secondary))] transition-colors cursor-pointer"
-          >
-            <FileText className="h-3.5 w-3.5" />
-          </button>
-          <button
-            type="button"
-            title="Edit"
-            aria-label="Edit"
-            onClick={e => { e.stopPropagation(); onEdit(app) }}
-            className="h-7 w-7 rounded-lg flex items-center justify-center text-[hsl(var(--text-muted))] hover:bg-[hsl(var(--bg-surface-raised))] hover:text-[hsl(var(--text-secondary))] transition-colors cursor-pointer"
-          >
-            <Edit className="h-3.5 w-3.5" />
-          </button>
-          <button
-            type="button"
-            title="Interview prep (coming soon)"
-            aria-label="Interview prep (coming soon)"
-            onClick={e => e.stopPropagation()}
-            className="h-7 w-7 rounded-lg flex items-center justify-center text-[hsl(var(--text-muted))] hover:bg-[hsl(var(--bg-surface-raised))] hover:text-[hsl(var(--text-secondary))] transition-colors cursor-pointer"
-          >
-            <MessageSquare className="h-3.5 w-3.5" />
-          </button>
-        </div>
-        <button
-          type="button"
-          title="More options"
-            aria-label="More options"
-          onClick={e => e.stopPropagation()}
-          className="h-7 w-7 rounded-lg flex items-center justify-center text-[hsl(var(--text-muted))] hover:bg-[hsl(var(--bg-surface-raised))] hover:text-[hsl(var(--text-secondary))] transition-colors cursor-pointer"
-        >
-          <MoreHorizontal className="h-3.5 w-3.5" />
-        </button>
-      </div>
-    </div>
+        {app.salary ? <span className="num text-[hsl(var(--text-secondary))]">{app.salary}</span> : null}
+      </span>
+    </button>
   )
 }
 
 interface KanbanColumnProps {
   status: ApplicationStatus
   label: string
-  bgVar: string
-  textVar: string
   apps: Application[]
-  totalAppsCount: number
   draggedAppId: string | null
   onAddClick: () => void
   onEditApp: (app: Application) => void
@@ -181,23 +95,13 @@ interface KanbanColumnProps {
   onDrop: (targetStatus: ApplicationStatus) => void
 }
 
-function KanbanColumn({
-  status,
-  label,
-  bgVar,
-  textVar,
-  apps,
-  draggedAppId,
-  onAddClick,
-  onEditApp,
-  onDragStart,
-  onDragEnd,
-  onDrop,
-}: KanbanColumnProps) {
+function KanbanColumn({ status, label, apps, draggedAppId, onAddClick, onEditApp, onDragStart, onDragEnd, onDrop }: KanbanColumnProps) {
   const [isDragOver, setIsDragOver] = useState(false)
 
   return (
-    <div
+    <section
+      aria-label={`${label}: ${apps.length}`}
+      data-stage={status}
       onDragOver={e => {
         e.preventDefault()
         e.dataTransfer.dropEffect = 'move'
@@ -208,49 +112,24 @@ function KanbanColumn({
         setIsDragOver(true)
       }}
       onDragLeave={e => {
-        if (!e.currentTarget.contains(e.relatedTarget as Node)) {
-          setIsDragOver(false)
-        }
+        if (!e.currentTarget.contains(e.relatedTarget as Node)) setIsDragOver(false)
       }}
       onDrop={e => {
         e.preventDefault()
         setIsDragOver(false)
         onDrop(status)
       }}
-      className={`w-[280px] shrink-0 flex flex-col gap-3 rounded-2xl p-1.5 transition-all duration-150 ${
-        isDragOver
-          ? 'bg-amber-500/10 ring-2 ring-amber-500/50 ring-dashed'
-          : 'bg-transparent'
+      className={`flex w-[calc(100vw-2rem)] shrink-0 snap-center flex-col gap-2.5 rounded-xl p-1.5 md:w-64 md:snap-align-none xl:w-auto xl:min-w-0 ${
+        isDragOver ? 'bg-[hsl(var(--accent-light))] ring-2 ring-[hsl(var(--focus))]' : ''
       }`}
     >
-      <div
-        className="flex items-center justify-between px-3 py-2 rounded-xl"
-        style={{ background: `hsl(var(${bgVar}))` }}
-      >
-        <div className="flex items-center gap-2">
-          <span
-            className="h-2 w-2 rounded-full"
-            style={{ background: `hsl(var(${textVar}))` }}
-          />
-          <span
-            className="text-sm font-semibold"
-            style={{ color: `hsl(var(${textVar}))` }}
-          >
-            {label}
-          </span>
-          <span
-            className="text-xs font-medium px-1.5 py-0.5 rounded-full"
-            style={{
-              background: `hsl(var(${textVar}) / 20%)`,
-              color: `hsl(var(${textVar}))`,
-            }}
-          >
-            {apps.length}
-          </span>
-        </div>
-      </div>
+      <h2 className="flex items-center gap-2 px-2 py-1.5 text-sm font-semibold text-[hsl(var(--text-primary))]">
+        <span aria-hidden className={`h-2 w-2 rounded-full ${stageDot(status)}`} />
+        {label}
+        <span className="num text-xs font-medium text-[hsl(var(--text-muted))]">{apps.length}</span>
+      </h2>
 
-      <div className="flex flex-col gap-2 flex-1 min-h-[90px]">
+      <div className="flex min-h-[90px] flex-1 flex-col gap-2">
         {apps.map(app => (
           <ApplicationCard
             key={app.id}
@@ -261,22 +140,25 @@ function KanbanColumn({
             onDragEnd={onDragEnd}
           />
         ))}
-        {apps.length === 0 && isDragOver && (
-          <div className="h-24 rounded-xl border border-dashed border-amber-500/40 bg-amber-500/5 flex items-center justify-center text-xs text-amber-500 font-medium">
+        {apps.length === 0 && !isDragOver ? (
+          <p className="px-2 py-3 text-xs text-[hsl(var(--text-muted))]">No application at this stage.</p>
+        ) : null}
+        {apps.length === 0 && isDragOver ? (
+          <div className="flex h-24 items-center justify-center rounded-xl border border-dashed border-[hsl(var(--accent-primary))] text-xs font-medium text-[hsl(var(--text-primary))]">
             Drop here
           </div>
-        )}
+        ) : null}
       </div>
 
       <button
         type="button"
         onClick={onAddClick}
-        className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-dashed border-[hsl(var(--border-default))] text-xs text-[hsl(var(--text-muted))] hover:text-[hsl(var(--text-secondary))] hover:border-[hsl(var(--border-strong))] transition-colors cursor-pointer"
+        className="flex items-center gap-1.5 rounded-lg border border-dashed border-[hsl(var(--border-default))] px-3 py-2 text-xs text-[hsl(var(--text-muted))] transition-colors hover:border-[hsl(var(--border-strong))] hover:text-[hsl(var(--text-secondary))]"
       >
-        <Plus className="h-3.5 w-3.5" />
-        Add
+        <Plus className="h-3.5 w-3.5" aria-hidden />
+        Add an application
       </button>
-    </div>
+    </section>
   )
 }
 
@@ -291,17 +173,37 @@ export default function ApplicationsPage() {
   const [userIsPro, setUserIsPro] = useState(false)
   const [draggedAppId, setDraggedAppId] = useState<string | null>(null)
 
+  // A failed load is an error to show, never an empty board ("No applications yet").
+  const [loadError, setLoadError] = useState(false)
   const fetchApplications = useCallback(async () => {
     try {
       const res = await fetch('/api/applications')
-      const json = await res.json() as { data?: Application[] }
+      const json = await res.json().catch(() => ({})) as { data?: Application[] }
       if (res.ok && json.data) {
         setApplications(json.data)
+        setLoadError(false)
+      } else {
+        setLoadError(true)
       }
+    } catch {
+      setLoadError(true)
     } finally {
       setLoading(false)
     }
   }, [])
+
+  // Mobile: one stage at a time, swiped sideways; the tabs above follow and jump.
+  const board = useRef<HTMLDivElement>(null)
+  const [visibleStage, setVisibleStage] = useState(0)
+  function showStage(index: number) {
+    const column = board.current?.children[index] as HTMLElement | undefined
+    column?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' })
+  }
+  function trackStage() {
+    const el = board.current
+    if (!el || !el.clientWidth) return
+    setVisibleStage(Math.min(COLUMNS.length - 1, Math.max(0, Math.round(el.scrollLeft / el.clientWidth))))
+  }
 
   const searchParams = useSearchParams()
   const router = useRouter()
@@ -516,15 +418,17 @@ export default function ApplicationsPage() {
     filters.sortBy !== 'newest'
 
   return (
-    <div className="flex flex-col gap-5 h-full">
+    <div className="flex flex-col gap-5 h-full min-w-0">
       {/* Header */}
-      <div className="flex items-start justify-between flex-wrap gap-3">
+      <div className="flex items-end justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-xl font-semibold text-[hsl(var(--text-primary))]">Applications</h1>
+          <h1 className="text-[26px] font-semibold leading-tight tracking-tight text-[hsl(var(--text-primary))]">Applications</h1>
           <p className="text-sm text-[hsl(var(--text-secondary))] mt-0.5">
-            {isFiltering ? (
+            {loadError && applications.length === 0 ? (
+              'Loading failed'
+            ) : isFiltering ? (
               <>
-                Showing <span className="font-semibold text-amber-500">{filteredApplications.length}</span> of{' '}
+                Showing <span className="num font-semibold text-[hsl(var(--text-primary))]">{filteredApplications.length}</span> of{' '}
                 {applications.length} applications
               </>
             ) : (
@@ -532,13 +436,14 @@ export default function ApplicationsPage() {
             )}
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        {/* On mobile the same action is in the top bar. */}
+        <div className="hidden items-center gap-2 md:flex">
           <Button
             onClick={() => setModalOpen(true)}
-            className="rounded-lg bg-amber-500 text-black hover:bg-amber-400 font-medium h-9 px-3 text-sm cursor-pointer"
+            className="rounded-lg bg-[hsl(var(--accent-primary))] text-[hsl(var(--accent-on))] hover:bg-[hsl(var(--accent-hover))] font-medium h-9 px-3 text-sm cursor-pointer"
           >
             <Plus className="h-4 w-4 mr-1.5" />
-            New Application
+            New application
           </Button>
         </div>
       </div>
@@ -555,7 +460,22 @@ export default function ApplicationsPage() {
 
       {loading ? (
         <div className="flex items-center justify-center flex-1 py-20">
-          <p className="text-sm text-[hsl(var(--text-muted))]">Loading...</p>
+          <p role="status" className="text-sm text-[hsl(var(--text-muted))]">Loading your applications…</p>
+        </div>
+      ) : loadError && applications.length === 0 ? (
+        <div role="alert" className="flex flex-col items-start gap-3 rounded-xl border border-[hsl(var(--border-default))] bg-[hsl(var(--bg-surface))] p-5">
+          <p className="font-semibold text-[hsl(var(--text-primary))]">Your applications could not be loaded.</p>
+          <p className="text-sm text-[hsl(var(--text-secondary))]">The server did not answer. Try again in a moment.</p>
+          <Button
+            variant="outline"
+            onClick={() => {
+              setLoading(true)
+              void fetchApplications()
+            }}
+            className="h-9 rounded-lg border-[hsl(var(--border-strong))] px-3 text-sm"
+          >
+            Retry
+          </Button>
         </div>
       ) : applications.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 gap-3">
@@ -563,7 +483,7 @@ export default function ApplicationsPage() {
           <p className="text-[hsl(var(--text-secondary))] text-sm">No applications yet</p>
           <Button
             onClick={() => setModalOpen(true)}
-            className="rounded-lg bg-amber-500 text-black hover:bg-amber-400 font-medium h-8 px-3 text-sm mt-1 cursor-pointer"
+            className="rounded-lg bg-[hsl(var(--accent-primary))] text-[hsl(var(--accent-on))] hover:bg-[hsl(var(--accent-hover))] font-medium h-8 px-3 text-sm mt-1 cursor-pointer"
           >
             <Plus className="h-4 w-4 mr-1.5" />
             Add your first application
@@ -585,14 +505,35 @@ export default function ApplicationsPage() {
           </Button>
         </div>
       ) : (
-        <div className="overflow-x-auto pb-4 -mx-6 px-6">
-          <div className="flex gap-4" style={{ minWidth: 'max-content' }}>
+        <div className="flex min-w-0 flex-col gap-3">
+          <div className="flex gap-1 overflow-x-auto md:hidden" aria-label="Stages">
+            {COLUMNS.map((col, index) => (
+              <button
+                key={col.status}
+                type="button"
+                aria-current={visibleStage === index ? 'true' : undefined}
+                onClick={() => showStage(index)}
+                className={`flex shrink-0 items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-sm ${
+                  visibleStage === index
+                    ? 'bg-[hsl(var(--bg-surface-raised))] font-semibold text-[hsl(var(--text-primary))]'
+                    : 'text-[hsl(var(--text-secondary))]'
+                }`}
+              >
+                {col.label}
+                <span className="num text-xs text-[hsl(var(--text-muted))]">{grouped[col.status].length}</span>
+              </button>
+            ))}
+          </div>
+          <div
+            ref={board}
+            onScroll={trackStage}
+            className="-mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-4 md:mx-0 md:snap-none md:px-0 xl:grid xl:grid-cols-5 xl:gap-3 xl:overflow-visible"
+          >
             {COLUMNS.map(col => (
               <KanbanColumn
                 key={col.status}
                 {...col}
                 apps={grouped[col.status]}
-                totalAppsCount={applications.length}
                 draggedAppId={draggedAppId}
                 onAddClick={() => setModalOpen(true)}
                 onEditApp={openEdit}

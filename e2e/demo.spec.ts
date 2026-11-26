@@ -10,14 +10,14 @@ test('"Try the demo" opens a seeded workspace with the banner and the fact-check
   await page.getByRole('button', { name: 'Try the demo' }).click()
   await page.waitForURL('**/dashboard')
 
-  await expect(page.getByRole('status').filter({ hasText: 'Demo workspace — data resets daily.' })).toBeVisible()
+  await expect(page.getByRole('status').filter({ hasText: 'Demo · resets daily' })).toBeVisible()
   const cookie = (await context.cookies()).find(c => c.name === 'jp_demo')
   expect(cookie).toEqual(expect.objectContaining({ httpOnly: true, sameSite: 'Lax' }))
 
   // Step 5: honest dashboard figures (the exact numbers depend on the date: see test/api/dashboard.int.test.ts).
   await expect(page.getByText('Welcome back, Sam.', { exact: false })).toBeVisible()
   await expect(page.getByText(/Welcome back, there/)).toHaveCount(0)
-  await expect(page.getByText(/Free plan — \d of 5 applications created this month/)).toBeVisible()
+  await expect(page.getByText(/Free plan: \d of 5 applications created this month/)).toBeVisible()
   await expect(page.getByText(/% vs last month/)).toHaveCount(0)
 
   await page.goto('/applications')
@@ -67,11 +67,18 @@ test('signing in with Clerk during a demo removes the demo cookie', async ({ pag
     })
   }
   await page.goto('/dashboard')
-  await expect(page.getByRole('status').filter({ hasText: 'Demo workspace' })).toHaveCount(0)
+  await expect(page.getByRole('status').filter({ hasText: 'resets daily' })).toHaveCount(0)
   expect((await context.cookies()).find(c => c.name === 'jp_demo')).toBeUndefined()
 })
 
 // Last in the file: it uses up the per-IP limit of demo starts.
+// The next spec files start demos too: give the starts back once this file is done.
+test.afterAll(async () => {
+  process.env.DATABASE_URL = process.env.E2E_DATABASE_URL
+  const { prisma } = await import('../src/lib/prisma')
+  await prisma.rateLimitHit.deleteMany({ where: { key: { startsWith: 'demo-start:' } } })
+})
+
 test('limit reached: back home with a readable message, and a reload does not re-send the form', async ({ page, playwright }) => {
   // Use up the starts from this IP with cookie-less requests (a demo cookie would skip the limit).
   for (let i = 0; i < 6; i++) {

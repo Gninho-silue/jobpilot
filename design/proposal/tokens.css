@@ -1,0 +1,54 @@
+/* JobPilot — proposed design tokens (6.2). Not wired into the app yet. */
+:root {
+  --font-sans: "Geist", "Inter", system-ui, sans-serif;
+  /* Figures, code and technical badges only. */
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+
+  /* Type scale (px): 12 · 13 · 14 · 16 · 20 · 26 · 30 */
+  --text-s: 13px;
+  --text-base: 14px;
+  --text-m: 16px;
+  --text-xl: 26px;
+
+  /* Spacing: 4-px grid. Page gutter 32 desktop / 16 mobile. */
+  --radius-s: 8px;
+  --radius-m: 12px;
+}
+
+/* Dark: graphite, not black; one warm accent kept for primary actions. */
+[data-theme="dark"] {
+  --bg: #15171c;
+  --surface: #1b1e24;
+  --raised: #252932;
+  --line: #2f333c;
+  --text: #ecebe7;
+  --text-2: #b6bac2;
+  --muted: #8f95a0;
+  --amber: #f0a63a;
+  --on-amber: #1a1408;
+  --amber-text: #f0a63a;
+  --ok: #5fbca2;
+  --flag: #ee7a66;
+  --focus: #9db8f2;
+}
+
+/* Light: warm white paper, ink text. Amber stays a fill (with dark text), never text on white. */
+[data-theme="light"] {
+  --bg: #f6f6f3;
+  --surface: #ffffff;
+  --raised: #eeeeea;
+  --line: #deded8;
+  --text: #1a1c21;
+  --text-2: #464b55;
+  --muted: #5f6570;
+  --amber: #f0a63a;
+  --on-amber: #1a1408;
+  --amber-text: #9a5b00;
+  --ok: #26745f;
+  --flag: #b4432d;
+  --focus: #2f5fc4;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; animation: none !important; }
+}

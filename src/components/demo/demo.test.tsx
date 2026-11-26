@@ -16,11 +16,14 @@ afterEach(() => {
 })
 
 describe('demo UI', () => {
-  it('the banner says the data resets daily and payments run in Stripe test mode', () => {
+  it('the banner is one short line; "Details" shows the full sentence', async () => {
     render(<DemoBanner />)
-    expect(screen.getByRole('status')).toHaveTextContent(
-      'Demo workspace — data resets daily. Payments run in Stripe test mode (card 4242 4242 4242 4242).'
-    )
+    const banner = screen.getByRole('status')
+    expect(banner).toHaveTextContent('Demo · resets daily · test card 4242 4242 4242 4242')
+    expect(banner).not.toHaveTextContent('Payments run in Stripe test mode')
+    await userEvent.click(screen.getByRole('button', { name: 'Details' }))
+    expect(banner).toHaveTextContent('Demo workspace — data resets daily. Payments run in Stripe test mode (card 4242 4242 4242 4242).')
+    expect(screen.getByRole('button', { name: 'Hide' })).toHaveAttribute('aria-expanded', 'true')
   })
 
   it('"Try the demo" posts to /api/demo', () => {

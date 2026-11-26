@@ -219,6 +219,13 @@ Vercel Deploy & Production Verification
   - [x] Free plan banner: "N of 5 applications created this month" + "Deleting an application does not give a credit back."; a usage counter from an earlier month counts as 0; a demo workspace's counter is seeded with its applications of the current (UTC) month, so the banner and the limit agree
   - [x] "Welcome back." without a first name; the demo greets "Sam"
   - [x] Integration tests: every dashboard figure against the database, demo workspace included (`test/api/dashboard.int.test.ts`)
+- [x] Step 6 (JOBPILOT_PLAN.md), on branch `redesign`: 6.1 inventory and before screenshots (`design/inventory.md`, `design/before/`), 6.2 proposal validated by Gninho on 26/11 (`design/proposal/`), 6.5 implemented zone by zone with after screenshots (`design/after/`, `CAPTURE=1 CAPTURE_DIR=design/after npm run test:e2e -- capture.spec.ts`)
+  - [x] Tokens: same names in `globals.css`, new values (graphite / warm white, AA measured); Geist (next/font) for text, JetBrains Mono for figures (`num` utility); focus ring, dark scrollbars, reduced motion
+  - [x] Shell: sidebar with the plan meter (the only upgrade call); under 768 px a top bar, a bottom bar (Dashboard, Applications, Interview, More) and a "More" sheet; one-line demo banner with "Details"
+  - [x] Dashboard: figures panel, pipeline bar, "To check" from stored fact-check results (`Application.adaptedCvCheck` / `coverLetterCheck`, migration `20261126000200_fact_check_results`, written with each text, refreshed on CV upload), recent applications
+  - [x] Kanban: five columns from 1280 px, one stage at a time with tabs under 768 px; cards are buttons; error state with Retry; detail panel full screen under 640 px
+  - [x] My CV read-only in the demo; mock interview is a modal dialog; Settings without its own upgrade button; landing with a concrete promise, real screenshots and no invented figures
+  - [x] E2E `e2e/mobile-journey.spec.ts`: the demo at 390 px with nothing past the edge of the screen
 
 ## Known Issues (found while writing tests)
 

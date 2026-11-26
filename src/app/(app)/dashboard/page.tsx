@@ -1,70 +1,68 @@
 import type { Metadata } from 'next'
+import { Suspense } from 'react'
 import { currentUser } from '@clerk/nextjs/server'
-import { getActor } from '@/lib/actor'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
+import { ArrowDown, ArrowUp, CalendarDays, Flag, Layers, Plus, Reply } from 'lucide-react'
+import { getActor } from '@/lib/actor'
+import { loadDashboard } from '@/lib/dashboard'
+import type { AppStatus, StatCard, Trend } from '@/lib/dashboard-stats'
+import type { ToCheckItem } from '@/lib/fact-check/summary'
+import { UpgradeSuccessToast } from '@/components/dashboard/upgrade-success-toast'
+import { cn } from '@/lib/utils'
 
 export const metadata: Metadata = {
   title: 'Dashboard',
 }
-import { Suspense } from 'react'
-import {
-  Briefcase,
-  RefreshCw,
-  Calendar,
-  Star,
-  Plus,
-  ArrowUpRight,
-  ArrowDownRight,
-  FileText,
-  Edit,
-} from 'lucide-react'
-import { loadDashboard } from '@/lib/dashboard'
-import type { AppStatus, StatCard, Trend } from '@/lib/dashboard-stats'
-import { FreeTierBanner } from '@/components/dashboard/free-tier-banner'
-import { UpgradeSuccessToast } from '@/components/dashboard/upgrade-success-toast'
 
-const STATUS_CONFIG: Record<AppStatus, { label: string; bgVar: string; textVar: string }> = {
-  APPLIED:   { label: 'Applied',      bgVar: '--kanban-applied-bg',   textVar: '--kanban-applied-text' },
-  PHONE:     { label: 'Phone Screen', bgVar: '--kanban-phone-bg',     textVar: '--kanban-phone-text' },
-  TECHNICAL: { label: 'Technical',    bgVar: '--kanban-technical-bg', textVar: '--kanban-technical-text' },
-  OFFER:     { label: 'Offer',        bgVar: '--kanban-offer-bg',     textVar: '--kanban-offer-text' },
-  REJECTED:  { label: 'Rejected',     bgVar: '--kanban-rejected-bg',  textVar: '--kanban-rejected-text' },
+const CARD: Record<StatCard['label'], { label: string; Icon: typeof Layers }> = {
+  'TOTAL APPLICATIONS': { label: 'Applications', Icon: Layers },
+  'RESPONSE RATE': { label: 'Response rate', Icon: Reply },
+  INTERVIEWS: { label: 'Interviews', Icon: CalendarDays },
+  OFFERS: { label: 'Offers', Icon: Flag },
 }
 
-const COMPANY_COLORS = [
-  'bg-violet-500', 'bg-sky-500', 'bg-emerald-500', 'bg-amber-500',
-  'bg-rose-500', 'bg-indigo-500', 'bg-teal-500', 'bg-orange-500',
-]
-
-function getCompanyColor(company: string): string {
-  let hash = 0
-  for (let i = 0; i < company.length; i++) {
-    hash = (hash * 31 + company.charCodeAt(i)) & 0xffffffff
-  }
-  return COMPANY_COLORS[Math.abs(hash) % COMPANY_COLORS.length]!
-}
-
-function timeAgo(date: Date): string {
-  const diff = Date.now() - date.getTime()
-  const days = Math.floor(diff / 86400000)
-  if (days === 0) return 'today'
-  if (days === 1) return '1d ago'
-  return `${days}d ago`
-}
-
-const CARD_ICON: Record<StatCard['label'], { Icon: typeof Briefcase; iconBg: string; iconColor: string }> = {
-  'TOTAL APPLICATIONS': { Icon: Briefcase, iconBg: 'bg-indigo-500/20', iconColor: 'text-indigo-400' },
-  'RESPONSE RATE': { Icon: RefreshCw, iconBg: 'bg-emerald-500/20', iconColor: 'text-emerald-400' },
-  INTERVIEWS: { Icon: Calendar, iconBg: 'bg-sky-500/20', iconColor: 'text-sky-400' },
-  OFFERS: { Icon: Star, iconBg: 'bg-amber-500/20', iconColor: 'text-amber-400' },
-}
-
-// The arrow follows the sign of the change; no arrow when nothing moved.
-const TREND: Record<Trend, { Arrow: typeof ArrowUpRight | null; color: string; label: string }> = {
-  up: { Arrow: ArrowUpRight, color: 'text-[hsl(var(--state-success))]', label: 'up' },
-  down: { Arrow: ArrowDownRight, color: 'text-[hsl(var(--state-error))]', label: 'down' },
+// The arrow and the colour follow the sign of the change; nothing when nothing moved.
+const TREND: Record<Trend, { Arrow: typeof ArrowUp | null; color: string; label: string }> = {
+  up: { Arrow: ArrowUp, color: 'text-[hsl(var(--state-success))]', label: 'up' },
+  down: { Arrow: ArrowDown, color: 'text-[hsl(var(--state-error))]', label: 'down' },
   none: { Arrow: null, color: 'text-[hsl(var(--text-muted))]', label: '' },
+}
+
+const STAGES: Array<{ status: AppStatus; label: string; short: string }> = [
+  { status: 'APPLIED', label: 'Applied', short: 'Applied' },
+  { status: 'PHONE', label: 'Phone screen', short: 'Phone' },
+  { status: 'TECHNICAL', label: 'Technical', short: 'Technical' },
+  { status: 'OFFER', label: 'Offer', short: 'Offer' },
+  { status: 'REJECTED', label: 'Rejected', short: 'Rejected' },
+]
+const STAGE_LABEL = Object.fromEntries(STAGES.map(s => [s.status, s.label])) as Record<AppStatus, string>
+
+const TONE_DOT: Record<ToCheckItem['tone'], string> = {
+  claim: 'bg-[hsl(var(--state-error))]',
+  phrase: 'bg-[hsl(var(--state-warning))]',
+  offer: 'bg-[hsl(var(--state-success))]',
+}
+
+function daysAgo(date: Date, now: Date): string {
+  const days = Math.floor((now.getTime() - date.getTime()) / 86_400_000)
+  if (days <= 0) return 'today'
+  return days === 1 ? '1 day ago' : `${days} days ago`
+}
+
+function StatusLabel({ status }: { status: AppStatus }) {
+  return (
+    <span className="inline-flex items-center gap-1.5 text-sm text-[hsl(var(--text-secondary))]">
+      <span
+        aria-hidden
+        className={cn(
+          'h-1.5 w-1.5 rounded-full',
+          status === 'OFFER' ? 'bg-[hsl(var(--state-success))]' : status === 'REJECTED' ? 'bg-[hsl(var(--text-muted))]' : 'bg-[hsl(var(--text-secondary))]'
+        )}
+      />
+      {STAGE_LABEL[status]}
+    </span>
+  )
 }
 
 export default async function DashboardPage() {
@@ -73,197 +71,166 @@ export default async function DashboardPage() {
 
   const clerkUser = actor.kind === 'user' ? await currentUser() : null
   const now = new Date()
-  const firstOfNextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1)
-  const dashboard = await loadDashboard(actor, now, clerkUser?.firstName ?? null)
-
-  const { plan, cards: statCards, usage, recent: recentApps } = dashboard
-  const nextResetDate = firstOfNextMonth.toLocaleDateString('en-US', { month: 'long', day: 'numeric' })
+  const { stats, cards, greeting, toCheck, recent } = await loadDashboard(actor, now, clerkUser?.firstName ?? null)
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-7">
       <Suspense>
         <UpgradeSuccessToast />
       </Suspense>
 
-      {/* Header */}
-      <div className="flex items-start justify-between">
+      <div className="flex items-end justify-between gap-4">
         <div>
-          <h1 className="text-xl font-semibold text-[hsl(var(--text-primary))]">Dashboard</h1>
-          <p className="text-sm text-[hsl(var(--text-secondary))] mt-0.5">
-            {dashboard.greeting} Here&apos;s where your search stands.
-          </p>
+          <h1 className="text-[26px] font-semibold leading-tight tracking-tight text-[hsl(var(--text-primary))]">Dashboard</h1>
+          <p className="mt-1 text-[hsl(var(--text-secondary))]">{greeting}</p>
         </div>
+        {/* On mobile the same action is in the top bar. */}
         <Link
           href="/applications?new=1"
-          className="flex items-center gap-1.5 h-9 px-3 rounded-lg bg-amber-500 text-black hover:bg-amber-400 font-medium text-sm transition-colors"
+          className="hidden h-[38px] items-center gap-2 rounded-lg bg-[hsl(var(--accent-primary))] px-3.5 text-sm font-semibold text-[hsl(var(--accent-on))] hover:bg-[hsl(var(--accent-hover))] md:flex"
         >
-          <Plus className="h-4 w-4" />
-          New Application
+          <Plus className="h-4 w-4" aria-hidden />
+          New application
         </Link>
       </div>
 
-      {/* Free Tier Banner */}
-      {plan === 'FREE' && (
-        <FreeTierBanner
-          used={usage.used}
-          limit={usage.limit}
-          nextResetDate={nextResetDate}
-        />
-      )}
-
-      {/* Stats Cards */}
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        {statCards.map(({ label, value, subtext, trend }) => {
-          const { Icon, iconBg, iconColor } = CARD_ICON[label]
+      <section aria-label="Your search in figures" className="grid grid-cols-2 overflow-hidden rounded-xl border border-[hsl(var(--border-default))] bg-[hsl(var(--bg-surface))] lg:grid-cols-4">
+        {cards.map(({ label, value, subtext, trend }, index) => {
+          const { label: name, Icon } = CARD[label]
           const { Arrow, color, label: trendLabel } = TREND[trend]
           return (
-          <div
-            key={label}
-            className="bg-[hsl(var(--bg-surface))] border border-[hsl(var(--border-default))] rounded-xl p-4 relative"
-          >
-            <div className="absolute top-4 right-4">
-              <div className={`h-9 w-9 rounded-lg ${iconBg} flex items-center justify-center`}>
-                <Icon className={`h-5 w-5 ${iconColor}`} />
-              </div>
+            <div
+              key={label}
+              className={cn(
+                'grid content-start gap-1 p-4 lg:px-5',
+                index % 2 === 1 && 'border-l border-[hsl(var(--border-default))]',
+                index >= 2 && 'border-t border-[hsl(var(--border-default))] lg:border-t-0',
+                index === 2 && 'lg:border-l'
+              )}
+            >
+              <span className="flex items-center gap-2 text-sm text-[hsl(var(--text-secondary))]">
+                <Icon className="h-4 w-4 shrink-0 text-[hsl(var(--text-muted))]" aria-hidden />
+                {name}
+              </span>
+              <span className="num text-[28px] font-medium leading-tight text-[hsl(var(--text-primary))]">{value}</span>
+              <span className={cn('flex items-center gap-1 text-sm', color)}>
+                {Arrow ? <Arrow className="h-3.5 w-3.5 shrink-0" aria-label={trendLabel} /> : null}
+                {subtext}
+              </span>
             </div>
-            <p className="text-[10px] font-semibold uppercase tracking-wider text-[hsl(var(--text-muted))] mb-2 pr-12">
-              {label}
-            </p>
-            <p className="text-3xl font-bold text-[hsl(var(--text-primary))] mb-1">{value}</p>
-            <p className={`text-xs ${color} flex items-center gap-0.5`}>
-              {Arrow ? <Arrow className="h-3 w-3" aria-label={trendLabel} /> : null}
-              {subtext}
-            </p>
-          </div>
           )
         })}
-      </div>
+      </section>
 
-      {/* Recent Applications */}
-      <div className="bg-[hsl(var(--bg-surface))] border border-[hsl(var(--border-default))] rounded-xl overflow-hidden">
-        <div className="flex items-start justify-between px-5 py-4 border-b border-[hsl(var(--border-default))]">
-          <div>
-            <h2 className="text-sm font-semibold text-[hsl(var(--text-primary))]">Recent Applications</h2>
-            <p className="text-xs text-[hsl(var(--text-muted))] mt-0.5">Your last 5 applications.</p>
-          </div>
-          <Link
-            href="/applications"
-            className="text-xs text-amber-500 hover:text-amber-400 transition-colors font-medium"
-          >
-            View all →
-          </Link>
-        </div>
-
-        {recentApps.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16 gap-3">
-            <FileText className="h-10 w-10 text-[hsl(var(--text-muted))]" />
-            <p className="text-sm text-[hsl(var(--text-secondary))]">No applications yet</p>
-            <Link
-              href="/applications?new=1"
-              className="flex items-center gap-1.5 h-8 px-3 rounded-lg bg-amber-500 text-black hover:bg-amber-400 font-medium text-sm transition-colors mt-1"
+      <section aria-labelledby="pipeline-title" className="grid gap-2.5">
+        <h2 id="pipeline-title" className="text-base font-semibold text-[hsl(var(--text-primary))]">Pipeline</h2>
+        <ol className="grid grid-cols-5 gap-[3px]">
+          {STAGES.map(({ status, label, short }, index) => (
+            <li
+              key={status}
+              className={cn(
+                'grid gap-0.5 border border-[hsl(var(--border-default))] bg-[hsl(var(--bg-surface))] px-1.5 py-2 sm:px-3 sm:py-2.5',
+                index === 0 && 'rounded-l-xl',
+                index === STAGES.length - 1 && 'rounded-r-xl',
+                status === 'OFFER' && 'shadow-[inset_0_3px_0_hsl(var(--state-success))]'
+              )}
             >
-              <Plus className="h-4 w-4" />
-              Add your first application
+              <span className={cn('num text-xl', status === 'REJECTED' ? 'text-[hsl(var(--text-muted))]' : 'text-[hsl(var(--text-primary))]')}>
+                {stats.byStatus[status]}
+              </span>
+              <span className={cn('truncate text-xs sm:text-sm', status === 'REJECTED' ? 'text-[hsl(var(--text-muted))]' : 'text-[hsl(var(--text-secondary))]')}>
+                <span className="sm:hidden">{short}</span>
+                <span className="hidden sm:inline">{label}</span>
+              </span>
+            </li>
+          ))}
+        </ol>
+      </section>
+
+      <div className="grid items-start gap-5 lg:grid-cols-[1fr_1.4fr]">
+        <section aria-labelledby="to-check-title" className="rounded-xl border border-[hsl(var(--border-default))] bg-[hsl(var(--bg-surface))]">
+          <h2 id="to-check-title" className="border-b border-[hsl(var(--border-default))] px-4 py-3.5 text-base font-semibold text-[hsl(var(--text-primary))] md:px-5">
+            To check
+          </h2>
+          {toCheck.length === 0 ? (
+            <p className="px-4 py-5 text-sm text-[hsl(var(--text-secondary))] md:px-5">
+              Nothing to check: no claim outside your CV in your adapted CVs and letters.
+            </p>
+          ) : (
+            <ul className="py-1.5">
+              {toCheck.map(item => (
+                <li key={`${item.applicationId}-${item.text}`}>
+                  <Link
+                    href={`/applications?edit=${item.applicationId}`}
+                    className="grid grid-cols-[8px_1fr] gap-3 px-4 py-2.5 hover:bg-[hsl(var(--bg-surface-raised))] md:px-5"
+                  >
+                    <span aria-hidden className={cn('mt-2 h-2 w-2 rounded-full', TONE_DOT[item.tone])} />
+                    <span className="min-w-0">
+                      <span className="block font-semibold text-[hsl(var(--text-primary))]">{item.company}</span>
+                      <span className="block text-sm text-[hsl(var(--text-secondary))] [overflow-wrap:anywhere]">
+                        {item.text}
+                        {item.example ? (
+                          <>
+                            {': '}
+                            <span className="num rounded bg-[hsl(var(--bg-surface-raised))] px-1.5 py-px text-xs text-[hsl(var(--text-primary))]">
+                              {item.example}
+                            </span>
+                          </>
+                        ) : null}
+                      </span>
+                    </span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+
+        <section aria-labelledby="recent-title" className="min-w-0 rounded-xl border border-[hsl(var(--border-default))] bg-[hsl(var(--bg-surface))]">
+          <div className="flex items-baseline justify-between border-b border-[hsl(var(--border-default))] px-4 py-3.5 md:px-5">
+            <h2 id="recent-title" className="text-base font-semibold text-[hsl(var(--text-primary))]">Recent applications</h2>
+            <Link href="/applications" className="text-sm text-[hsl(var(--text-secondary))] underline underline-offset-2 hover:text-[hsl(var(--text-primary))]">
+              See all
             </Link>
           </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[640px]">
-              <thead>
-                <tr className="border-b border-[hsl(var(--border-default))]">
-                  {(['COMPANY', 'ROLE', 'STATUS', 'APPLIED', 'ACTIONS'] as const).map(col => (
-                    <th
-                      key={col}
-                      className="px-5 py-3 text-left text-[10px] font-semibold uppercase tracking-wider text-[hsl(var(--text-muted))]"
-                    >
-                      {col}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {recentApps.map(app => {
-                  const statusCfg = STATUS_CONFIG[app.status as AppStatus]!
-                  const colorClass = getCompanyColor(app.company)
-                  return (
-                    <tr
-                      key={app.id}
-                      className="border-b border-[hsl(var(--border-default))] last:border-0 hover:bg-[hsl(var(--bg-surface-raised))] transition-colors"
-                    >
-                      {/* Company */}
-                      <td className="px-5 py-3">
-                        <div className="flex items-center gap-2.5">
-                          <div
-                            className={`h-8 w-8 rounded-lg ${colorClass} flex items-center justify-center text-white text-xs font-semibold shrink-0`}
-                          >
-                            {app.company.charAt(0).toUpperCase()}
-                          </div>
-                          <div>
-                            <p className="text-sm font-medium text-[hsl(var(--text-primary))] leading-tight">
-                              {app.company}
-                            </p>
-                            <span className="text-[10px] border border-[hsl(var(--border-strong))] text-[hsl(var(--text-muted))] rounded px-1 py-0.5 font-medium">
-                              {app.language === 'EN' ? '🇬🇧 EN' : '🇫🇷 FR'}
-                            </span>
-                          </div>
-                        </div>
-                      </td>
-
-                      {/* Role */}
-                      <td className="px-5 py-3">
-                        <p className="text-sm text-[hsl(var(--text-secondary))]">{app.role}</p>
-                      </td>
-
-                      {/* Status */}
-                      <td className="px-5 py-3">
-                        <span
-                          className="inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-lg whitespace-nowrap"
-                          style={{
-                            background: `hsl(var(${statusCfg.bgVar}))`,
-                            color: `hsl(var(${statusCfg.textVar}))`,
-                          }}
-                        >
-                          <span
-                            className="h-1.5 w-1.5 rounded-full shrink-0"
-                            style={{ background: `hsl(var(${statusCfg.textVar}))` }}
-                          />
-                          {statusCfg.label}
-                        </span>
-                      </td>
-
-                      {/* Applied */}
-                      <td className="px-5 py-3">
-                        <p className="text-sm text-[hsl(var(--text-muted))]">{timeAgo(app.createdAt)}</p>
-                      </td>
-
-                      {/* Actions */}
-                      <td className="px-5 py-3">
-                        <div className="flex items-center gap-1">
-                          <Link
-                            href={`/applications?edit=${app.id}`}
-                            title="View / Edit"
-            aria-label="View / Edit"
-                            className="h-7 w-7 rounded-lg flex items-center justify-center text-[hsl(var(--text-muted))] hover:bg-[hsl(var(--bg-surface-raised))] hover:text-[hsl(var(--text-secondary))] transition-colors"
-                          >
-                            <FileText className="h-3.5 w-3.5" />
-                          </Link>
-                          <Link
-                            href={`/applications?edit=${app.id}`}
-                            title="Edit"
-            aria-label="Edit"
-                            className="h-7 w-7 rounded-lg flex items-center justify-center text-[hsl(var(--text-muted))] hover:bg-[hsl(var(--bg-surface-raised))] hover:text-[hsl(var(--text-secondary))] transition-colors"
-                          >
-                            <Edit className="h-3.5 w-3.5" />
-                          </Link>
-                        </div>
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
+          {recent.length === 0 ? (
+            <div className="grid justify-items-start gap-3 px-4 py-6 md:px-5">
+              <p className="text-sm text-[hsl(var(--text-secondary))]">No applications yet. Paste a job offer to start.</p>
+              <Link
+                href="/applications?new=1"
+                className="flex h-9 items-center gap-2 rounded-lg bg-[hsl(var(--accent-primary))] px-3 text-sm font-semibold text-[hsl(var(--accent-on))] hover:bg-[hsl(var(--accent-hover))]"
+              >
+                <Plus className="h-4 w-4" aria-hidden />
+                Add your first application
+              </Link>
+            </div>
+          ) : (
+            <ul>
+              {recent.map(app => (
+                <li key={app.id} className="border-b border-[hsl(var(--border-default))] last:border-b-0">
+                  <Link
+                    href={`/applications?edit=${app.id}`}
+                    className="grid grid-cols-[1fr_auto] items-center gap-x-4 gap-y-1 px-4 py-3 hover:bg-[hsl(var(--bg-surface-raised))] md:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)_8rem_6.5rem] md:px-5"
+                  >
+                    <span className="flex min-w-0 items-center gap-2">
+                      <span className="truncate font-semibold text-[hsl(var(--text-primary))]">{app.company}</span>
+                      <span className="num shrink-0 rounded border border-[hsl(var(--border-default))] px-1 text-[11px] text-[hsl(var(--text-secondary))]">
+                        {app.language}
+                      </span>
+                    </span>
+                    <span className="hidden truncate text-sm text-[hsl(var(--text-secondary))] md:block">{app.role}</span>
+                    <span className="col-start-1 md:col-start-auto">
+                      <StatusLabel status={app.status} />
+                    </span>
+                    <span className="col-start-2 row-start-1 whitespace-nowrap text-right text-sm text-[hsl(var(--text-muted))] md:col-start-auto md:row-start-auto md:text-left">
+                      {daysAgo(app.createdAt, now)}
+                    </span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
       </div>
     </div>
   )

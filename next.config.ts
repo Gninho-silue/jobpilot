@@ -5,6 +5,9 @@ import { assertProductionAppUrl } from "./src/lib/env";
 assertProductionAppUrl();
 
 const nextConfig: NextConfig = {
+  // The dev-only "N" badge covered the bottom of the sidebar in screenshots.
+  devIndicators: false,
+
   // Pin the Turbopack root to this project. Without this, Turbopack's
   // automatic root detection walks up the filesystem for a lockfile and
   // picks up C:\Users\<user>\package-lock.json, which breaks resolution

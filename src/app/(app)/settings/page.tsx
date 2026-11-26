@@ -1,89 +1,88 @@
 import type { Metadata } from 'next'
-import { getActor } from '@/lib/actor'
 import { redirect } from 'next/navigation'
-import { Zap, Crown, CreditCard } from 'lucide-react'
+import { CreditCard, Crown, Zap } from 'lucide-react'
+import { getActor } from '@/lib/actor'
+import { billing } from '@/lib/billing'
+import { FREE_TIER_LIMITS } from '@/lib/config'
+import { prisma } from '@/lib/prisma'
+import { ManageSubscriptionButton } from '@/components/manage-subscription-button'
 
 export const metadata: Metadata = {
   title: 'Settings',
 }
-import { prisma } from '@/lib/prisma'
-import { UpgradeButton } from '@/components/upgrade-button'
-import { ManageSubscriptionButton } from '@/components/manage-subscription-button'
 
 export default async function SettingsPage() {
   const actor = await getActor()
   if (!actor) redirect('/sign-in')
-  const userId = actor.id
 
   const dbUser = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { plan: true, email: true, stripeCustomerId: true },
+    where: { id: actor.id },
+    select: { plan: true },
   })
-
-  const plan = dbUser?.plan ?? 'FREE'
-  const isPro = plan === 'PRO'
+  const isPro = dbUser?.plan === 'PRO'
+  // Said only when it is true: with live keys this line disappears.
+  const testMode = billing.isTestMode()
 
   return (
-    <div className="flex flex-col gap-6 max-w-2xl">
+    <div className="flex max-w-2xl flex-col gap-6">
       <div>
-        <h1 className="text-xl font-semibold text-[hsl(var(--text-primary))]">Settings</h1>
-        <p className="text-sm text-[hsl(var(--text-secondary))] mt-0.5">
-          Manage your account and subscription.
-        </p>
+        <h1 className="text-[26px] font-semibold leading-tight tracking-tight text-[hsl(var(--text-primary))]">Settings</h1>
+        <p className="mt-1 text-[hsl(var(--text-secondary))]">Your plan and subscription.</p>
       </div>
 
-      {/* Plan card */}
-      <div className="bg-[hsl(var(--bg-surface))] border border-[hsl(var(--border-default))] rounded-xl overflow-hidden">
-        <div className="px-5 py-4 border-b border-[hsl(var(--border-default))]">
-          <h2 className="text-sm font-semibold text-[hsl(var(--text-primary))]">Subscription</h2>
-        </div>
+      <section aria-labelledby="plan-title" className="overflow-hidden rounded-xl border border-[hsl(var(--border-default))] bg-[hsl(var(--bg-surface))]">
+        <h2 id="plan-title" className="border-b border-[hsl(var(--border-default))] px-5 py-3.5 text-base font-semibold text-[hsl(var(--text-primary))]">
+          Plan
+        </h2>
 
-        <div className="px-5 py-5 flex items-start justify-between gap-4">
+        <div className="flex flex-wrap items-start justify-between gap-4 px-5 py-5">
           <div className="flex items-start gap-3">
-            <div
-              className={`h-10 w-10 rounded-lg flex items-center justify-center shrink-0 ${
-                isPro ? 'bg-amber-500/20' : 'bg-[hsl(var(--bg-surface-raised))]'
-              }`}
-            >
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[hsl(var(--bg-surface-raised))]">
               {isPro ? (
-                <Crown className="h-5 w-5 text-amber-500" />
+                <Crown className="h-5 w-5 text-[hsl(var(--text-primary))]" aria-hidden />
               ) : (
-                <Zap className="h-5 w-5 text-[hsl(var(--text-muted))]" />
+                <Zap className="h-5 w-5 text-[hsl(var(--text-muted))]" aria-hidden />
               )}
             </div>
-            <div>
-              <p className="text-sm font-semibold text-[hsl(var(--text-primary))]">
-                {isPro ? 'Pro Plan' : 'Free Plan'}
-              </p>
-              <p className="text-xs text-[hsl(var(--text-muted))] mt-0.5">
-                {isPro
-                  ? 'Unlimited applications, CV adaptations, and cover letters.'
-                  : '5 applications · 3 CV adaptations · 3 cover letters per month'}
-              </p>
+            <div className="grid gap-1">
+              <p className="font-semibold text-[hsl(var(--text-primary))]">{isPro ? 'Pro plan' : 'Free plan'}</p>
+              {isPro ? (
+                <p className="text-sm text-[hsl(var(--text-secondary))]">Unlimited applications, CV adaptations and cover letters.</p>
+              ) : (
+                <>
+                  <p className="text-sm text-[hsl(var(--text-secondary))]">
+                    Each month: <span className="num">{FREE_TIER_LIMITS.applications}</span> applications,{' '}
+                    <span className="num">{FREE_TIER_LIMITS.cvAdaptations}</span> CV adaptations,{' '}
+                    <span className="num">{FREE_TIER_LIMITS.coverLetters}</span> cover letters. Deleting an application does not give a credit back.
+                  </p>
+                  {/* The upgrade call itself stays in one place: the plan meter (sidebar, or "More" on mobile). */}
+                  <p className="text-sm text-[hsl(var(--text-secondary))]">To upgrade, use &quot;Upgrade to Pro&quot; under the plan meter.</p>
+                </>
+              )}
             </div>
           </div>
-
-          <div className="shrink-0">
-            {isPro ? (
+          {isPro ? (
+            <div className="shrink-0">
               <ManageSubscriptionButton />
-            ) : (
-              <UpgradeButton source="settings" className="w-auto px-4">
-                <Zap className="h-4 w-4" />
-                Upgrade to Pro
-              </UpgradeButton>
-            )}
-          </div>
+            </div>
+          ) : null}
         </div>
 
-        {isPro && (
+        {isPro ? (
           <div className="px-5 pb-5">
-            <div className="flex items-center gap-2 text-xs text-[hsl(var(--state-success))] bg-[hsl(var(--state-success-light))] rounded-lg px-3 py-2">
-              <CreditCard className="h-3.5 w-3.5 shrink-0" />
-              Active subscription — managed via Stripe Customer Portal
-            </div>
+            <p className="flex items-center gap-2 rounded-lg bg-[hsl(var(--state-success-light))] px-3 py-2 text-sm text-[hsl(var(--state-success))]">
+              <CreditCard className="h-4 w-4 shrink-0" aria-hidden />
+              Active subscription, managed in the Stripe customer portal.
+            </p>
           </div>
-        )}
-      </div>
+        ) : null}
+
+        {testMode ? (
+          <p className="border-t border-[hsl(var(--border-default))] px-5 py-3 text-sm text-[hsl(var(--text-secondary))]">
+            Payments run in Stripe test mode: no real charge is possible (test card <span className="num">4242 4242 4242 4242</span>).
+          </p>
+        ) : null}
+      </section>
     </div>
   )
 }
