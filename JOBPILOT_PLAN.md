@@ -70,22 +70,52 @@ Problème : un LLM qui « adapte » un CV peut ajouter des compétences, entrepr
 - [x] Tests : isolation entre visiteurs de démo, réinitialisation, quotas.
 - [ ] Commit : `feat(demo): no-signup demo workspace with seeded fictional data` → push. (Fait en une série de commits `feat(demo)` ; push après la migration et les variables Vercel.)
 
-## Étape 5 — Corrections de données affichées
-- [ ] Dashboard : si aucune donnée le mois précédent, afficher « — » au lieu de « +X % vs last month » ; libeller la variation en **points** (« +12 pts »).
-- [ ] Vérifier chaque chiffre du dashboard contre la base (tests).
-- [ ] Commit : `fix(dashboard): honest trend indicators` → push.
+## Étape 4.5 — Corrections préalables (avant l'étape 5)
+- [x] **Test E2E instable** : le test « Use » à 1175 px a expiré une fois. Trouver la cause (élément qui apparaît après une animation ? requête non attendue ?), corriger la cause et pas le timeout, puis lancer le test 10 fois de suite pour le prouver.
+- [x] **`NEXT_PUBLIC_APP_URL`** valait `http://localhost:3000` en production (corrigé à la main dans Vercel le 25/11) : redirections Stripe, `metadataBase` et sitemap pointaient vers localhost. Dans `src/lib/env.ts`, faire échouer le build en production (`VERCEL_ENV=production`) si la variable est absente, en `http://` ou contient `localhost`. Ajouter au test de fumée une vérification que le sitemap et les métadonnées pointent vers `https://jobpilot-jet.vercel.app`.
+- [x] Commits séparés, push sur `main` (CI verte).
 
-## Étape 6 — Design (skill frontend-design)
-Objectif : un produit sobre et crédible, pas un template « SaaS IA ».
-- [ ] **Typographie** : police sans-serif (Geist Sans ou Inter) pour tout le texte ; JetBrains Mono réservée aux chiffres des stats, badges techniques et extraits de code. Supprimer `--font-sans: "JetBrains Mono"`.
-- [ ] **Accueil** : remplacer « Land your dream job faster with AI » et la pastille « AI-Powered » par une promesse concrète, ex. « Tailor your CV to every job offer, without inventing anything. » ; montrer de **vraies captures** de l'application (kanban, CV adapté avec vérification, entraînement d'entretien) ; bouton principal = « Try the demo ».
-- [ ] **Un seul appel « Upgrade »** visible à la fois (garder la carte latérale, retirer la bannière du dashboard ou la rendre fermable et discrète ; Settings garde le détail du plan).
-- [ ] Ambre réservé aux actions principales ; cartes de stats neutres (icônes monochromes) ; barres de défilement sombres sur le kanban ; états vides et chargement soignés.
-- [ ] Interface du CV adapté : vue côte à côte original / adapté avec les ajouts surlignés et les éléments non vérifiés signalés (lien avec l'Étape 3).
-- [ ] Accessibilité : contraste AA, focus clavier, `prefers-reduced-motion`. Thème clair vérifié aussi.
-- [ ] **Textes** (accueil, états vides, e-mails, README) : passe finale avec le skill **humanizer** (`~/.claude/skills/humanizer`), en FR et EN, sans changer aucun fait ni chiffre.
-- [ ] Captures avant/après pour Gninho.
-- [ ] Commit : `feat(ui): sober product design and real screenshots on landing` → push.
+## Étape 5 — Corrections de données affichées (TDD)
+Cas réels vus dans la démo le 25/11 :
+- [ ] « Free plan — 0 of 5 applications used this month » alors que l'espace contient 5 candidatures : le compteur doit refléter la réalité (ou expliquer clairement ce qu'il compte).
+- [ ] « -20 % vs last month » affiché avec une **flèche vers le haut** : la flèche suit le signe ; variation en **points** (« −20 pts ») ; « — » s'il n'y a pas de données le mois précédent.
+- [ ] « Welcome back, there » : pas de nom → « Welcome back » tout court (et un prénom fictif pour la démo).
+- [ ] Vérifier chaque chiffre du dashboard contre la base (tests), y compris pour un espace de démo.
+- [ ] Commit : `fix(dashboard): honest trend indicators` → push sur `main`.
+
+## Étape 6 — Refonte de toute l'application (skills frontend-design, humanizer, webapp-testing)
+**Sur une branche `redesign`. Aucun push sur `main` avant validation de Gninho sur la preview Vercel.**
+
+### 6.1 Inventaire (sans toucher au code)
+- [ ] Avec la démo (pas besoin de Clerk), captures **avant** de chaque écran à 1440 et 390 px, thèmes sombre et clair : accueil, connexion et inscription, dashboard, Applications (kanban + panneau de détail : Overview, Resume, Cover Letter, Interview), My CV, Interview Prep, entretien simulé, Settings, modales (nouvelle candidature, upgrade, confirmations), bandeau de démo, états vides, chargement, erreur.
+
+### 6.2 Direction visuelle — **STOP : attendre la validation de Gninho**
+- [ ] Une page de proposition : typographie, palette, espacements, composants, et **la solution mobile** (voir 6.4), avec 2 écrans maquettés (dashboard desktop + dashboard mobile 390 px).
+- [ ] Ne rien coder avant la validation.
+
+### 6.3 Contraintes générales
+- Police sans-serif pour le texte (Geist Sans ou Inter) ; JetBrains Mono seulement pour les chiffres, le code et les badges techniques. Supprimer `--font-sans: "JetBrains Mono"`.
+- Accueil : remplacer « Land your dream job faster with AI » et la pastille « AI-Powered » par une promesse concrète (ex. « Tailor your CV to every job offer, without inventing anything. ») ; vraies captures de l'application ; bouton principal « Try the demo ».
+- **Un seul appel « Upgrade » visible à la fois.**
+- Ambre réservé aux actions principales ; cartes de stats neutres (icônes monochromes) ; barres de défilement sombres.
+- Accessibilité AA (contraste, focus clavier, `aria-label` sur tous les boutons-icônes), `prefers-reduced-motion`, thème clair vérifié.
+- Textes : passe humanizer FR et EN, sans changer aucun fait.
+- Les PDF exportés (CV et lettre) ne changent pas.
+- Aucune régression des tests E2E existants (panneau aux trois largeurs, démo).
+
+### 6.4 Mobile en priorité
+Capture du téléphone de Gninho à 390 px le 25/11 : la barre latérale prend la moitié de l'écran, cartes de stats écrasées avec les icônes par-dessus le texte, « New Application » coupé, bandeau de démo sur 9 lignes.
+- Sous 768 px : barre latérale → **menu repliable (hamburger) ou barre de navigation en bas** (proposer la meilleure option dans 6.2).
+- Cartes de stats sur 2 colonnes lisibles ou en liste ; icônes jamais par-dessus le texte.
+- Kanban : une colonne à la fois avec glissement horizontal, ou vue liste par statut.
+- Panneau de détail en **plein écran** sur mobile.
+- Bandeau de démo sur **une ligne courte** (« Demo · resets daily · card 4242… »), dépliable.
+- Aucun défilement horizontal de la page, à aucune largeur.
+- **Test E2E** : parcours complet de la démo à 390 px (dashboard, kanban, panneau, My CV, entretien) qui vérifie qu'aucun élément ne déborde de l'écran.
+
+### 6.5 Mise en œuvre (après validation)
+- [ ] Un commit par zone : système de design et tokens, mise en page générale + mobile, dashboard, kanban et panneau, My CV, entretien, Settings et modales, accueil. Captures **après** à chaque fois.
+- [ ] Push de la branche `redesign` → donner l'URL de preview Vercel à Gninho. Merge dans `main` seulement après sa validation.
 
 ## Étape 7 — E2E et vérification en production
 - [ ] Playwright : parcours démo complet (ouvrir la démo → créer une candidature depuis une offre → adapter le CV → voir la vérification → générer la lettre → entraînement d'entretien → export PDF).

@@ -211,6 +211,9 @@ Vercel Deploy & Production Verification
   - [x] Stripe: checkout and portal for a demo only with an `sk_test_` key (403 with `sk_live_`); customer and session metadata `demo=true` + demo id; a demo webhook event changes only that demo row, an event naming a user never changes a demo (`lib/billing/apply-event.ts`)
   - [x] UI: "Try the demo" on the landing page, permanent demo banner, "Exit demo" in the navbar. E2E `e2e/demo.spec.ts` (landing → flagged Kubernetes removed → letter warning; exit; Clerk sign-in removes the cookie)
   - [x] Fixed on the way: a lost backslash in the proxy matcher (it ran on "/" only); `src/proxy.test.ts` pins the matcher
+- [x] Step 4.5 (JOBPILOT_PLAN.md): preliminary fixes
+  - [x] Flaky E2E ("Use" at 1175 px): not reproduced in ~45 runs (incl. 4× CPU throttling); mechanism found: the Applications page dropped `?edit=<id>` as soon as the sheet opened, so a reload or remount (Clerk dev handshake) lost the sheet for good. `?edit` now stays while the sheet is open; E2E "a reload keeps the detail panel open"; the "Use" test passed 10 times in a row
+  - [x] `assertProductionAppUrl()` (`lib/env.ts`), called by `next.config.ts`: with `VERCEL_ENV=production` the build fails if `NEXT_PUBLIC_APP_URL` is missing, http:// or local. `npm run smoke:prod` (`scripts/smoke-production.mjs`) checks the deployed sitemap, robots.txt and home metadata point to https://jobpilot-jet.vercel.app (manual; not wired into CI)
 
 ## Known Issues (found while writing tests)
 
