@@ -55,10 +55,11 @@ export const metadata: Metadata = {
       'Adapt your CV and write your cover letter from each job offer, in French or English. JobPilot checks every claim against your original CV and flags what it cannot find there before you export.',
     images: [
       {
-        url: '/screenshots/kanban.png',
+        // A real screenshot of the app (demo workspace, fictional data), 1200 × 630.
+        url: '/og.png',
         width: 1200,
         height: 630,
-        alt: 'JobPilot Kanban Application Tracker & AI Career Copilot',
+        alt: 'The adapted CV of an application in JobPilot, with one claim not found in the CV and a Remove button',
       },
     ],
   },
@@ -67,8 +68,7 @@ export const metadata: Metadata = {
     title: 'JobPilot: tailor your CV to every job offer without inventing anything',
     description:
       'Adapt your CV and write your cover letter from each job offer, in French or English. JobPilot checks every claim against your original CV and flags what it cannot find there before you export.',
-    images: ['/screenshots/kanban.png'],
-    creator: '@jobpilot',
+    images: [{ url: '/og.png', width: 1200, height: 630, alt: 'The adapted CV of an application in JobPilot, with one claim not found in the CV and a Remove button' }],
   },
   icons: {
     icon: [
