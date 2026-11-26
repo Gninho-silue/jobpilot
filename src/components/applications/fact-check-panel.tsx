@@ -49,10 +49,14 @@ export function FactCheckPanel({ issues, document = 'cv', busy, onFix, onApprove
         <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0 text-[hsl(var(--state-warning))]" aria-hidden />
         <div className="space-y-0.5">
           <h3 className="text-sm font-semibold text-[hsl(var(--text-primary))]">
-            {issues.length} {issues.length === 1 ? 'claim' : 'claims'} not found in your CV
+            {document === 'letter'
+              ? `${issues.length} ${issues.length === 1 ? 'point' : 'points'} to check in your letter`
+              : `${issues.length} ${issues.length === 1 ? 'claim' : 'claims'} not found in your CV`}
           </h3>
           <p className="text-xs text-[hsl(var(--text-muted))]">
-            Check them before exporting: a recruiter may ask about anything on your CV.
+            {document === 'letter'
+              ? 'Check them before sending: a recruiter may ask about anything in your letter.'
+              : 'Check them before exporting: a recruiter may ask about anything on your CV.'}
           </p>
         </div>
       </div>

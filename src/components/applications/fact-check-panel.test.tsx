@@ -128,6 +128,32 @@ describe('FactCheckPanel — point 6: short labels, and what to do for a letter'
   })
 })
 
+describe('FactCheckPanel — heading of the letter panel', () => {
+  function renderLetter(issues: ReviewedIssue[]) {
+    render(<FactCheckPanel document="letter" issues={issues} busy={false} onFix={vi.fn()} onApproveTitle={vi.fn()} />)
+  }
+  const HOLLOW: ReviewedIssue = { id: 'hollow-1', kind: 'hollow', line: 'I would welcome the opportunity to discuss my proven achievements.', lineIndex: 1, unsupported: ['proven achievements'], fixable: false }
+  const COMPANY: ReviewedIssue = { id: 'company-3', kind: 'company', line: 'At Globex, I built an API.', lineIndex: 3, unsupported: ['Globex'], fixable: false }
+
+  it('talks about the letter, not about claims missing from the CV', () => {
+    renderLetter([HOLLOW])
+    expect(screen.getByRole('heading', { name: '1 point to check in your letter' })).toBeInTheDocument()
+    expect(screen.getByText('Check them before sending: a recruiter may ask about anything in your letter.')).toBeInTheDocument()
+    expect(screen.queryByText(/not found in your CV/)).toBeNull()
+  })
+
+  it('counts every point of the letter', () => {
+    renderLetter([HOLLOW, COMPANY])
+    expect(screen.getByRole('heading', { name: '2 points to check in your letter' })).toBeInTheDocument()
+  })
+
+  it('the CV panel keeps its heading', () => {
+    setup(ISSUES.slice(1, 2))
+    expect(screen.getByRole('heading', { name: '1 claim not found in your CV' })).toBeInTheDocument()
+    expect(screen.getByText('Check them before exporting: a recruiter may ask about anything on your CV.')).toBeInTheDocument()
+  })
+})
+
 describe('FactCheckPanel — point 7: hollow phrases', () => {
   it('shows a warning that asks for a fact instead', () => {
     setup([{ id: 'hollow-1', kind: 'hollow', line: 'I bring a strong work ethic.', lineIndex: 1, unsupported: ['strong work ethic'], fixable: false }])
