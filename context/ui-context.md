@@ -1,93 +1,101 @@
 # UI Context
 
+Direction validated on 26/11/2026 (JOBPILOT_PLAN.md step 6.2; proposal and mockups in
+`design/proposal/`). A quiet, precise tool rather than an "AI" product: what needs checking
+stands out, everything else steps back.
+
 ## Theme
 
-Dark mode by default, with light mode toggle. The design language is a clean, technical productivity tool — near-black backgrounds, subtle layered surfaces, and **amber** as the primary accent color. NOT the typical AI startup indigo/blue. Inspired by Linear (dark), GitHub dark, and the JetBrains IDE aesthetic. **No gradients. No glow. No blur on interactive elements.**
+Dark mode by default, light mode toggle (stored in `localStorage.theme`). Graphite dark,
+warm white light. **No gradients, no glow, no drop shadows**: separation comes from 1 px
+hairlines and the `bg-surface` / `bg-surface-raised` difference.
 
-## Font
+## Fonts
 
-**JetBrains Mono** for ALL text — headings, body, labels, buttons, everything. This gives JobPilot a unique developer-tool feel that stands out from generic SaaS.
+| Use | Font | Token |
+| --- | --- | --- |
+| All text (headings, body, labels, buttons) | Geist Sans (`next/font/google`, `app/layout.tsx`) | `--font-sans` |
+| Figures, code, technical badges (`Kubernetes`, `EN`/`FR`) | JetBrains Mono (`@fontsource`) | `--font-mono`, utility `num` (tabular figures) |
 
-| Role        | Font           | Variable      |
-| ----------- | -------------- | ------------- |
-| All UI text | JetBrains Mono | `--font-mono` |
-| Code blocks | JetBrains Mono | `--font-mono` |
+Type scale (px): 12 · 13 · 14 · 16 · 20 · 26 (page titles) · 28–30 (figures). Sentence case
+everywhere, no all-caps labels. Text blocks: 80 characters per line at most.
 
 ## Colors
 
-All components must use CSS custom property tokens only. No hardcoded hex values anywhere.
+Tokens are HSL triplets in `app/globals.css`, used as `hsl(var(--token))`. **No hex values
+or Tailwind palette classes in components.** Contrast measured in
+`design/proposal/README.md` (AA everywhere).
 
-| Role               | CSS Variable            | Dark value        | Light value |
-| ------------------ | ----------------------- | ----------------- | ----------- |
-| Page background    | `--bg-base`             | `#0D1117`         | `#FFFFFF`   |
-| Surface (cards)    | `--bg-surface`          | `#111827`         | `#F8FAFC`   |
-| Surface raised     | `--bg-surface-raised`   | `#1A2236`         | `#F1F5F9`   |
-| Border default     | `--border-default`      | `#1E2D40`         | `#E2E8F0`   |
-| Border strong      | `--border-strong`       | `#2D3F55`         | `#CBD5E1`   |
-| Primary text       | `--text-primary`        | `#F0F6FC`         | `#0F172A`   |
-| Secondary text     | `--text-secondary`      | `#8B949E`         | `#475569`   |
-| Muted text         | `--text-muted`          | `#484F58`         | `#94A3B8`   |
-| **Accent primary** | `--accent-primary`      | `#F59E0B` (amber) | `#F59E0B`   |
-| Accent hover       | `--accent-hover`        | `#D97706`         | `#D97706`   |
-| Accent light       | `--accent-light`        | `#2D1F00`         | `#FEF3C7`   |
-| Success            | `--state-success`       | `#3FB950`         | `#10B981`   |
-| Success light      | `--state-success-light` | `#0D2818`         | `#D1FAE5`   |
-| Warning            | `--state-warning`       | `#F59E0B`         | `#F59E0B`   |
-| Error              | `--state-error`         | `#F85149`         | `#EF4444`   |
-| Error light        | `--state-error-light`   | `#2D0E0E`         | `#FEE2E2`   |
+| Token | Dark | Light | Use |
+| --- | --- | --- | --- |
+| `--bg-base` | `#15171c` | `#f6f6f3` | page background |
+| `--bg-surface` | `#1b1e24` | `#ffffff` | panels, cards, tables |
+| `--bg-surface-raised` | `#252932` | `#eeeeea` | active item, selected filter, badges |
+| `--border-default` | `#2f333c` | `#deded8` | hairlines (decorative) |
+| `--border-strong` | `#4d525d` | `#8a8f98` | input and secondary button borders (≥ 3:1) |
+| `--text-primary` | `#ecebe7` | `#1a1c21` | main text |
+| `--text-secondary` | `#b6bac2` | `#464b55` | secondary text |
+| `--text-muted` | `#8f95a0` | `#5f6570` | notes, dates |
+| `--accent-primary` / `--accent-hover` | `#f0a63a` | `#f0a63a` | **primary action only** (fill) |
+| `--accent-on` | `#1a1408` | `#1a1408` | text on the amber fill |
+| `--accent-light` | `#3a2c14` | `#f8ecd6` | drop target highlight |
+| `--state-success` | `#5fbca2` | `#26745f` | rise, offer, verified |
+| `--state-error` | `#ee7a66` | `#b4432d` | fall, claim not found in the CV |
+| `--state-warning` | `#f0a63a` | `#9a5b00` | warnings (amber text that stays readable on white) |
+| `--focus` | `#9db8f2` | `#2f5fc4` | keyboard focus ring |
 
-## Kanban Column Colors
+## Stages
 
-| Column       | Dark bg   | Dark text | Light bg  | Light text |
-| ------------ | --------- | --------- | --------- | ---------- |
-| Applied      | `#1A1F35` | `#818CF8` | `#EEF2FF` | `#4F46E5`  |
-| Phone Screen | `#1F1A00` | `#F59E0B` | `#FEF3C7` | `#D97706`  |
-| Technical    | `#001A2D` | `#38BDF8` | `#E0F2FE` | `#0284C7`  |
-| Offer        | `#001A10` | `#3FB950` | `#D1FAE5` | `#059669`  |
-| Rejected     | `#2D0E0E` | `#F85149` | `#FEE2E2` | `#DC2626`  |
+Neutral: a dot and a word, never colour alone. Only **Offer** (success green) and
+**Rejected** (dimmed) stand out. Tokens `--kanban-*` follow these rules.
+
+## Rules
+
+- **One amber button per screen**: the page's main action ("New application", "Download
+  PDF", "Try the demo"). Repeated actions (one per row) are outlined buttons.
+- **One upgrade call**: the plan meter (sidebar on desktop, "More" on mobile). No upgrade
+  banner or card elsewhere.
+- Secondary actions: underlined text or outlined buttons. No `→` appended to links.
+- Company initials on a neutral tile; icons monochrome (`--text-muted`).
+- Every icon-only button has an `aria-label`; overlays are labelled dialogs; a visible focus
+  ring (`--focus`) on every interactive element; `prefers-reduced-motion` honoured.
+- Every sentence must be true: no invented figures, ratings or features.
 
 ## Border Radius
 
-| Context                 | Class                |
-| ----------------------- | -------------------- |
-| Buttons, inputs, badges | `rounded-lg` (8px)   |
-| Cards, panels           | `rounded-xl` (12px)  |
-| Modals, sheets          | `rounded-2xl` (16px) |
-| Avatars                 | `rounded-full`       |
-
-## Buttons — CRITICAL RULE
-
-**NO gradient. NO glow. NO box-shadow on hover. NO blur. FLAT ONLY.**
-
-- **Primary**: `bg-amber-500 text-black hover:bg-amber-400 rounded-lg font-medium`
-- **Secondary**: `border border-[--border-default] bg-transparent hover:bg-[--bg-surface-raised] rounded-lg`
-- **Destructive**: `bg-red-600 hover:bg-red-500 text-white rounded-lg`
-- **Ghost**: `hover:bg-[--bg-surface-raised] rounded-lg`
+| Context | Class |
+| --- | --- |
+| Buttons, inputs, menu items, badges | `rounded-lg` (8px) |
+| Panels, cards | `rounded-xl` (12px) |
+| Bottom sheets | `rounded-t-2xl` |
 
 ## Component Library
 
-shadcn/ui on top of Tailwind CSS. Components in `components/ui/`. Use shadcn CLI only. Never modify `components/ui/` manually.
+shadcn/ui on top of Tailwind CSS. Components in `components/ui/`. Use shadcn CLI only. Never
+modify `components/ui/` manually (override with `className` from the caller).
 
 ## Layout Patterns
 
-- **App shell**: Top navbar (64px) + left sidebar (240px fixed) + main content area
-- **Navbar**: dark surface, bottom border, logo left — search + bell + theme toggle + avatar right
-- **Theme toggle**: Sun/Moon icon in navbar, switches dark (default) ↔ light
-- **Sidebar**: dark surface, right border, active item uses `--accent-light` bg + amber text
-- **Kanban**: horizontal scroll, 280px fixed columns, draggable cards
-- **Modals**: centered, max-width 540px, `rounded-2xl`
-- **AI panel**: right slide-over 480px, streaming text with blinking cursor animation
+- **Desktop (768 px and up)**: fixed sidebar 240 px (brand, navigation, plan meter, account,
+  theme toggle); content max 1320 px, gutter 32 px. No top navbar.
+- **Mobile (under 768 px)**: top bar (brand, theme, amber "New application" icon button),
+  bottom bar (Dashboard, Applications, Interview, More) and a "More" bottom sheet (My CV,
+  Settings, plan meter, account). Gutter 16 px. **No horizontal page scroll at any width**
+  (E2E `e2e/mobile-journey.spec.ts`).
+- **Demo banner**: one line ("Demo · resets daily · test card …") with "Details".
+- **Kanban**: five columns from 1280 px; between 768 and 1280 px the board scrolls; under
+  768 px one stage at a time, swiped, with stage tabs.
+- **Detail panel**: right sheet 480 px; full screen under 640 px; tabs scroll, never cut.
+- **Dashboard**: figures panel (four cells), pipeline bar, "To check" (stored fact-check
+  results), recent applications (table on desktop, list on mobile).
 
 ## Icons
 
-Lucide React. Stroke-based only.
-
-`h-4 w-4` inline · `h-5 w-5` buttons · `h-6 w-6` feature icons
+Lucide React, stroke-based. `h-4 w-4` inline · `h-5 w-5` navigation.
 
 ## Key UI Moments
 
-- **Free tier banner**: amber left border, amber progress bar, dark surface bg
-- **Upgrade button**: amber bg, black text, flat, bottom of sidebar
-- **AI streaming**: blinking cursor `|` animation, no spinner
-- **Language badge**: small `EN` or `FR` pill, monochrome border on cards
-- **Empty states**: simple icon + JetBrains Mono message + CTA
+- **AI streaming**: blinking cursor `|` animation, no spinner.
+- **Fact-check panel**: amber outline, one item per claim with its entry and a Remove button.
+- **Empty states**: one sentence that says what to do, and the action.
+- **Errors**: say what failed and offer "Retry"; never show an error as an empty state.
