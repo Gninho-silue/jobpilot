@@ -33,9 +33,9 @@ function FeedbackCard({
 }) {
   const scoreColor =
     feedback.score >= 8
-      ? 'text-emerald-400'
+      ? 'text-[hsl(var(--state-success))]'
       : feedback.score >= 5
-      ? 'text-amber-400'
+      ? 'text-[hsl(var(--state-warning))]'
       : 'text-red-400'
 
   return (
@@ -60,7 +60,7 @@ function FeedbackCard({
 
       {feedback.strengths.length > 0 && (
         <div className="space-y-1">
-          <p className="text-xs font-medium text-emerald-400">✅ Strengths</p>
+          <p className="text-xs font-medium text-[hsl(var(--state-success))]">✅ Strengths</p>
           <ul className="space-y-0.5">
             {feedback.strengths.map((s, i) => (
               <li key={i} className="text-xs text-[hsl(var(--text-secondary))] flex gap-1.5">
@@ -74,7 +74,7 @@ function FeedbackCard({
 
       {feedback.improvements.length > 0 && (
         <div className="space-y-1">
-          <p className="text-xs font-medium text-amber-400">💡 Improvements</p>
+          <p className="text-xs font-medium text-[hsl(var(--state-warning))]">💡 Improvements</p>
           <ul className="space-y-0.5">
             {feedback.improvements.map((s, i) => (
               <li key={i} className="text-xs text-[hsl(var(--text-secondary))] flex gap-1.5">
@@ -91,7 +91,7 @@ function FeedbackCard({
           <button
             type="button"
             onClick={onToggleBetter}
-            className="text-xs text-[hsl(var(--text-muted))] hover:text-amber-500 transition-colors"
+            className="text-xs text-[hsl(var(--text-muted))] hover:text-[hsl(var(--text-primary))] transition-colors"
           >
             🎯 Better Answer {betterOpen ? '▲' : '▼'}
           </button>
@@ -118,6 +118,41 @@ export function MockInterviewModal({ company, questions, language, isPro, onClos
   const [feedbackLoading, setFeedbackLoading] = useState(false)
   const [feedbackAttempted, setFeedbackAttempted] = useState<Set<number>>(new Set())
   const [betterAnswerOpen, setBetterAnswerOpen] = useState(false)
+
+  const dialogRef = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    dialogRef.current?.focus()
+  }, [finished])
+
+  function handleDialogKeyDown(e: React.KeyboardEvent<HTMLDivElement>) {
+    if (e.key === 'Escape') {
+      e.preventDefault()
+      onClose()
+      return
+    }
+    if (e.key !== 'Tab' || !dialogRef.current) return
+    const focusable = Array.from(
+      dialogRef.current.querySelectorAll<HTMLElement>('button:not([disabled]), textarea, a[href], [tabindex]:not([tabindex="-1"])')
+    )
+    if (!focusable.length) return
+    const first = focusable[0]!
+    const last = focusable[focusable.length - 1]!
+    if (e.shiftKey && (document.activeElement === first || document.activeElement === dialogRef.current)) {
+      e.preventDefault()
+      last.focus()
+    } else if (!e.shiftKey && document.activeElement === last) {
+      e.preventDefault()
+      first.focus()
+    }
+  }
+  const dialogProps = {
+    ref: dialogRef,
+    role: 'dialog' as const,
+    'aria-modal': true,
+    'aria-labelledby': 'mock-interview-title',
+    tabIndex: -1,
+    onKeyDown: handleDialogKeyDown,
+  }
 
   useEffect(() => {
     trackEvent.interviewStarted()
@@ -209,12 +244,12 @@ export function MockInterviewModal({ company, questions, language, isPro, onClos
 
   if (finished) {
     return (
-      <div className="fixed inset-0 z-50 bg-[hsl(var(--bg-base))] flex flex-col overflow-y-auto">
+      <div {...dialogProps} className="fixed inset-0 z-50 bg-[hsl(var(--bg-base))] flex flex-col overflow-y-auto outline-none">
         <div className="max-w-2xl mx-auto w-full px-6 py-12 space-y-8">
           <div className="text-center space-y-2">
-            <p className="text-2xl font-semibold text-[hsl(var(--text-primary))]">Interview complete!</p>
+            <h2 id="mock-interview-title" className="text-2xl font-semibold text-[hsl(var(--text-primary))]">Interview complete</h2>
             <p className="text-sm text-[hsl(var(--text-secondary))]">
-              Time taken: <span className="text-amber-500 font-medium">{formatTime(finalTime)}</span>
+              Time taken: <span className="num font-medium text-[hsl(var(--text-primary))]">{formatTime(finalTime)}</span>
             </p>
           </div>
 
@@ -224,16 +259,16 @@ export function MockInterviewModal({ company, questions, language, isPro, onClos
                 key={q.id}
                 className={`rounded-xl border p-4 space-y-2 ${
                   q.type === 'technical'
-                    ? 'border-l-2 border-l-sky-500 border-[hsl(var(--border-default))]'
-                    : 'border-l-2 border-l-amber-500 border-[hsl(var(--border-default))]'
+                    ? 'border-l-2 border-l-[hsl(var(--text-secondary))] border-[hsl(var(--border-default))]'
+                    : 'border-l-2 border-l-[hsl(var(--border-strong))] border-[hsl(var(--border-default))]'
                 }`}
               >
                 <div className="flex items-center gap-2">
                   <span
                     className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
                       q.type === 'technical'
-                        ? 'bg-sky-500/10 text-sky-400'
-                        : 'bg-amber-500/10 text-amber-400'
+                        ? 'bg-[hsl(var(--bg-surface-raised))] text-[hsl(var(--text-secondary))]'
+                        : 'bg-[hsl(var(--bg-surface-raised))] text-[hsl(var(--text-secondary))]'
                     }`}
                   >
                     {q.type === 'technical' ? 'Technical' : 'Behavioral'}
@@ -255,7 +290,7 @@ export function MockInterviewModal({ company, questions, language, isPro, onClos
           <div className="flex justify-center">
             <Button
               onClick={onClose}
-              className="rounded-lg bg-amber-500 text-black hover:bg-amber-400 font-medium px-8"
+              className="rounded-lg bg-[hsl(var(--accent-primary))] text-[hsl(var(--accent-on))] hover:bg-[hsl(var(--accent-hover))] font-medium px-8"
             >
               Close
             </Button>
@@ -266,19 +301,19 @@ export function MockInterviewModal({ company, questions, language, isPro, onClos
   }
 
   return (
-    <div className="fixed inset-0 z-50 bg-[hsl(var(--bg-base))] flex flex-col">
+    <div {...dialogProps} className="fixed inset-0 z-50 bg-[hsl(var(--bg-base))] flex flex-col outline-none">
       {/* Header */}
       <div className="shrink-0 flex items-center justify-between px-6 py-4 border-b border-[hsl(var(--border-default))]">
         <div>
-          <p className="text-sm font-semibold text-[hsl(var(--text-primary))]">
-            Mock Interview — {company}
-          </p>
+          <h2 id="mock-interview-title" className="text-sm font-semibold text-[hsl(var(--text-primary))]">
+            Mock interview: {company}
+          </h2>
           <p className="text-xs text-[hsl(var(--text-muted))]">
             Question {index + 1} of {questions.length}
           </p>
         </div>
         <div className="flex items-center gap-4">
-          <span className="text-sm font-mono text-amber-500">{formatTime(elapsed)}</span>
+          <span className="num text-sm text-[hsl(var(--text-secondary))]" aria-label="Elapsed time">{formatTime(elapsed)}</span>
           <button
             type="button"
             onClick={onClose}
@@ -293,7 +328,7 @@ export function MockInterviewModal({ company, questions, language, isPro, onClos
       {/* Progress bar */}
       <div className="h-0.5 bg-[hsl(var(--bg-surface-raised))]">
         <div
-          className="h-full bg-amber-500 transition-all"
+          className="h-full bg-[hsl(var(--text-primary))] transition-all"
           style={{ width: `${((index + 1) / questions.length) * 100}%` }}
         />
       </div>
@@ -305,8 +340,8 @@ export function MockInterviewModal({ company, questions, language, isPro, onClos
             <span
               className={`inline-block text-[10px] font-semibold px-2.5 py-1 rounded-full ${
                 current.type === 'technical'
-                  ? 'bg-sky-500/10 text-sky-400'
-                  : 'bg-amber-500/10 text-amber-400'
+                  ? 'bg-[hsl(var(--bg-surface-raised))] text-[hsl(var(--text-secondary))]'
+                  : 'bg-[hsl(var(--bg-surface-raised))] text-[hsl(var(--text-secondary))]'
               }`}
             >
               {current.type === 'technical' ? 'Technical' : 'Behavioral'}
@@ -320,7 +355,7 @@ export function MockInterviewModal({ company, questions, language, isPro, onClos
             <button
               type="button"
               onClick={() => setHintOpen(h => !h)}
-              className="text-xs text-[hsl(var(--text-muted))] hover:text-amber-500 transition-colors"
+              className="text-xs text-[hsl(var(--text-muted))] hover:text-[hsl(var(--text-primary))] transition-colors"
             >
               {hintOpen ? 'Hide hint ▲' : 'Show hint ▼'}
             </button>
@@ -335,18 +370,18 @@ export function MockInterviewModal({ company, questions, language, isPro, onClos
             placeholder="Type your answer here..."
             value={currentAnswer}
             onChange={e => handleAnswerChange(e.target.value)}
-            className="resize-none min-h-[200px] bg-[hsl(var(--bg-surface-raised))] border border-[hsl(var(--border-default))] text-[hsl(var(--text-primary))] placeholder:text-[hsl(var(--text-muted))] rounded-lg focus-visible:ring-1 focus-visible:ring-amber-500/60 focus-visible:border-[hsl(var(--border-default))]"
+            className="resize-none min-h-[200px] bg-[hsl(var(--bg-surface-raised))] border border-[hsl(var(--border-default))] text-[hsl(var(--text-primary))] placeholder:text-[hsl(var(--text-muted))] rounded-lg focus-visible:ring-1 focus-visible:ring-[hsl(var(--focus))] focus-visible:border-[hsl(var(--border-default))]"
           />
 
           {/* Feedback area */}
           {!isPro && currentAnswer.length >= 10 && (
-            <div className="flex items-center justify-between rounded-lg border border-amber-500/20 bg-amber-500/5 px-4 py-3">
+            <div className="flex items-center justify-between rounded-lg border border-[hsl(var(--accent-primary))] bg-[hsl(var(--accent-light))] px-4 py-3">
               <p className="text-xs text-[hsl(var(--text-secondary))]">
                 Upgrade to Pro for AI feedback on your answers
               </p>
               <a
                 href="/settings"
-                className="text-xs font-medium text-amber-500 hover:text-amber-400 transition-colors shrink-0 ml-3"
+                className="text-xs font-medium text-[hsl(var(--state-warning))] hover:text-[hsl(var(--text-primary))] transition-colors shrink-0 ml-3"
               >
                 Upgrade →
               </a>
@@ -355,7 +390,7 @@ export function MockInterviewModal({ company, questions, language, isPro, onClos
 
           {isPro && feedbackLoading && (
             <div className="flex items-center gap-2 text-xs text-[hsl(var(--text-muted))] py-2">
-              <span className="h-3.5 w-3.5 border-2 border-amber-500/40 border-t-amber-500 rounded-full animate-spin inline-block" />
+              <span className="h-3.5 w-3.5 border-2 border-[hsl(var(--accent-primary))] border-t-[hsl(var(--text-secondary))] rounded-full animate-spin inline-block" />
               Getting AI feedback...
             </div>
           )}
@@ -386,7 +421,7 @@ export function MockInterviewModal({ company, questions, language, isPro, onClos
           <Button
             onClick={() => void handleFinish()}
             disabled={feedbackLoading}
-            className="rounded-lg bg-amber-500 text-black hover:bg-amber-400 font-medium h-9 px-6 text-sm disabled:opacity-60"
+            className="rounded-lg bg-[hsl(var(--accent-primary))] text-[hsl(var(--accent-on))] hover:bg-[hsl(var(--accent-hover))] font-medium h-9 px-6 text-sm disabled:opacity-60"
           >
             {feedbackLoading ? 'Getting feedback...' : 'Finish'}
           </Button>
@@ -394,7 +429,7 @@ export function MockInterviewModal({ company, questions, language, isPro, onClos
           <Button
             onClick={() => void handleNext()}
             disabled={feedbackLoading}
-            className="rounded-lg bg-amber-500 text-black hover:bg-amber-400 font-medium h-9 px-4 text-sm disabled:opacity-60"
+            className="rounded-lg bg-[hsl(var(--accent-primary))] text-[hsl(var(--accent-on))] hover:bg-[hsl(var(--accent-hover))] font-medium h-9 px-4 text-sm disabled:opacity-60"
           >
             {feedbackLoading ? (
               'Getting feedback...'
