@@ -58,17 +58,9 @@ const STATUS_CONFIG: Record<
 
 const STATUSES = Object.keys(STATUS_CONFIG) as ApplicationStatus[]
 
-const COMPANY_COLORS = [
-  'bg-violet-500', 'bg-sky-500', 'bg-emerald-500', 'bg-amber-500',
-  'bg-rose-500', 'bg-indigo-500', 'bg-teal-500', 'bg-orange-500',
-]
-
-function getCompanyColor(company: string): string {
-  let hash = 0
-  for (let i = 0; i < company.length; i++) {
-    hash = (hash * 31 + company.charCodeAt(i)) & 0xffffffff
-  }
-  return COMPANY_COLORS[Math.abs(hash) % COMPANY_COLORS.length]!
+// Company initials sit on a neutral tile: colour is kept for state, not decoration.
+function getCompanyColor(_company: string): string {
+  return 'bg-[hsl(var(--bg-surface-raised))]'
 }
 
 function timeAgo(dateStr: string): string {
@@ -327,7 +319,7 @@ function ResumeTab({ confirm, applicationId, hasCv, initialAdaptedCvText, onAdap
         </div>
         <Link
           href="/my-cv"
-          className="inline-flex items-center justify-center rounded-lg bg-amber-500 text-black hover:bg-amber-400 font-medium h-8 px-4 text-sm"
+          className="inline-flex items-center justify-center rounded-lg bg-[hsl(var(--accent-primary))] text-[hsl(var(--accent-on))] hover:bg-[hsl(var(--accent-hover))] font-medium h-8 px-4 text-sm"
         >
           Go to My CV →
         </Link>
@@ -340,7 +332,7 @@ function ResumeTab({ confirm, applicationId, hasCv, initialAdaptedCvText, onAdap
     return (
       <div className="flex flex-col items-center justify-center py-16 gap-4 px-5">
         <div className="h-12 w-12 rounded-xl bg-[hsl(var(--accent-light))] flex items-center justify-center">
-          <Sparkles className="h-5 w-5 text-amber-500" />
+          <Sparkles className="h-5 w-5 text-[hsl(var(--state-warning))]" />
         </div>
         <div className="text-center space-y-1">
           <p className="text-sm font-medium text-[hsl(var(--text-primary))]">Free tier limit reached</p>
@@ -368,7 +360,7 @@ function ResumeTab({ confirm, applicationId, hasCv, initialAdaptedCvText, onAdap
         <p className="text-sm text-[hsl(var(--text-muted))]">Upload your CV first</p>
         <Link
           href="/my-cv"
-          className="inline-flex items-center justify-center rounded-lg bg-amber-500 text-black hover:bg-amber-400 font-medium h-8 px-4 text-sm"
+          className="inline-flex items-center justify-center rounded-lg bg-[hsl(var(--accent-primary))] text-[hsl(var(--accent-on))] hover:bg-[hsl(var(--accent-hover))] font-medium h-8 px-4 text-sm"
         >
           Go to My CV →
         </Link>
@@ -380,14 +372,14 @@ function ResumeTab({ confirm, applicationId, hasCv, initialAdaptedCvText, onAdap
   if (generating) {
     return (
       <div className="p-5 space-y-3">
-        <div className="flex items-center gap-2 text-xs font-semibold text-amber-500">
+        <div className="flex items-center gap-2 text-xs font-semibold text-[hsl(var(--state-warning))]">
           <Sparkles className="h-3.5 w-3.5 animate-spin" />
           <span>Adapting your CV in real-time…</span>
         </div>
         <div className="rounded-xl border border-[hsl(var(--border-default))] bg-[hsl(var(--bg-surface-raised))] p-4 max-h-[460px] overflow-y-auto">
           <pre className="text-xs text-[hsl(var(--text-primary))] leading-relaxed whitespace-pre-wrap font-(family-name:--font-mono)">
             {adaptedCvText || 'Analyzing candidate profile and matching keywords…'}
-            <span className="inline-block w-1.5 h-3.5 bg-amber-500 animate-pulse ml-0.5 align-middle" />
+            <span className="inline-block w-1.5 h-3.5 bg-[hsl(var(--accent-primary))] animate-pulse ml-0.5 align-middle" />
           </pre>
         </div>
       </div>
@@ -411,11 +403,11 @@ function ResumeTab({ confirm, applicationId, hasCv, initialAdaptedCvText, onAdap
           </p>
         )}
         <FactCheckPanel issues={issues} busy={fixing} onFix={fixIssue} onApproveTitle={approveTitle} />
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <Button
             onClick={downloadPdf}
             disabled={downloading}
-            className="rounded-lg bg-amber-500 text-black hover:bg-amber-400 font-medium h-8 px-4 text-sm"
+            className="rounded-lg bg-[hsl(var(--accent-primary))] text-[hsl(var(--accent-on))] hover:bg-[hsl(var(--accent-hover))] font-medium h-8 px-4 text-sm"
           >
             {downloading ? (
               <><Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />Generating…</>
@@ -451,7 +443,7 @@ function ResumeTab({ confirm, applicationId, hasCv, initialAdaptedCvText, onAdap
       )}
       <Button
         onClick={() => generate(true)}
-        className="rounded-lg bg-amber-500 text-black hover:bg-amber-400 font-medium h-8 px-4 text-sm"
+        className="rounded-lg bg-[hsl(var(--accent-primary))] text-[hsl(var(--accent-on))] hover:bg-[hsl(var(--accent-hover))] font-medium h-8 px-4 text-sm"
       >
         <Sparkles className="h-3.5 w-3.5 mr-1.5" />
         Generate Adapted CV
@@ -620,7 +612,7 @@ function CoverLetterTab({ confirm, applicationId, hasCv, initialCoverLetter, onG
         </div>
         <Link
           href="/my-cv"
-          className="inline-flex items-center justify-center rounded-lg bg-amber-500 text-black hover:bg-amber-400 font-medium h-8 px-4 text-sm"
+          className="inline-flex items-center justify-center rounded-lg bg-[hsl(var(--accent-primary))] text-[hsl(var(--accent-on))] hover:bg-[hsl(var(--accent-hover))] font-medium h-8 px-4 text-sm"
         >
           Go to My CV →
         </Link>
@@ -633,7 +625,7 @@ function CoverLetterTab({ confirm, applicationId, hasCv, initialCoverLetter, onG
     return (
       <div className="flex flex-col items-center justify-center py-16 gap-4 px-5">
         <div className="h-12 w-12 rounded-xl bg-[hsl(var(--accent-light))] flex items-center justify-center">
-          <Sparkles className="h-5 w-5 text-amber-500" />
+          <Sparkles className="h-5 w-5 text-[hsl(var(--state-warning))]" />
         </div>
         <div className="text-center space-y-1">
           <p className="text-sm font-medium text-[hsl(var(--text-primary))]">Free tier limit reached</p>
@@ -661,7 +653,7 @@ function CoverLetterTab({ confirm, applicationId, hasCv, initialCoverLetter, onG
         <p className="text-sm text-[hsl(var(--text-muted))]">Upload your CV first</p>
         <Link
           href="/my-cv"
-          className="inline-flex items-center justify-center rounded-lg bg-amber-500 text-black hover:bg-amber-400 font-medium h-8 px-4 text-sm"
+          className="inline-flex items-center justify-center rounded-lg bg-[hsl(var(--accent-primary))] text-[hsl(var(--accent-on))] hover:bg-[hsl(var(--accent-hover))] font-medium h-8 px-4 text-sm"
         >
           Go to My CV →
         </Link>
@@ -673,14 +665,14 @@ function CoverLetterTab({ confirm, applicationId, hasCv, initialCoverLetter, onG
   if (generating) {
     return (
       <div className="p-5 space-y-3">
-        <div className="flex items-center gap-2 text-xs font-semibold text-amber-500">
+        <div className="flex items-center gap-2 text-xs font-semibold text-[hsl(var(--state-warning))]">
           <Sparkles className="h-3.5 w-3.5 animate-spin" />
           <span>Writing your cover letter in real-time…</span>
         </div>
         <div className="rounded-xl border border-[hsl(var(--border-default))] bg-[hsl(var(--bg-surface-raised))] p-4 max-h-[460px] overflow-y-auto">
           <pre className="text-xs text-[hsl(var(--text-primary))] leading-relaxed whitespace-pre-wrap font-(family-name:--font-mono)">
             {coverLetter || 'Crafting personalized letter matching your achievements with the offer…'}
-            <span className="inline-block w-1.5 h-3.5 bg-amber-500 animate-pulse ml-0.5 align-middle" />
+            <span className="inline-block w-1.5 h-3.5 bg-[hsl(var(--accent-primary))] animate-pulse ml-0.5 align-middle" />
           </pre>
         </div>
       </div>
@@ -704,11 +696,11 @@ function CoverLetterTab({ confirm, applicationId, hasCv, initialCoverLetter, onG
           </p>
         )}
         <FactCheckPanel document="letter" issues={letterIssues} busy={false} onFix={() => {}} onApproveTitle={() => {}} />
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <Button
             onClick={downloadPdf}
             disabled={downloading}
-            className="rounded-lg bg-amber-500 text-black hover:bg-amber-400 font-medium h-8 px-4 text-sm"
+            className="rounded-lg bg-[hsl(var(--accent-primary))] text-[hsl(var(--accent-on))] hover:bg-[hsl(var(--accent-hover))] font-medium h-8 px-4 text-sm"
           >
             {downloading ? (
               <><Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />Generating…</>
@@ -744,7 +736,7 @@ function CoverLetterTab({ confirm, applicationId, hasCv, initialCoverLetter, onG
       )}
       <Button
         onClick={() => generate(true)}
-        className="rounded-lg bg-amber-500 text-black hover:bg-amber-400 font-medium h-8 px-4 text-sm"
+        className="rounded-lg bg-[hsl(var(--accent-primary))] text-[hsl(var(--accent-on))] hover:bg-[hsl(var(--accent-hover))] font-medium h-8 px-4 text-sm"
       >
         <Sparkles className="h-3.5 w-3.5 mr-1.5" />
         Generate Cover Letter
@@ -820,7 +812,7 @@ function InterviewTab({ confirm, applicationId, company, hasCv, language, isPro,
         </div>
         <a
           href="/my-cv"
-          className="inline-flex items-center justify-center rounded-lg bg-amber-500 text-black hover:bg-amber-400 font-medium h-8 px-4 text-sm"
+          className="inline-flex items-center justify-center rounded-lg bg-[hsl(var(--accent-primary))] text-[hsl(var(--accent-on))] hover:bg-[hsl(var(--accent-hover))] font-medium h-8 px-4 text-sm"
         >
           Go to My CV →
         </a>
@@ -837,7 +829,7 @@ function InterviewTab({ confirm, applicationId, company, hasCv, language, isPro,
         <p className="text-sm text-[hsl(var(--text-muted))]">Upload your CV first</p>
         <a
           href="/my-cv"
-          className="inline-flex items-center justify-center rounded-lg bg-amber-500 text-black hover:bg-amber-400 font-medium h-8 px-4 text-sm"
+          className="inline-flex items-center justify-center rounded-lg bg-[hsl(var(--accent-primary))] text-[hsl(var(--accent-on))] hover:bg-[hsl(var(--accent-hover))] font-medium h-8 px-4 text-sm"
         >
           Go to My CV →
         </a>
@@ -848,7 +840,7 @@ function InterviewTab({ confirm, applicationId, company, hasCv, language, isPro,
   if (generating) {
     return (
       <div className="flex flex-col items-center justify-center py-16 gap-3">
-        <Loader2 className="h-6 w-6 animate-spin text-amber-500" />
+        <Loader2 className="h-6 w-6 animate-spin text-[hsl(var(--state-warning))]" />
         <p className="text-sm text-[hsl(var(--text-muted))]">Preparing your interview…</p>
       </div>
     )
@@ -894,9 +886,9 @@ function InterviewTab({ confirm, applicationId, company, hasCv, language, isPro,
             {behavioral.map(q => (
               <div
                 key={q.id}
-                className="rounded-xl border border-[hsl(var(--border-default))] border-l-2 border-l-amber-500 p-4 space-y-2 bg-[hsl(var(--bg-surface-raised))]"
+                className="rounded-xl border border-[hsl(var(--border-default))] border-l-2 border-l-[hsl(var(--text-secondary))] p-4 space-y-2 bg-[hsl(var(--bg-surface-raised))]"
               >
-                <span className="inline-block text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-400">
+                <span className="inline-block text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[hsl(var(--accent-light))] text-[hsl(var(--state-warning))]">
                   Behavioral
                 </span>
                 <p className="text-sm font-medium text-[hsl(var(--text-primary))]">{q.question}</p>
@@ -918,7 +910,7 @@ function InterviewTab({ confirm, applicationId, company, hasCv, language, isPro,
           <button
             type="button"
             onClick={() => setMockOpen(true)}
-            className="inline-flex items-center justify-center rounded-lg bg-amber-500 text-black hover:bg-amber-400 font-medium h-8 px-4 text-sm transition-colors"
+            className="inline-flex items-center justify-center rounded-lg bg-[hsl(var(--accent-primary))] text-[hsl(var(--accent-on))] hover:bg-[hsl(var(--accent-hover))] font-medium h-8 px-4 text-sm transition-colors"
           >
             <MessageSquare className="h-3.5 w-3.5 mr-1.5" />
             Mock Interview
@@ -953,7 +945,7 @@ function InterviewTab({ confirm, applicationId, company, hasCv, language, isPro,
       <button
         type="button"
         onClick={() => generate(true)}
-        className="inline-flex items-center justify-center rounded-lg bg-amber-500 text-black hover:bg-amber-400 font-medium h-8 px-4 text-sm"
+        className="inline-flex items-center justify-center rounded-lg bg-[hsl(var(--accent-primary))] text-[hsl(var(--accent-on))] hover:bg-[hsl(var(--accent-hover))] font-medium h-8 px-4 text-sm"
       >
         <Sparkles className="h-3.5 w-3.5 mr-1.5" />
         Generate Questions
@@ -1054,13 +1046,13 @@ export function EditApplicationSheet({
       <SheetContent
         side="right"
         showCloseButton={false}
-        className="w-120 sm:max-w-120 p-0 gap-0 flex flex-col bg-[hsl(var(--bg-surface))] border-l border-[hsl(var(--border-default))] overflow-hidden"
+        className="w-full max-w-none data-[side=right]:w-full data-[side=right]:sm:w-120 data-[side=right]:sm:max-w-120 p-0 gap-0 flex flex-col bg-[hsl(var(--bg-surface))] border-l border-[hsl(var(--border-default))] overflow-hidden"
       >
         {/* ── Header ── */}
         <div className="shrink-0 px-5 pt-5 pb-4 border-b border-[hsl(var(--border-default))] space-y-3">
           <div className="flex items-start gap-3">
             <div
-              className={`${colorClass} h-10 w-10 rounded-xl shrink-0 flex items-center justify-center text-white text-sm font-bold`}
+              className={`${colorClass} h-10 w-10 rounded-xl shrink-0 flex items-center justify-center text-[hsl(var(--text-primary))] text-sm font-semibold`}
             >
               {initial}
             </div>
@@ -1116,12 +1108,12 @@ export function EditApplicationSheet({
         <Tabs defaultValue="overview" className="flex-1 flex flex-col overflow-hidden min-h-0">
           <TabsList
             variant="line"
-            className="shrink-0 px-5 pt-3 w-full justify-start rounded-none border-b border-[hsl(var(--border-default))] h-auto pb-0"
+            className="shrink-0 px-5 pt-3 w-full justify-start overflow-x-auto flex-nowrap rounded-none border-b border-[hsl(var(--border-default))] h-auto pb-0"
           >
-            <TabsTrigger value="overview" className="pb-3">Overview</TabsTrigger>
-            <TabsTrigger value="resume" className="pb-3">Resume</TabsTrigger>
-            <TabsTrigger value="cover-letter" className="pb-3">Cover Letter</TabsTrigger>
-            <TabsTrigger value="interview" className="pb-3">Interview</TabsTrigger>
+            <TabsTrigger value="overview" className="pb-3 shrink-0">Overview</TabsTrigger>
+            <TabsTrigger value="resume" className="pb-3 shrink-0">Resume</TabsTrigger>
+            <TabsTrigger value="cover-letter" className="pb-3 shrink-0">Cover Letter</TabsTrigger>
+            <TabsTrigger value="interview" className="pb-3 shrink-0">Interview</TabsTrigger>
           </TabsList>
 
           {/* ── Overview ── */}
@@ -1158,7 +1150,7 @@ export function EditApplicationSheet({
                       href={application.link}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-center gap-1 text-sm text-amber-500 hover:text-amber-400 transition-colors truncate max-w-65"
+                      className="flex items-center gap-1 text-sm text-[hsl(var(--state-warning))] hover:text-[hsl(var(--text-primary))] transition-colors truncate max-w-65"
                     >
                       <span className="truncate">{application.link.replace(/^https?:\/\//, '')}</span>
                       <ExternalLink className="h-3 w-3 shrink-0" />
@@ -1178,7 +1170,7 @@ export function EditApplicationSheet({
                   value={notes}
                   onChange={e => setNotes(e.target.value)}
                   rows={5}
-                  className="resize-none field-sizing-fixed bg-[hsl(var(--bg-surface-raised))] border border-[hsl(var(--border-default))] text-[hsl(var(--text-primary))] placeholder:text-[hsl(var(--text-muted))] rounded-lg focus-visible:ring-1 focus-visible:ring-amber-500/60 focus-visible:border-[hsl(var(--border-default))]"
+                  className="resize-none field-sizing-fixed bg-[hsl(var(--bg-surface-raised))] border border-[hsl(var(--border-default))] text-[hsl(var(--text-primary))] placeholder:text-[hsl(var(--text-muted))] rounded-lg focus-visible:ring-1 focus-visible:ring-[hsl(var(--focus))] focus-visible:border-[hsl(var(--border-default))]"
                 />
               </div>
 
@@ -1191,7 +1183,7 @@ export function EditApplicationSheet({
               <Button
                 onClick={handleSave}
                 disabled={saving}
-                className="w-full rounded-lg bg-amber-500 text-black hover:bg-amber-400 font-medium"
+                className="w-full rounded-lg bg-[hsl(var(--accent-primary))] text-[hsl(var(--accent-on))] hover:bg-[hsl(var(--accent-hover))] font-medium"
               >
                 {saving ? 'Saving…' : 'Save Changes'}
               </Button>
