@@ -126,7 +126,7 @@ GitHub push + Vercel deploy
 - [x] Frontend Metadata, Favicon & Brand Identity
   - [x] Custom amber jet brand SVG icons: `src/app/icon.svg` & `public/icon.svg`
   - [x] Apple touch icon generated via `next/og` `ImageResponse`
-  - [x] OpenGraph, Twitter card, robots.txt, sitemap.xml, manifest.json
+  - [x] OpenGraph, Twitter card, robots.txt, sitemap.xml, manifest.json (share card drawn in `design/og/og-card.html`, rendered by `node design/og/render.mjs` into `public/og.png` and `public/apple-icon.png`)
 
 - [x] Applications Search & Multi-Criteria Filtering
   - [x] `src/components/applications/applications-filter-bar.tsx`

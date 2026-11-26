@@ -59,7 +59,7 @@ export const metadata: Metadata = {
         url: '/og.png',
         width: 1200,
         height: 630,
-        alt: 'The adapted CV of an application in JobPilot, with one claim not found in the CV and a Remove button',
+        alt: 'JobPilot: tailor your CV to every offer, invent nothing. A fact-check box flags Kubernetes as a claim not found in the CV, with a Remove button',
       },
     ],
   },
@@ -68,7 +68,7 @@ export const metadata: Metadata = {
     title: 'JobPilot: tailor your CV to every job offer without inventing anything',
     description:
       'Adapt your CV and write your cover letter from each job offer, in French or English. JobPilot checks every claim against your original CV and flags what it cannot find there before you export.',
-    images: [{ url: '/og.png', width: 1200, height: 630, alt: 'The adapted CV of an application in JobPilot, with one claim not found in the CV and a Remove button' }],
+    images: [{ url: '/og.png', width: 1200, height: 630, alt: 'JobPilot: tailor your CV to every offer, invent nothing. A fact-check box flags Kubernetes as a claim not found in the CV, with a Remove button' }],
   },
   icons: {
     icon: [

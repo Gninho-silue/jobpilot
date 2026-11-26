@@ -81,7 +81,7 @@ flowchart LR
 
 | Suite | Tests | What it covers |
 | --- | --- | --- |
-| Unit (Vitest) | 499 | fact-checker, prompts, LLM response parsing, dashboard figures, demo cookie, components (Testing Library) |
+| Unit (Vitest) | 501 | fact-checker, prompts, LLM response parsing, dashboard figures, demo cookie, components (Testing Library) |
 | Integration (Vitest + Postgres) | 216 | every API route: 401 without a session, 404 on another user's data, quotas, rate limits, webhooks, demo isolation and purge |
 | End-to-end (Playwright) | 13 | the full demo journey (offer, adapted CV and its fact-check, cover letter, both PDFs, feedback on an interview answer), the fact-check panel at 1440, 1175 and 390 px, and the demo at 390 px, which fails if anything goes past the edge of the screen |
 
