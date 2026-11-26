@@ -35,6 +35,8 @@ export default function MyCvPage() {
   const [cvData, setCvData] = useState<CvData | null>(null)
   const [loadingCv, setLoadingCv] = useState(true)
   const [showUploadZone, setShowUploadZone] = useState(false)
+  // Demo workspace: the fictional CV, read-only (no upload, no file).
+  const [demoCvText, setDemoCvText] = useState<string | null>(null)
 
   useEffect(() => {
     fetch('/api/cv')
@@ -43,6 +45,7 @@ export default function MyCvPage() {
           r.json() as Promise<{
             data?: {
               hasCv: boolean
+              demo?: boolean
               fileUrl: string | null
               cvText: string | null
               cvTextPreview: string | null
@@ -51,6 +54,10 @@ export default function MyCvPage() {
           }>
       )
       .then(j => {
+        if (j.data?.demo) {
+          setDemoCvText(j.data.cvText ?? '')
+          return
+        }
         if (j.data?.hasCv && j.data.fileUrl) {
           setCvData({
             fileUrl: j.data.fileUrl,
@@ -77,10 +84,12 @@ export default function MyCvPage() {
     )
   }
 
+  if (demoCvText !== null) return <DemoCvView text={demoCvText} />
+
   return (
     <div className="max-w-5xl space-y-6">
       <div>
-        <h1 className="text-xl font-semibold text-[hsl(var(--text-primary))]">My CV</h1>
+        <h1 className="text-[26px] font-semibold leading-tight tracking-tight text-[hsl(var(--text-primary))]">My CV</h1>
         <p className="text-sm text-[hsl(var(--text-secondary))] mt-0.5">
           Upload your CV once. JobPilot uses it for all AI generations.
         </p>
@@ -97,6 +106,27 @@ export default function MyCvPage() {
           onCancel={cvData ? () => setShowUploadZone(false) : undefined}
         />
       )}
+    </div>
+  )
+}
+
+// ── Demo CV (read-only) ──────────────────────────────────────────────────────
+
+function DemoCvView({ text }: { text: string }) {
+  return (
+    <div className="max-w-3xl space-y-5">
+      <div>
+        <h1 className="text-[26px] font-semibold leading-tight tracking-tight text-[hsl(var(--text-primary))]">My CV</h1>
+        <p className="mt-1 text-[hsl(var(--text-secondary))]">
+          The demo uses this fictional CV for every generation. It is read-only here: create a free account to upload your own.
+        </p>
+      </div>
+      <article
+        aria-label="Fictional CV of the demo"
+        className="rounded-xl border border-[hsl(var(--border-default))] bg-[hsl(var(--bg-surface))] p-5 md:p-6"
+      >
+        <pre className="whitespace-pre-wrap font-sans text-sm leading-relaxed text-[hsl(var(--text-primary))] [overflow-wrap:anywhere]">{text}</pre>
+      </article>
     </div>
   )
 }
@@ -188,7 +218,7 @@ function ExistingCvView({
               onClick={() => setActiveTab('pdf')}
               className={`flex items-center gap-1.5 px-3 py-1 rounded-md font-medium transition-colors cursor-pointer ${
                 activeTab === 'pdf'
-                  ? 'bg-amber-500 text-black font-semibold shadow-xs'
+                  ? 'bg-[hsl(var(--bg-surface-raised))] text-[hsl(var(--text-primary))] font-semibold'
                   : 'text-[hsl(var(--text-muted))] hover:text-[hsl(var(--text-primary))]'
               }`}
             >
@@ -200,7 +230,7 @@ function ExistingCvView({
               onClick={() => setActiveTab('text')}
               className={`flex items-center gap-1.5 px-3 py-1 rounded-md font-medium transition-colors cursor-pointer ${
                 activeTab === 'text'
-                  ? 'bg-amber-500 text-black font-semibold shadow-xs'
+                  ? 'bg-[hsl(var(--bg-surface-raised))] text-[hsl(var(--text-primary))] font-semibold'
                   : 'text-[hsl(var(--text-muted))] hover:text-[hsl(var(--text-primary))]'
               }`}
             >
@@ -330,7 +360,7 @@ function UploadZone({ onUploaded, onCancel }: { onUploaded: (data: CvData) => vo
         className={`
           relative rounded-xl border-2 border-dashed p-12 flex flex-col items-center gap-3 transition-colors
           ${dragOver
-            ? 'border-amber-500 bg-[hsl(var(--accent-light))]'
+            ? 'border-[hsl(var(--accent-primary))] bg-[hsl(var(--accent-light))]'
             : 'border-[hsl(var(--border-default))] bg-[hsl(var(--bg-surface))] hover:border-[hsl(var(--border-strong))] hover:bg-[hsl(var(--bg-surface-raised))]'
           }
           ${uploading ? 'cursor-wait' : 'cursor-pointer'}
@@ -347,11 +377,11 @@ function UploadZone({ onUploaded, onCancel }: { onUploaded: (data: CvData) => vo
 
         {uploading ? (
           <>
-            <Loader2 className="h-8 w-8 animate-spin text-amber-500" />
+            <Loader2 className="h-8 w-8 animate-spin text-[hsl(var(--text-secondary))]" />
             <p className="text-sm text-[hsl(var(--text-secondary))]">Uploading and extracting text…</p>
             <div className="w-48 h-1.5 rounded-full bg-[hsl(var(--bg-surface-raised))] overflow-hidden">
               <div
-                className="h-full bg-amber-500 rounded-full transition-all duration-300"
+                className="h-full bg-[hsl(var(--text-secondary))] rounded-full transition-all duration-300"
                 style={{ width: `${progress}%` }}
               />
             </div>

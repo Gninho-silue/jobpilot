@@ -91,6 +91,11 @@ describe('a demo visitor only reaches its own data', () => {
     expect((await dashboard.GET()).status).toBe(200)
   })
 
+  it('its fictional CV is there, read-only: text but no file', async () => {
+    const json = await readJson<{ data: { hasCv: boolean; demo: boolean; fileUrl: string | null; cvText: string } }>(await cv.GET())
+    expect(json.data).toEqual(expect.objectContaining({ hasCv: true, demo: true, fileUrl: null, cvText: SAMPLE_CV }))
+  })
+
   it('cannot upload a CV (403), and has no CV file (404)', async () => {
     const res = await cvUpload.POST(formRequest('/api/cv/upload', new FormData()))
     expect(res.status).toBe(403)
