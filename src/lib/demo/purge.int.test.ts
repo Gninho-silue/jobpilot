@@ -16,7 +16,7 @@ describe('demo purge after 24 h', () => {
     const recent = await createDemoWorkspace()
     await age(old, DEMO_MAX_AGE_MS + HOUR)
     await age(recent, HOUR)
-    await prisma.usageCounter.create({ data: { userId: old, month: '2026-11' } })
+    expect(await prisma.usageCounter.count({ where: { userId: old } })).toBe(1) // seeded with the workspace
     await createUser('user_real01')
     await age('user_real01', 30 * 24 * HOUR)
     await createApplication('user_real01')

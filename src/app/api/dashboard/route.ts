@@ -1,44 +1,36 @@
 import { getActor } from '@/lib/actor'
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { computeDashboardStats } from '@/lib/dashboard-stats'
+import { loadDashboard } from '@/lib/dashboard'
 
 export async function GET() {
   const actor = await getActor()
   const userId = actor?.id
-  if (!userId) {
+  if (!actor || !userId) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
   const now = new Date()
-
-  const [user, applications, usageCounter] = await Promise.all([
-    prisma.user.findUnique({ where: { id: userId }, select: { plan: true } }),
-    prisma.application.findMany({
-      where: { userId },
-      orderBy: { createdAt: 'desc' },
-      select: { id: true, company: true, role: true, status: true, language: true, createdAt: true },
-    }),
+  const [dashboard, usageCounter] = await Promise.all([
+    loadDashboard(actor, now),
     prisma.usageCounter.findUnique({ where: { userId } }),
   ])
-
-  const { totalApplications, byStatus, thisWeekCount, responseRate } =
-    computeDashboardStats(applications, now)
-  const recentApplications = applications.slice(0, 5)
+  // A counter left from an earlier month counts as 0, like on the dashboard page.
+  const current = usageCounter?.month === now.toISOString().slice(0, 7) ? usageCounter : null
 
   return NextResponse.json({
     data: {
-      totalApplications,
-      byStatus,
-      recentApplications,
+      totalApplications: dashboard.stats.totalApplications,
+      byStatus: dashboard.stats.byStatus,
+      recentApplications: dashboard.recent,
       usageThisMonth: {
-        applications: usageCounter?.applications ?? 0,
-        cvAdaptations: usageCounter?.cvAdaptations ?? 0,
-        coverLetters: usageCounter?.coverLetters ?? 0,
+        applications: dashboard.usage.used,
+        cvAdaptations: current?.cvAdaptations ?? 0,
+        coverLetters: current?.coverLetters ?? 0,
       },
-      plan: user?.plan ?? 'FREE',
-      thisWeekCount,
-      responseRate,
+      plan: dashboard.plan,
+      thisWeekCount: dashboard.stats.thisWeekCount,
+      responseRate: dashboard.stats.responseRate,
     },
   })
 }

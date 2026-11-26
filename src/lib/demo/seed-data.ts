@@ -7,6 +7,9 @@ import type { InterviewQuestion } from '@/lib/ai/generate-interview-questions'
  * (Kubernetes) and the letter one generic phrase, so a visitor sees the
  * fact-check panel at once without spending an AI generation.
  */
+/** First name of the fictional candidate, for the dashboard greeting. */
+export const DEMO_FIRST_NAME = 'Sam'
+
 export const DEMO_CV = `Sam Rivera
 Backend Developer | Node.js · TypeScript · PostgreSQL
 sam.rivera@example.com | +00 000 000 000 | Remote

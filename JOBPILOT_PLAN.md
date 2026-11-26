@@ -77,11 +77,11 @@ Problème : un LLM qui « adapte » un CV peut ajouter des compétences, entrepr
 
 ## Étape 5 — Corrections de données affichées (TDD)
 Cas réels vus dans la démo le 25/11 :
-- [ ] « Free plan — 0 of 5 applications used this month » alors que l'espace contient 5 candidatures : le compteur doit refléter la réalité (ou expliquer clairement ce qu'il compte).
-- [ ] « -20 % vs last month » affiché avec une **flèche vers le haut** : la flèche suit le signe ; variation en **points** (« −20 pts ») ; « — » s'il n'y a pas de données le mois précédent.
-- [ ] « Welcome back, there » : pas de nom → « Welcome back » tout court (et un prénom fictif pour la démo).
-- [ ] Vérifier chaque chiffre du dashboard contre la base (tests), y compris pour un espace de démo.
-- [ ] Commit : `fix(dashboard): honest trend indicators` → push sur `main`.
+- [x] « Free plan — 0 of 5 applications used this month » alors que l'espace contient 5 candidatures : le compteur doit refléter la réalité (ou expliquer clairement ce qu'il compte).
+- [x] « -20 % vs last month » affiché avec une **flèche vers le haut** : la flèche suit le signe ; variation en **points** (« −20 pts ») ; « — » s'il n'y a pas de données le mois précédent.
+- [x] « Welcome back, there » : pas de nom → « Welcome back » tout court (et un prénom fictif pour la démo).
+- [x] Vérifier chaque chiffre du dashboard contre la base (tests), y compris pour un espace de démo.
+- [x] Commit : `fix(dashboard): honest trend indicators` → push sur `main`.
 
 ## Étape 6 — Refonte de toute l'application (skills frontend-design, humanizer, webapp-testing)
 **Sur une branche `redesign`. Aucun push sur `main` avant validation de Gninho sur la preview Vercel.**

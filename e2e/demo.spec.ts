@@ -14,6 +14,12 @@ test('"Try the demo" opens a seeded workspace with the banner and the fact-check
   const cookie = (await context.cookies()).find(c => c.name === 'jp_demo')
   expect(cookie).toEqual(expect.objectContaining({ httpOnly: true, sameSite: 'Lax' }))
 
+  // Step 5: honest dashboard figures (the exact numbers depend on the date: see test/api/dashboard.int.test.ts).
+  await expect(page.getByText('Welcome back, Sam.', { exact: false })).toBeVisible()
+  await expect(page.getByText(/Welcome back, there/)).toHaveCount(0)
+  await expect(page.getByText(/Free plan — \d of 5 applications created this month/)).toBeVisible()
+  await expect(page.getByText(/% vs last month/)).toHaveCount(0)
+
   await page.goto('/applications')
   for (const company of ['Northwind Traders', 'Tailspin Toys', 'Woodgrove Bank', 'Adventure Works', 'Litware']) {
     await expect(page.getByText(company).first()).toBeVisible()

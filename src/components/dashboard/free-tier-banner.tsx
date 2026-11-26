@@ -25,11 +25,11 @@ export function FreeTierBanner({ used, limit, nextResetDate }: FreeTierBannerPro
         <div className="flex items-center gap-2 mb-1">
           <Zap className="h-4 w-4 text-amber-500 shrink-0" />
           <span className="text-sm font-semibold text-[hsl(var(--text-primary))]">
-            Free plan — {used} of {limit} applications used this month
+            Free plan — {used} of {limit} applications created this month
           </span>
         </div>
         <p className="text-xs text-[hsl(var(--text-muted))] mb-3">
-          Resets {nextResetDate}. Upgrade to Pro for unlimited applications and AI generations.
+          Resets {nextResetDate}. Deleting an application does not give a credit back. Upgrade to Pro for unlimited applications and AI generations.
         </p>
         <div className="h-1.5 rounded-full bg-[hsl(var(--bg-surface-raised))] overflow-hidden">
           <div

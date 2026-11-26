@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { computeDashboardStats, type AppStatus, type StatsApplication } from './dashboard-stats'
+import { applicationsUsedThisMonth, computeDashboardStats, greeting, presentStatCards, type AppStatus, type StatsApplication } from './dashboard-stats'
 
 // Fixed "now": 24 November 2026, local time.
 const NOW = new Date(2026, 10, 24, 12, 0, 0)
@@ -20,8 +20,9 @@ describe('computeDashboardStats', () => {
       thisWeekCount: 0,
       thisWeekOffers: 0,
       responseRate: 0,
+      lastMonthCount: 0,
       lastMonthRate: 0,
-      responseRateDelta: 0,
+      responseRateDelta: null,
     })
   })
 
@@ -74,12 +75,61 @@ describe('computeDashboardStats', () => {
     expect(stats.responseRateDelta).toBe(25)
   })
 
-  // Characterization of a known bug (JOBPILOT_PLAN.md, audit item 4, fixed in step 5):
-  // with no applications last month, lastMonthRate falls back to 0 and the whole
-  // current rate is shown as a "+X% vs last month" improvement.
-  it('KNOWN BUG: with no data last month, the delta equals the current rate', () => {
+  it('no applications last month → no delta (null), never the whole current rate', () => {
     const stats = computeDashboardStats([app('PHONE', daysAgo(1)), app('APPLIED', daysAgo(2))], NOW)
-    expect(stats.lastMonthRate).toBe(0)
-    expect(stats.responseRateDelta).toBe(50)
+    expect(stats.lastMonthCount).toBe(0)
+    expect(stats.responseRateDelta).toBeNull()
+  })
+})
+
+describe('presentStatCards', () => {
+  const card = (stats: ReturnType<typeof computeDashboardStats>, label: string) =>
+    presentStatCards(stats).find(c => c.label === label)!
+
+  it('a fall: down arrow, in points, with a real minus sign', () => {
+    // The demo of 25/11: 80 % now, 100 % in October.
+    const stats = computeDashboardStats(
+      [app('APPLIED', daysAgo(1)), app('PHONE', daysAgo(2)), app('TECHNICAL', daysAgo(3)), app('OFFER', daysAgo(4)), app('REJECTED', lastMonth(27))],
+      NOW
+    )
+    expect(card(stats, 'RESPONSE RATE')).toEqual(expect.objectContaining({ value: '80%', subtext: '−20 pts vs last month', trend: 'down' }))
+  })
+
+  it('a rise: up arrow; no change: no arrow', () => {
+    const up = computeDashboardStats([app('PHONE', daysAgo(1)), app('APPLIED', lastMonth(10))], NOW)
+    expect(card(up, 'RESPONSE RATE')).toEqual(expect.objectContaining({ subtext: '+50 pts vs last month', trend: 'up' }))
+    const flat = computeDashboardStats([app('PHONE', daysAgo(1)), app('PHONE', lastMonth(10))], NOW)
+    expect(card(flat, 'RESPONSE RATE')).toEqual(expect.objectContaining({ subtext: '0 pts vs last month', trend: 'none' }))
+  })
+
+  it('no data last month: "—", no arrow', () => {
+    const stats = computeDashboardStats([app('PHONE', daysAgo(1))], NOW)
+    expect(card(stats, 'RESPONSE RATE')).toEqual(expect.objectContaining({ subtext: '— vs last month', trend: 'none' }))
+  })
+
+  it('every other figure says what it counts, with an arrow only for a real increase', () => {
+    const stats = computeDashboardStats([app('TECHNICAL', daysAgo(1)), app('OFFER', daysAgo(10)), app('APPLIED', daysAgo(20))], NOW)
+    expect(card(stats, 'TOTAL APPLICATIONS')).toEqual(expect.objectContaining({ value: '3', subtext: '+1 in the last 7 days', trend: 'up' }))
+    expect(card(stats, 'INTERVIEWS')).toEqual(expect.objectContaining({ value: '1', subtext: 'at the technical stage', trend: 'none' }))
+    expect(card(stats, 'OFFERS')).toEqual(expect.objectContaining({ value: '1', subtext: 'out of 3 applications', trend: 'none' }))
+    const quiet = computeDashboardStats([app('APPLIED', daysAgo(20))], NOW)
+    expect(card(quiet, 'TOTAL APPLICATIONS')).toEqual(expect.objectContaining({ subtext: 'none in the last 7 days', trend: 'none' }))
+  })
+})
+
+describe('greeting', () => {
+  it('with a first name, and without one (never "there")', () => {
+    expect(greeting('Sam')).toBe('Welcome back, Sam.')
+    expect(greeting(null)).toBe('Welcome back.')
+    expect(greeting('  ')).toBe('Welcome back.')
+  })
+})
+
+describe('applicationsUsedThisMonth', () => {
+  it('the counter of the current month; a stale month counts as 0', () => {
+    const now = new Date('2026-11-26T12:00:00Z')
+    expect(applicationsUsedThisMonth({ month: '2026-11', applications: 4 }, now)).toBe(4)
+    expect(applicationsUsedThisMonth({ month: '2026-10', applications: 5 }, now)).toBe(0)
+    expect(applicationsUsedThisMonth(null, now)).toBe(0)
   })
 })

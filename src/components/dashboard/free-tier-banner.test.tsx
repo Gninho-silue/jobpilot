@@ -12,7 +12,8 @@ afterEach(cleanup)
 describe('FreeTierBanner', () => {
   it('shows usage and the reset date', () => {
     render(<FreeTierBanner used={2} limit={5} nextResetDate="December 1" />)
-    expect(screen.getByText('Free plan — 2 of 5 applications used this month')).toBeInTheDocument()
+    expect(screen.getByText('Free plan — 2 of 5 applications created this month')).toBeInTheDocument()
+    expect(screen.getByText(/Deleting an application does not give a credit back./)).toBeInTheDocument()
     expect(screen.getByText(/Resets December 1\./)).toBeInTheDocument()
   })
 

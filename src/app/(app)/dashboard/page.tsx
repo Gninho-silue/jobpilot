@@ -15,12 +15,12 @@ import {
   Star,
   Plus,
   ArrowUpRight,
+  ArrowDownRight,
   FileText,
   Edit,
 } from 'lucide-react'
-import { prisma } from '@/lib/prisma'
-import { FREE_TIER_LIMITS } from '@/lib/config'
-import { computeDashboardStats, type AppStatus } from '@/lib/dashboard-stats'
+import { loadDashboard } from '@/lib/dashboard'
+import type { AppStatus, StatCard, Trend } from '@/lib/dashboard-stats'
 import { FreeTierBanner } from '@/components/dashboard/free-tier-banner'
 import { UpgradeSuccessToast } from '@/components/dashboard/upgrade-success-toast'
 
@@ -53,75 +53,31 @@ function timeAgo(date: Date): string {
   return `${days}d ago`
 }
 
+const CARD_ICON: Record<StatCard['label'], { Icon: typeof Briefcase; iconBg: string; iconColor: string }> = {
+  'TOTAL APPLICATIONS': { Icon: Briefcase, iconBg: 'bg-indigo-500/20', iconColor: 'text-indigo-400' },
+  'RESPONSE RATE': { Icon: RefreshCw, iconBg: 'bg-emerald-500/20', iconColor: 'text-emerald-400' },
+  INTERVIEWS: { Icon: Calendar, iconBg: 'bg-sky-500/20', iconColor: 'text-sky-400' },
+  OFFERS: { Icon: Star, iconBg: 'bg-amber-500/20', iconColor: 'text-amber-400' },
+}
+
+// The arrow follows the sign of the change; no arrow when nothing moved.
+const TREND: Record<Trend, { Arrow: typeof ArrowUpRight | null; color: string; label: string }> = {
+  up: { Arrow: ArrowUpRight, color: 'text-[hsl(var(--state-success))]', label: 'up' },
+  down: { Arrow: ArrowDownRight, color: 'text-[hsl(var(--state-error))]', label: 'down' },
+  none: { Arrow: null, color: 'text-[hsl(var(--text-muted))]', label: '' },
+}
+
 export default async function DashboardPage() {
   const actor = await getActor()
   if (!actor) redirect('/sign-in')
-  const userId = actor.id
 
   const clerkUser = actor.kind === 'user' ? await currentUser() : null
-  const firstName = clerkUser?.firstName ?? 'there'
-
   const now = new Date()
   const firstOfNextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1)
+  const dashboard = await loadDashboard(actor, now, clerkUser?.firstName ?? null)
 
-  const [user, allApps, usageCounter] = await Promise.all([
-    prisma.user.findUnique({ where: { id: userId }, select: { plan: true } }),
-    prisma.application.findMany({
-      where: { userId },
-      orderBy: { createdAt: 'desc' },
-      select: { id: true, company: true, role: true, status: true, language: true, createdAt: true },
-    }),
-    prisma.usageCounter.findUnique({ where: { userId } }),
-  ])
-
-  const plan = user?.plan ?? 'FREE'
-  const {
-    totalApplications,
-    byStatus,
-    thisWeekCount: thisWeekApps,
-    thisWeekOffers,
-    responseRate,
-    responseRateDelta,
-  } = computeDashboardStats(allApps, now)
-
-  const recentApps = allApps.slice(0, 5)
-  const usedThisMonth = usageCounter?.applications ?? 0
+  const { plan, cards: statCards, usage, recent: recentApps } = dashboard
   const nextResetDate = firstOfNextMonth.toLocaleDateString('en-US', { month: 'long', day: 'numeric' })
-
-  const statCards = [
-    {
-      label: 'TOTAL APPLICATIONS',
-      value: String(totalApplications),
-      subtext: `+${thisWeekApps} this week`,
-      Icon: Briefcase,
-      iconBg: 'bg-indigo-500/20',
-      iconColor: 'text-indigo-400',
-    },
-    {
-      label: 'RESPONSE RATE',
-      value: `${responseRate}%`,
-      subtext: `${responseRateDelta >= 0 ? '+' : ''}${responseRateDelta}% vs last month`,
-      Icon: RefreshCw,
-      iconBg: 'bg-emerald-500/20',
-      iconColor: 'text-emerald-400',
-    },
-    {
-      label: 'INTERVIEWS',
-      value: String(byStatus.TECHNICAL),
-      subtext: `${byStatus.TECHNICAL} scheduled`,
-      Icon: Calendar,
-      iconBg: 'bg-sky-500/20',
-      iconColor: 'text-sky-400',
-    },
-    {
-      label: 'OFFERS',
-      value: String(byStatus.OFFER),
-      subtext: `+${thisWeekOffers} this week`,
-      Icon: Star,
-      iconBg: 'bg-amber-500/20',
-      iconColor: 'text-amber-400',
-    },
-  ]
 
   return (
     <div className="flex flex-col gap-6">
@@ -134,7 +90,7 @@ export default async function DashboardPage() {
         <div>
           <h1 className="text-xl font-semibold text-[hsl(var(--text-primary))]">Dashboard</h1>
           <p className="text-sm text-[hsl(var(--text-secondary))] mt-0.5">
-            Welcome back, {firstName}. Here&apos;s where your search stands.
+            {dashboard.greeting} Here&apos;s where your search stands.
           </p>
         </div>
         <Link
@@ -149,15 +105,18 @@ export default async function DashboardPage() {
       {/* Free Tier Banner */}
       {plan === 'FREE' && (
         <FreeTierBanner
-          used={usedThisMonth}
-          limit={FREE_TIER_LIMITS.applications}
+          used={usage.used}
+          limit={usage.limit}
           nextResetDate={nextResetDate}
         />
       )}
 
       {/* Stats Cards */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        {statCards.map(({ label, value, subtext, Icon, iconBg, iconColor }) => (
+        {statCards.map(({ label, value, subtext, trend }) => {
+          const { Icon, iconBg, iconColor } = CARD_ICON[label]
+          const { Arrow, color, label: trendLabel } = TREND[trend]
+          return (
           <div
             key={label}
             className="bg-[hsl(var(--bg-surface))] border border-[hsl(var(--border-default))] rounded-xl p-4 relative"
@@ -171,12 +130,13 @@ export default async function DashboardPage() {
               {label}
             </p>
             <p className="text-3xl font-bold text-[hsl(var(--text-primary))] mb-1">{value}</p>
-            <p className="text-xs text-[hsl(var(--state-success))] flex items-center gap-0.5">
-              <ArrowUpRight className="h-3 w-3" />
+            <p className={`text-xs ${color} flex items-center gap-0.5`}>
+              {Arrow ? <Arrow className="h-3 w-3" aria-label={trendLabel} /> : null}
               {subtext}
             </p>
           </div>
-        ))}
+          )
+        })}
       </div>
 
       {/* Recent Applications */}

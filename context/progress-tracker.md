@@ -214,6 +214,11 @@ Vercel Deploy & Production Verification
 - [x] Step 4.5 (JOBPILOT_PLAN.md): preliminary fixes
   - [x] Flaky E2E ("Use" at 1175 px): not reproduced in ~45 runs (incl. 4× CPU throttling); mechanism found: the Applications page dropped `?edit=<id>` as soon as the sheet opened, so a reload or remount (Clerk dev handshake) lost the sheet for good. `?edit` now stays while the sheet is open; E2E "a reload keeps the detail panel open"; the "Use" test passed 10 times in a row
   - [x] `assertProductionAppUrl()` (`lib/env.ts`), called by `next.config.ts`: with `VERCEL_ENV=production` the build fails if `NEXT_PUBLIC_APP_URL` is missing, http:// or local. `npm run smoke:prod` (`scripts/smoke-production.mjs`) checks the deployed sitemap, robots.txt and home metadata point to https://jobpilot-jet.vercel.app (manual; not wired into CI)
+- [x] Step 5 (JOBPILOT_PLAN.md): honest dashboard figures
+  - [x] `loadDashboard()` (`lib/dashboard.ts`) feeds both the page and `GET /api/dashboard`; `presentStatCards()` (`lib/dashboard-stats.ts`): response-rate change in points with a real minus sign ("−20 pts vs last month"), arrow following the sign, "—" without applications last month (`responseRateDelta: null`); "+N in the last 7 days" (arrow only if N > 0), "Interviews: at the technical stage" (was "N scheduled", which nothing records), "Offers: out of N applications" (was "+N this week", counted on applications created this week)
+  - [x] Free plan banner: "N of 5 applications created this month" + "Deleting an application does not give a credit back."; a usage counter from an earlier month counts as 0; a demo workspace's counter is seeded with its applications of the current (UTC) month, so the banner and the limit agree
+  - [x] "Welcome back." without a first name; the demo greets "Sam"
+  - [x] Integration tests: every dashboard figure against the database, demo workspace included (`test/api/dashboard.int.test.ts`)
 
 ## Known Issues (found while writing tests)
 
