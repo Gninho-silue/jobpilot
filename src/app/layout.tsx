@@ -21,11 +21,11 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'https://jobpilot.app'),
   title: {
-    default: 'JobPilot — AI-Powered Job Search Copilot',
+    default: 'JobPilot — Tailor your CV to every job offer, without inventing anything',
     template: '%s | JobPilot',
   },
   description:
-    'Track applications, tailor your CV to any job in 1 click, generate compelling cover letters, and master interview questions with your personal AI job search copilot.',
+    'Adapt your CV and write your cover letter from each job offer, in French or English. Every claim is checked against your original CV, and what it cannot find is flagged before you export.',
   applicationName: 'JobPilot',
   keywords: [
     'Job tracker',
@@ -50,9 +50,9 @@ export const metadata: Metadata = {
     locale: 'en_US',
     url: '/',
     siteName: 'JobPilot',
-    title: 'JobPilot — AI-Powered Job Search Copilot',
+    title: 'JobPilot — Tailor your CV to every job offer, without inventing anything',
     description:
-      'Organize applications, adapt resumes to match job descriptions, generate personalized cover letters, and practice interview questions with AI.',
+      'Adapt your CV and write your cover letter from each job offer, in French or English. Every claim is checked against your original CV, and what it cannot find is flagged before you export.',
     images: [
       {
         url: '/screenshots/kanban.png',
@@ -64,9 +64,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'JobPilot — AI-Powered Job Search Copilot',
+    title: 'JobPilot — Tailor your CV to every job offer, without inventing anything',
     description:
-      'Organize applications, adapt resumes to match job descriptions, generate personalized cover letters, and practice interview questions with AI.',
+      'Adapt your CV and write your cover letter from each job offer, in French or English. Every claim is checked against your original CV, and what it cannot find is flagged before you export.',
     images: ['/screenshots/kanban.png'],
     creator: '@jobpilot',
   },
