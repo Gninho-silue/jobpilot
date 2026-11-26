@@ -40,7 +40,7 @@ export function UpgradeButton({ children, className, variant = 'primary', source
         onClick={handleClick}
         disabled={loading}
         className={cn(
-          'text-sm font-medium text-amber-500 hover:text-amber-400 transition-colors whitespace-nowrap disabled:opacity-60',
+          'text-sm font-medium text-[hsl(var(--text-primary))] underline underline-offset-2 hover:text-[hsl(var(--text-secondary))] transition-colors whitespace-nowrap disabled:opacity-60',
           className
         )}
       >
@@ -61,7 +61,7 @@ export function UpgradeButton({ children, className, variant = 'primary', source
       onClick={handleClick}
       disabled={loading}
       className={cn(
-        'flex items-center justify-center gap-2 w-full px-3 py-2 rounded-lg bg-amber-500 text-black text-sm font-medium hover:bg-amber-400 transition-colors disabled:opacity-60',
+        'flex items-center justify-center gap-2 w-full px-3 py-2 rounded-lg bg-[hsl(var(--accent-primary))] text-[hsl(var(--accent-on))] text-sm font-medium hover:bg-[hsl(var(--accent-hover))] transition-colors disabled:opacity-60',
         className
       )}
     >

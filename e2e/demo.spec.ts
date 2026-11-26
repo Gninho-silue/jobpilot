@@ -10,7 +10,7 @@ test('"Try the demo" opens a seeded workspace with the banner and the fact-check
   await page.getByRole('button', { name: 'Try the demo' }).click()
   await page.waitForURL('**/dashboard')
 
-  await expect(page.getByRole('status').filter({ hasText: 'Demo workspace — data resets daily.' })).toBeVisible()
+  await expect(page.getByRole('status').filter({ hasText: 'Demo · resets daily' })).toBeVisible()
   const cookie = (await context.cookies()).find(c => c.name === 'jp_demo')
   expect(cookie).toEqual(expect.objectContaining({ httpOnly: true, sameSite: 'Lax' }))
 
@@ -67,7 +67,7 @@ test('signing in with Clerk during a demo removes the demo cookie', async ({ pag
     })
   }
   await page.goto('/dashboard')
-  await expect(page.getByRole('status').filter({ hasText: 'Demo workspace' })).toHaveCount(0)
+  await expect(page.getByRole('status').filter({ hasText: 'resets daily' })).toHaveCount(0)
   expect((await context.cookies()).find(c => c.name === 'jp_demo')).toBeUndefined()
 })
 
